@@ -1,0 +1,47 @@
+{
+  "appId": "com.kkuldanji.app",
+  "productName": "꿀단지",
+  "directories": {
+    "output": "release",
+    "buildResources": "electron/resources"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "../dist/backend",
+      "to": "backend",
+      "filter": ["**/*"]
+    }
+  ],
+  "win": {
+    "target": [
+      "nsis"
+    ],
+    "icon": "electron/resources/icon.ico"
+  },
+  "mac": {
+    "target": [
+      "dmg"
+    ],
+    "icon": "electron/resources/icon.icns",
+    "category": "public.app-category.productivity"
+  },
+  "linux": {
+    "target": [
+      "AppImage",
+      "deb"
+    ],
+    "icon": "electron/resources/icon.png",
+    "category": "Utility"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  }
+}
