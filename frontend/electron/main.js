@@ -174,3 +174,21 @@ ipcMain.handle("check-backend", async () => {
     port: BACKEND_PORT,
   };
 });
+
+// IPC 핸들러 - JSON 파일 저장
+ipcMain.handle("save-json", async (event, { data, filename }) => {
+  const { dialog } = require("electron");
+  const fs = require("fs");
+
+  const { filePath } = await dialog.showSaveDialog({
+    title: "인수인계서 저장",
+    defaultPath: filename || "handover.json",
+    filters: [{ name: "JSON Files", extensions: ["json"] }],
+  });
+
+  if (filePath) {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    return { success: true, filePath };
+  }
+  return { success: false };
+});

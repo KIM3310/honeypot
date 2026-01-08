@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { HandoverData } from "../types.ts";
+import { HandoverPrintTemplate } from "./HandoverPrintTemplate";
 import {
   FileText,
   Users,
@@ -135,8 +136,59 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
 
 
 
+  const handleExportJSON = async () => {
+    if ((window as any).electronAPI) {
+      try {
+        const result = await (window as any).electronAPI.saveJson(
+          data,
+          `handover_${new Date().toISOString().split("T")[0]}.json`
+        );
+        if (result.success) {
+          alert(`저장되었습니다: ${result.filePath}`);
+        }
+      } catch (error) {
+        console.error("저장 실패:", error);
+        alert("저장에 실패했습니다.");
+      }
+    } else {
+      // 웹 환경 폴백 (다운로드 링크 생성)
+      const jsonString = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `handover_${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const handleExportPDF = () => {
+    window.print();
+  };
+
   return (
     <div className="bg-white rounded-[2.5rem] shadow-2xl border border-yellow-100 h-full flex flex-col overflow-hidden relative">
+      <div className="flex justify-between items-center p-4 border-b border-yellow-100 bg-white">
+        <h2 className="text-sm font-black text-yellow-600 uppercase tracking-widest flex items-center gap-2">
+          <Sparkles className="w-4 h-4" /> 인수인계서 리포트
+        </h2>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportJSON}
+            className="flex items-center gap-2 px-3 py-1.5 bg-yellow-50 text-yellow-600 rounded-lg text-xs font-bold hover:bg-yellow-100 transition-colors"
+          >
+            <Save className="w-3.5 h-3.5" /> JSON 저장
+          </button>
+          <button
+            onClick={handleExportPDF}
+            className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500 text-white rounded-lg text-xs font-bold hover:bg-yellow-600 transition-colors shadow-sm"
+          >
+            <Printer className="w-3.5 h-3.5" /> PDF 출력
+          </button>
+        </div>
+      </div>
       {/* Tab Navigation */}
       <div className="flex bg-yellow-50/50 border-b border-yellow-100 p-2 gap-1 overflow-x-auto no-scrollbar">
         {tabs.map((tab, idx) => (
@@ -929,6 +981,9 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
           style={{ width: `${((activeTab + 1) / tabs.length) * 100}%` }}
         ></div>
       </div>
+
+      {/* 인쇄용 템플릿 (CSS로 제어: 화면 숨김 / 출력 보임) */}
+      <HandoverPrintTemplate data={data} />
     </div>
   );
 };

@@ -31,3 +31,41 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  /* 모든 요소 숨기기 */
+  body * {
+    visibility: hidden;
+  }
+
+  /* 프린트 템플릿만 보이기 */
+  .print-template,
+  .print-template * {
+    visibility: visible;
+  }
+
+  /* 템플릿 위치 및 스타일 강제 지정 */
+  .print-template {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 210mm;
+    /* min-height 제거하여 자연스럽게 늘어나도록 함 */
+    display: block !important;
+    background: white;
+    z-index: 9999;
+    color: black !important;
+  }
+
+  /* 부모 요소의 overflow clipping 방지 - 매우 중요 */
+  html, body, #root, #root > div, .overflow-hidden {
+    overflow: visible !important;
+    height: auto !important;
+    position: static !important; /* relative 등 제거 */
+  }
+}

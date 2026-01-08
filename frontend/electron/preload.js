@@ -4,6 +4,9 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
   // 백엔드 상태 확인
   checkBackend: () => ipcRenderer.invoke('check-backend'),
+  
+  // JSON 저장
+  saveJson: (data, filename) => ipcRenderer.invoke('save-json', { data, filename }),
 
   // 환경 정보
   platform: process.platform,
