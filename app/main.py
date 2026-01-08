@@ -26,8 +26,8 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
         "http://192.168.200.115:5173",
-        "http://192.168.200.115:5174",
-        "*"
+        "http://192.168.200.115:5174"
+        # "*" 제거 - credentials: 'include'와 충돌
     ],
     allow_credentials=True,
     allow_methods=["*"],

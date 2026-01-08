@@ -127,6 +127,11 @@ export const removeCsrfToken = (): void => {
   localStorage.removeItem("csrf_token");
 };
 
+// ✅ Refresh Token 삭제
+export const removeRefreshToken = (): void => {
+  localStorage.removeItem("refresh_token");
+};
+
 // ✅ 모든 토큰 삭제 (수정)
 export const removeAllTokens = (): void => {
   removeToken();
