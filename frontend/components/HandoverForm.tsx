@@ -24,6 +24,56 @@ interface Props {
   onUpdate: (data: HandoverData) => void;
 }
 
+const InputField = ({
+  label,
+  value,
+  onChange,
+  multiline = false,
+  placeholder = "",
+}: any) => {
+  const [localValue, setLocalValue] = useState(value || "");
+
+  useEffect(() => {
+    setLocalValue(value || "");
+  }, [value]);
+
+  const handleChange = (newValue: string) => {
+    setLocalValue(newValue);
+  };
+
+  const handleBlur = () => {
+    if (localValue !== value) {
+      onChange(localValue);
+    }
+  };
+
+  return (
+    <div className="mb-4 group">
+      <label className="block text-[9px] font-black text-yellow-600 uppercase mb-1.5 tracking-widest">
+        {label}
+      </label>
+      {multiline ? (
+        <textarea
+          value={localValue}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={handleBlur}
+          placeholder={placeholder}
+          className="w-full p-3.5 bg-white border border-yellow-100 rounded-xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all text-xs font-medium min-h-[100px] shadow-sm resize-none"
+        />
+      ) : (
+        <input
+          type="text"
+          value={localValue}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={handleBlur}
+          placeholder={placeholder}
+          className="w-full p-3.5 bg-white border border-yellow-100 rounded-xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all text-xs font-bold shadow-sm"
+        />
+      )}
+    </div>
+  );
+};
+
 const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
   const [activeTab, setActiveTab] = useState(0);
 
@@ -83,55 +133,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
     { name: "6. 확인", icon: <CheckSquare className="w-4 h-4" /> },
   ];
 
-  const InputField = ({
-    label,
-    value,
-    onChange,
-    multiline = false,
-    placeholder = "",
-  }: any) => {
-    const [localValue, setLocalValue] = useState(value || "");
 
-    useEffect(() => {
-      setLocalValue(value || "");
-    }, [value]);
-
-    const handleChange = (newValue: string) => {
-      setLocalValue(newValue);
-    };
-
-    const handleBlur = () => {
-      if (localValue !== value) {
-        onChange(localValue);
-      }
-    };
-
-    return (
-      <div className="mb-4 group">
-        <label className="block text-[9px] font-black text-yellow-600 uppercase mb-1.5 tracking-widest">
-          {label}
-        </label>
-        {multiline ? (
-          <textarea
-            value={localValue}
-            onChange={(e) => handleChange(e.target.value)}
-            onBlur={handleBlur}
-            placeholder={placeholder}
-            className="w-full p-3.5 bg-white border border-yellow-100 rounded-xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all text-xs font-medium min-h-[100px] shadow-sm resize-none"
-          />
-        ) : (
-          <input
-            type="text"
-            value={localValue}
-            onChange={(e) => handleChange(e.target.value)}
-            onBlur={handleBlur}
-            placeholder={placeholder}
-            className="w-full p-3.5 bg-white border border-yellow-100 rounded-xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all text-xs font-bold shadow-sm"
-          />
-        )}
-      </div>
-    );
-  };
 
   return (
     <div className="bg-white rounded-[2.5rem] shadow-2xl border border-yellow-100 h-full flex flex-col overflow-hidden relative">
