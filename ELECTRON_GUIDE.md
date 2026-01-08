@@ -23,6 +23,7 @@ pip install pyinstaller  # 백엔드 빌드용
 ```bash
 # 터미널 1: 백엔드 실행
 cd /home/user/honeypot_proto
+python -m uvicorn app.main:app --reload
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 # 터미널 2: Electron 앱 실행
@@ -42,6 +43,7 @@ npm run electron:dev
 ```
 
 이 스크립트는:
+
 - PyInstaller로 Python 백엔드를 독립 실행 파일로 빌드
 - `dist/backend` 생성
 - 빌드된 파일을 `frontend/electron/resources/backend/`로 복사
@@ -88,11 +90,11 @@ honeypot_proto/
 ```json
 {
   "scripts": {
-    "dev": "vite",                              // Vite dev 서버
-    "build": "tsc && vite build",               // React 앱 빌드
-    "electron": "wait-on http://localhost:5173 && electron .",  // Electron 실행
-    "electron:dev": "concurrently \"npm run dev\" \"npm run electron\"",  // 개발 모드
-    "electron:build": "npm run build && electron-builder"  // 프로덕션 빌드
+    "dev": "vite", // Vite dev 서버
+    "build": "tsc && vite build", // React 앱 빌드
+    "electron": "wait-on http://localhost:5173 && electron .", // Electron 실행
+    "electron:dev": "concurrently \"npm run dev\" \"npm run electron\"", // 개발 모드
+    "electron:build": "npm run build && electron-builder" // 프로덕션 빌드
   }
 }
 ```
@@ -101,21 +103,23 @@ honeypot_proto/
 
 ```typescript
 export default defineConfig({
-  base: './',  // Electron에서 상대 경로로 리소스 로드
+  base: "./", // Electron에서 상대 경로로 리소스 로드
   build: {
-    outDir: 'dist'
-  }
+    outDir: "dist",
+  },
 });
 ```
 
 ## 🎯 동작 방식
 
 ### 개발 모드
+
 1. Vite dev 서버가 포트 5173에서 실행
 2. Electron이 `http://localhost:5173`을 로드
 3. Python 백엔드는 별도로 실행 (포트 8000)
 
 ### 프로덕션 모드
+
 1. React 앱이 `frontend/dist`에 빌드됨
 2. Python 백엔드가 독립 실행 파일로 빌드됨
 3. Electron 앱 시작 시:
@@ -156,7 +160,9 @@ OPENAI_API_KEY=your_openai_key
 ## 🐛 문제 해결
 
 ### Electron 설치 실패
+
 네트워크 문제로 Electron 설치가 실패하는 경우:
+
 ```bash
 cd frontend
 npm cache clean --force
@@ -164,13 +170,16 @@ npm install
 ```
 
 ### 백엔드 빌드 오류
+
 의존성 누락 시:
+
 ```bash
 pip install -r requirements.txt
 pip install pyinstaller uvicorn[standard]
 ```
 
 ### 빌드된 앱에서 백엔드가 시작되지 않음
+
 - `electron/main.js`의 로그 확인
 - 백엔드 실행 파일 경로 확인
 - 환경 변수 설정 확인

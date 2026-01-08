@@ -44,10 +44,10 @@ def get_search_client(index_name: str = None):
     )
 """
 
-def get_search_client():
+def get_search_client(index_name: str = None):
     return SearchClient(
         endpoint=AZURE_SEARCH_ENDPOINT,
-        index_name=AZURE_SEARCH_INDEX_NAME,
+        index_name=index_name or AZURE_SEARCH_INDEX_NAME,
         credential=AzureKeyCredential(AZURE_SEARCH_KEY)
     )
 
