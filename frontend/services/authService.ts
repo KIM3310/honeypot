@@ -1,4 +1,5 @@
 import { setToken, setCsrfToken, setUserInfo } from "../utils/auth";
+import { API_ENDPOINTS, fetchWithRetry } from "../config/api";
 
 // ✅ Backend 응답 형식에 맞춤
 interface LoginResponse {
@@ -18,7 +19,7 @@ export const loginUser = async (
   email: string,
   password: string
 ): Promise<LoginResponse> => {
-  const response = await fetch("http://localhost:8000/api/auth/login", {
+  const response = await fetchWithRetry(API_ENDPOINTS.LOGIN, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

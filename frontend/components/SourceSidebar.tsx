@@ -11,6 +11,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { SourceFile } from "../types.ts";
+import { API_ENDPOINTS, fetchWithRetry } from "../config/api";
 
 interface Props {
   onIndexChange?: (indexName: string) => void;
@@ -36,9 +37,7 @@ const SourceSidebar: React.FC<Props> = ({
   useEffect(() => {
     const fetchIndexes = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:8000/api/upload/indexes"
-        );
+        const response = await fetchWithRetry(API_ENDPOINTS.INDEXES);
         if (response.ok) {
           const data = await response.json();
           const indexNames = data.indexes.map((idx: any) => idx.name);
@@ -59,6 +58,8 @@ const SourceSidebar: React.FC<Props> = ({
         }
       } catch (error) {
         console.error("❌ RAG 인덱스 목록 조회 실패:", error);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.warn(`인덱스 목록을 가져올 수 없습니다: ${errorMsg}`);
       }
     };
 
@@ -97,7 +98,7 @@ const SourceSidebar: React.FC<Props> = ({
             const headers = getAuthHeaders();
             delete headers["Content-Type"]; // FormData는 Content-Type 자동 설정
 
-            const response = await fetch("http://localhost:8000/api/upload", {
+            const response = await fetchWithRetry(API_ENDPOINTS.UPLOAD, {
               method: "POST",
               headers: headers,
               body: formData,
@@ -111,7 +112,9 @@ const SourceSidebar: React.FC<Props> = ({
             console.log("✅ PDF 텍스트 추출 완료:", file.name);
           } catch (error) {
             console.error("❌ PDF 업로드 실패:", error);
-            content = "[PDF 업로드 중 오류 발생]";
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            content = `[PDF 업로드 중 오류 발생: ${errorMsg}]`;
+            alert(`PDF 파일 업로드에 실패했습니다.\n\n${errorMsg}`);
           }
         }
 

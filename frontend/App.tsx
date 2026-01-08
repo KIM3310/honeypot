@@ -22,6 +22,7 @@ import {
   analyzeFilesForHandover,
   chatWithGemini,
 } from "./services/geminiService";
+import { API_ENDPOINTS, fetchWithRetry } from "./config/api";
 
 const STORAGE_KEY_SESSIONS = "honeycomb_chat_sessions";
 const STORAGE_KEY_CURRENT_SESSION = "honeycomb_current_session";
@@ -238,8 +239,8 @@ const App: React.FC = () => {
           "📚 업로드된 파일이 없음 - AI Search 인덱스에서 문서 조회..."
         );
         try {
-          const response = await fetch(
-            "http://localhost:8000/api/upload/documents",
+          const response = await fetchWithRetry(
+            API_ENDPOINTS.DOCUMENTS,
             {
               headers: getAuthHeaders(), // ← 토큰 포함
             }
@@ -284,7 +285,12 @@ const App: React.FC = () => {
           }
         } catch (error) {
           console.error("❌ 인덱스 조회 실패:", error);
-          alert("자료 보관함에 업무 파일을 추가해 주세요!");
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          alert(
+            `인덱스에서 문서를 가져오는 데 실패했습니다.\n\n` +
+            `오류: ${errorMsg}\n\n` +
+            `백엔드가 실행 중인지 확인하거나, 자료 보관함에 파일을 직접 추가해주세요.`
+          );
           setIsProcessing(false);
           return;
         }
