@@ -12,13 +12,13 @@ function getApiBaseUrl(): string {
     return import.meta.env.VITE_API_BASE_URL;
   }
 
-  // 2. Electron 환경에서는 항상 localhost:8000
-  if (isElectron) {
-    return 'http://localhost:8000';
+  // 2. 개발 환경 (Web & Electron Dev) -> Proxy 사용
+  if (isDev) {
+    return '';
   }
 
-  // 3. 개발 환경
-  if (isDev) {
+  // 3. Electron 프로덕션 환경 -> localhost:8000
+  if (isElectron) {
     return 'http://localhost:8000';
   }
 
