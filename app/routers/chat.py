@@ -41,8 +41,8 @@ async def analyze(
     """
     try:
         # 사용자 정보 로깅 (감사 추적)
-        print(f"🔍 [{user['name']}] /analyze 요청 - messages: {len(request.messages)}")
-        
+        print(f"🔍 [{user['name']}] /analyze 요청 - messages: {len(analyze_request.messages)}")
+
         # 프론트엔드에서 보낸 메시지 형식 처리
         messages = analyze_request.messages  # ← analyze_request 사용!
 
