@@ -7,10 +7,11 @@ import {
   removeCsrfToken,
 } from "../utils/auth.ts";
 import { HandoverData, SourceFile } from "../types.ts";
+import { API_BASE_URL, API_ENDPOINTS } from "../config/api";
 
 const CONFIG = {
   USE_LOCAL_BACKEND: true,
-  LOCAL_BACKEND_URL: "http://localhost:8000",
+  LOCAL_BACKEND_URL: API_BASE_URL,
   AZURE_ENDPOINT: "https://YOUR_RESOURCE_NAME.openai.azure.com",
   AZURE_KEY: "YOUR_AZURE_API_KEY",
   DEPLOYMENT_NAME: "YOUR_DEPLOYMENT_NAME",
@@ -27,7 +28,7 @@ async function refreshAccessToken(): Promise<string | null> {
     const refreshToken = localStorage.getItem("refresh_token");
     if (!refreshToken) return null;
 
-    const response = await fetch("http://localhost:8000/api/auth/refresh", {
+    const response = await fetch(API_ENDPOINTS.REFRESH, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -190,6 +191,16 @@ async function callAI(path: string, payload: any) {
     console.error(`🔴 callAI 전체 에러 [${path}]:`, errorMsg);
     console.error(` URL: ${url}`);
     console.error(` 원본 에러:`, error);
+
+    // 네트워크 오류 처리
+    if (error instanceof TypeError && errorMsg.includes('fetch')) {
+      throw new Error(
+        `백엔드 서버에 연결할 수 없습니다.\n` +
+        `- 백엔드가 실행 중인지 확인해주세요 (http://localhost:8000)\n` +
+        `- 네트워크 연결을 확인해주세요`
+      );
+    }
+
     throw error;
   }
 }
