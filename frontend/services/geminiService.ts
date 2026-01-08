@@ -57,18 +57,17 @@ async function refreshAccessToken(): Promise<string | null> {
 
 async function callAI(path: string, payload: any) {
   let url = "";
-  const authHeaders = getAuthHeaders();
-  let headers: Record<string, string> = authHeaders instanceof Headers
-    ? Object.fromEntries(authHeaders.entries())
-    : Array.isArray(authHeaders)
-    ? Object.fromEntries(authHeaders)
-    : (authHeaders as Record<string, string>);
+  let headers: Record<string, string> = {};
   let body = JSON.stringify(payload);
 
   if (CONFIG.USE_LOCAL_BACKEND) {
     url = `${CONFIG.LOCAL_BACKEND_URL}/api${path}`;
+    // getAuthHeaders()는 이미 Content-Type, Authorization, X-CSRF-Token을 포함
+    const authHeaders = getAuthHeaders();
+    headers = authHeaders as Record<string, string>;
   } else {
     url = `${CONFIG.AZURE_ENDPOINT}/openai/deployments/${CONFIG.DEPLOYMENT_NAME}/chat/completions?api-version=${CONFIG.API_VERSION}`;
+    headers["Content-Type"] = "application/json";
     headers["api-key"] = CONFIG.AZURE_KEY;
     body = JSON.stringify({
       messages: payload.messages,
@@ -81,8 +80,9 @@ async function callAI(path: string, payload: any) {
     console.log(`🌐 ${path} 요청:`, {
       url,
       method: "POST",
-      headerKeys: Object.keys(headers),
+      headers: headers, // 전체 헤더 출력
     });
+    console.log(`📊 페이로드:`, payload);
     console.log(`📊 페이로드 크기: ${body.length} bytes`);
 
     const fetchOptions: RequestInit = {
@@ -93,7 +93,25 @@ async function callAI(path: string, payload: any) {
       credentials: "include",
     };
 
-    const response = await fetch(url, fetchOptions);
+    // fetchWithRetry 사용 (타임아웃 60초로 설정 - AI 응답 대기)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
+
+    let response;
+    try {
+      response = await fetch(url, {
+        ...fetchOptions,
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+    } catch (fetchError) {
+      clearTimeout(timeout);
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        throw new Error('AI 응답 시간이 초과되었습니다 (60초). 잠시 후 다시 시도해주세요.');
+      }
+      throw fetchError;
+    }
+
     console.log(`📨 ${path} 응답 상태:`, response.status, response.statusText);
 
     // ← Step 1: 429 Rate Limit 처리 (401 전에 추가)
@@ -190,15 +208,26 @@ async function callAI(path: string, payload: any) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error(`🔴 callAI 전체 에러 [${path}]:`, errorMsg);
     console.error(` URL: ${url}`);
+    console.error(` 에러 타입:`, error instanceof Error ? error.constructor.name : typeof error);
     console.error(` 원본 에러:`, error);
 
+    // 상세 스택 트레이스
+    if (error instanceof Error && error.stack) {
+      console.error(` 스택 트레이스:`, error.stack);
+    }
+
     // 네트워크 오류 처리
-    if (error instanceof TypeError && errorMsg.includes('fetch')) {
-      throw new Error(
-        `백엔드 서버에 연결할 수 없습니다.\n` +
-        `- 백엔드가 실행 중인지 확인해주세요 (http://localhost:8000)\n` +
-        `- 네트워크 연결을 확인해주세요`
-      );
+    if (error instanceof TypeError) {
+      if (errorMsg.toLowerCase().includes('fetch') || errorMsg.toLowerCase().includes('network')) {
+        throw new Error(
+          `백엔드 서버에 연결할 수 없습니다.\n\n` +
+          `오류 상세: ${errorMsg}\n\n` +
+          `확인 사항:\n` +
+          `- 백엔드가 실행 중인지 확인 (${url})\n` +
+          `- CORS 설정 확인\n` +
+          `- 네트워크 연결 확인`
+        );
+      }
     }
 
     throw error;
