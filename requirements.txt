@@ -7,3 +7,5 @@ azure-search-documents
 openai
 python-multipart
 PyJWT
+python-docx
+azure-identity
