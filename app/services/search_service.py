@@ -162,20 +162,27 @@ def add_document_to_index(doc_id: str, content: str, file_name: str):
     
     search_client.upload_documents([document])
 
-def index_processed_chunks(chunks: list):
+def index_processed_chunks(chunks: list, index_name: str = None):
     """
     LLM 전처리가 완료된 청크 리스트(메모리 상의 객체)를 받아 Azure Search에 업로드합니다.
     인덱스가 없으면 자동으로 생성합니다.
+
+    Args:
+        chunks: 인덱싱할 청크 리스트
+        index_name: RAG 인덱스 이름 (None이면 기본 인덱스 사용)
     """
     if not chunks:
         print("[Warning] No chunks to index.")
         return 0
-    
-    search_client = get_search_client()
+
+    target_index = index_name or AZURE_SEARCH_INDEX_NAME
+    print(f"🔍 Target index: {target_index}")
+
+    search_client = get_search_client(index_name=index_name)
     documents_batch = []
     count = 0
 
-    print(f"[Info] Indexing {len(chunks)} chunks...")
+    print(f"[Info] Indexing {len(chunks)} chunks to '{target_index}'...")
 
     # Helper functions for type safety
     def ensure_list_str(value):
@@ -309,13 +316,22 @@ def index_processed_chunks(chunks: list):
             
     return count
 
-def search_documents(query: str, filters: dict = None, top_k: int = 5):
+def search_documents(query: str, filters: dict = None, top_k: int = 5, index_name: str = None):
     """
     하이브리드 검색 수행 (Vector + Semantic + Keyword)
+
+    Args:
+        query: 검색 쿼리
+        filters: 필터 조건
+        top_k: 반환할 최대 결과 수
+        index_name: 검색할 RAG 인덱스 이름 (None이면 기본 인덱스)
     """
     from azure.search.documents.models import VectorizedQuery
 
-    search_client = get_search_client()
+    target_index = index_name or AZURE_SEARCH_INDEX_NAME
+    print(f"🔍 Searching in index: {target_index}")
+
+    search_client = get_search_client(index_name=index_name)
     query_embedding = get_embedding(query)
 
     vector_query = VectorizedQuery(
