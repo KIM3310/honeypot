@@ -73,53 +73,38 @@ const SourceSidebar: React.FC<Props> = ({
         const file = e.target.files[i];
         let content = "";
 
-        // 텍스트 파일은 직접 읽기
-        if (
-          file.type === "text/plain" ||
-          file.name.endsWith(".txt") ||
-          file.name.endsWith(".md")
-        ) {
-          content = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const result = reader.result as string;
-              resolve(result);
-            };
-            reader.readAsText(file);
+        // 모든 파일을 백엔드로 업로드 (RAG 파이프라인 처리)
+        const formData = new FormData();
+        formData.append("file", file);
+        // RAG 인덱스 선택 정보 전송
+        if (selectedIndex) {
+          formData.append("index_name", selectedIndex);
+        }
+
+        try {
+          const headers = getAuthHeaders();
+          delete headers["Content-Type"]; // FormData는 Content-Type 자동 설정
+
+          console.log(`📤 업로드 시작: ${file.name} → 인덱스: ${selectedIndex || "default"}`);
+          const response = await fetchWithRetry(API_ENDPOINTS.UPLOAD, {
+            method: "POST",
+            headers: headers,
+            body: formData,
           });
-        } else if (
-          file.type === "application/pdf" ||
-          file.name.endsWith(".pdf")
-        ) {
-          // PDF 파일은 백엔드로 업로드 (OCR 처리)
-          const formData = new FormData();
-          formData.append("file", file);
-          // RAG 인덱스 선택 정보 전송
-          if (selectedIndex) {
-            formData.append("index_name", selectedIndex);
-          }
-          try {
-            const headers = getAuthHeaders();
-            delete headers["Content-Type"]; // FormData는 Content-Type 자동 설정
 
-            const response = await fetchWithRetry(API_ENDPOINTS.UPLOAD, {
-              method: "POST",
-              headers: headers,
-              body: formData,
-            });
-
-            if (!response.ok) {
-              throw new Error(`Upload failed: ${response.statusText}`);
-            }
-            const data = await response.json();
-            content = data.extracted_text || "[PDF 텍스트 추출 실패]";
-            console.log("✅ PDF 텍스트 추출 완료:", file.name);
-          } catch (error) {
-            console.error("❌ PDF 업로드 실패:", error);
-            const errorMsg = error instanceof Error ? error.message : String(error);
-            content = `[PDF 업로드 중 오류 발생: ${errorMsg}]`;
-            alert(`PDF 파일 업로드에 실패했습니다.\n\n${errorMsg}`);
+          if (!response.ok) {
+            throw new Error(`Upload failed: ${response.statusText}`);
           }
+          const data = await response.json();
+          console.log(`✅ 업로드 완료: ${file.name}, task_id: ${data.task_id}`);
+
+          // 백엔드에서 비동기 처리되므로 content는 비워둠
+          content = `[업로드 완료 - 백그라운드 처리 중] Task ID: ${data.task_id}`;
+        } catch (error) {
+          console.error("❌ 파일 업로드 실패:", error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          content = `[업로드 중 오류 발생: ${errorMsg}]`;
+          alert(`파일 업로드에 실패했습니다: ${file.name}\n\n${errorMsg}`);
         }
 
         newFiles.push({
@@ -170,7 +155,7 @@ const SourceSidebar: React.FC<Props> = ({
             ref={fileInputRef}
             className="hidden"
             onChange={handleFileChange}
-            accept=".txt,.md,.text,.pdf,application/pdf"
+            accept=".txt,.md,.text,.pdf,.docx,.py,.js,.java,.c,.cpp,.h,.cs,.ts,.tsx,.html,.css,.json,application/pdf"
           />
         </div>
 
