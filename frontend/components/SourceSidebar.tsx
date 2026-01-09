@@ -94,6 +94,10 @@ const SourceSidebar: React.FC<Props> = ({
           // PDF 파일은 백엔드로 업로드 (OCR 처리)
           const formData = new FormData();
           formData.append("file", file);
+          // RAG 인덱스 선택 정보 전송
+          if (selectedIndex) {
+            formData.append("index_name", selectedIndex);
+          }
           try {
             const headers = getAuthHeaders();
             delete headers["Content-Type"]; // FormData는 Content-Type 자동 설정

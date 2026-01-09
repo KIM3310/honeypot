@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Form
 from app.services.blob_service import upload_to_blob, save_processed_json
 from app.services.document_service import extract_text_from_url, extract_text_from_docx
 from app.services.search_service import add_document_to_index, get_document_count, get_all_documents
@@ -65,7 +65,7 @@ async def upload_document(file: UploadFile = File(...)):
 
 #창훈 코드 추가
 
-async def process_file_background(task_id: str, file_name: str, file_data: bytes, file_ext: str):
+async def process_file_background(task_id: str, file_name: str, file_data: bytes, file_ext: str, index_name: str = None):
     """
     백그라운드에서 실행될 실제 파이프라인 로직
     1. Blob 업로드 (Raw)
@@ -73,6 +73,9 @@ async def process_file_background(task_id: str, file_name: str, file_data: bytes
     3. LLM 전처리 (JSON 생성)
     4. Blob 업로드 (Processed JSON)
     5. Azure Search 인덱싱
+
+    Args:
+        index_name: RAG 인덱스 이름 (지정하지 않으면 기본 인덱스 사용)
     """
     try:
         print(f"[Background] Processing task {task_id} for file {file_name}...")
@@ -85,7 +88,7 @@ async def process_file_background(task_id: str, file_name: str, file_data: bytes
 
         try:
             # upload_to_blob은 이미 SAS Token이 포함된 URL을 반환함
-            blob_url_with_sas = upload_to_blob(safe_file_name, file_data)
+            blob_url_with_sas = upload_to_blob(safe_file_name, file_data, index_name=index_name)
             print(f"[Background] Blob upload success: {blob_url_with_sas}")
             
         except Exception as e:
@@ -146,7 +149,7 @@ async def process_file_background(task_id: str, file_name: str, file_data: bytes
         processed_file_name = f"{task_id}_processed.json"
         try:
             json_str = json.dumps(chunks, ensure_ascii=False, indent=2)
-            save_processed_json(processed_file_name, json_str)
+            save_processed_json(processed_file_name, json_str, index_name=index_name)
         except Exception as e:
             print(f"⚠️ Failed to save processed json: {e}")
             # 저장은 실패해도 진행
@@ -154,9 +157,9 @@ async def process_file_background(task_id: str, file_name: str, file_data: bytes
         task_manager.update_task(task_id, progress=80, message="Indexing to Search...")
 
         # 5. Azure Search 인덱싱
-        print(f"[Background] Starting indexing for {len(chunks)} chunks...")
+        print(f"[Background] Starting indexing for {len(chunks)} chunks to index '{index_name or 'default'}'...")
         try:
-            indexed_count = index_processed_chunks(chunks)
+            indexed_count = index_processed_chunks(chunks, index_name=index_name)
             print(f"[Background] Indexing complete. Count: {indexed_count}")
         except Exception as e:
             print(f"[Background] Indexing failed: {e}")
@@ -176,29 +179,36 @@ async def process_file_background(task_id: str, file_name: str, file_data: bytes
 @router.post("/upload")
 async def upload_document(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    index_name: str = Form(None)
 ):
     """
     파일 업로드 엔드포인트 (비동기 처리)
     파일을 받자마자 task_id를 리턴하고, 백그라운드에서 처리 시작.
+
+    Args:
+        file: 업로드할 파일
+        index_name: RAG 인덱스 이름 (선택 사항, 지정하지 않으면 기본 인덱스)
     """
     try:
         # 1. 파일 데이터 읽기 (메모리)
         file_data = await file.read()
         file_name = file.filename
         file_ext = file_name.lower().split('.')[-1] if '.' in file_name else ''
-        
+
         # 2. Task 생성
         task_id = str(uuid.uuid4())
         task_manager.create_task(task_id)
-        
+
         # 3. 백그라운드 작업 등록
-        background_tasks.add_task(process_file_background, task_id, file_name, file_data, file_ext)
-        
+        print(f"📋 Upload request: file={file_name}, index={index_name or 'default'}")
+        background_tasks.add_task(process_file_background, task_id, file_name, file_data, file_ext, index_name)
+
         return {
             "message": "Upload started",
             "task_id": task_id,
-            "file_name": file_name
+            "file_name": file_name,
+            "index_name": index_name or "default"
         }
         
     except Exception as e:

@@ -317,7 +317,8 @@ export const analyzeFilesForHandover = async (
 export const chatWithGemini = async (
   message: string,
   files: SourceFile[],
-  history: { role: string; text: string }[]
+  history: { role: string; text: string }[],
+  indexName?: string
 ): Promise<string> => {
   const payload = {
     messages: [
@@ -328,7 +329,9 @@ export const chatWithGemini = async (
       })),
       { role: "user", content: message },
     ],
+    index_name: indexName || null,  // RAG 인덱스 선택 정보 추가
   };
 
+  console.log(`💬 Chat 요청 - 인덱스: ${indexName || 'default'}`);
   return await callAI("/chat", payload);
 };

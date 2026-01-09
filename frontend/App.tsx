@@ -187,7 +187,7 @@ const App: React.FC = () => {
     }
 
     try {
-      const responseText = await chatWithGemini(text, files, updatedMessages);
+      const responseText = await chatWithGemini(text, files, updatedMessages, selectedRagIndex);
       const aiMsg: ChatMessage = { role: "assistant", text: responseText };
       const finalMessages = [...updatedMessages, aiMsg];
       setMessages(finalMessages);

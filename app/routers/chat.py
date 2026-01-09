@@ -17,6 +17,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list
+    index_name: str = None  # RAG 인덱스 선택 (optional)
 
 class AnalyzeRequest(BaseModel):
     messages: list
@@ -123,10 +124,10 @@ async def chat(
             }
 
         # 사용자 정보 로깅 (감사 추적)
-        print(f"💬 [{user['name']}] /chat 요청 - 메시지: {user_message[:100]}")
+        print(f"💬 [{user['name']}] /chat 요청 - 메시지: {user_message[:100]}, 인덱스: {chat_request.index_name or 'default'}")
 
-        # 1. 관련 문서 검색
-        search_results = search_documents(user_message)
+        # 1. 관련 문서 검색 (선택된 인덱스에서)
+        search_results = search_documents(user_message, index_name=chat_request.index_name)
 
         if not search_results:
             return {

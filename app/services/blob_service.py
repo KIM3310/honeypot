@@ -27,12 +27,25 @@ def get_blob_client():
 
 # ===== 기존 함수들 (유지) =====
 
-def upload_to_blob(file_name: str, file_data: bytes):
+def upload_to_blob(file_name: str, file_data: bytes, index_name: str = None):
     """
-    Blob Storage에 파일 업로드 (기존)
+    Blob Storage에 파일 업로드
     SAS Token이 포함된 URL 반환
+
+    Args:
+        file_name: 업로드할 파일명
+        file_data: 파일 데이터
+        index_name: RAG 인덱스 이름 (None이면 기본 컨테이너 사용)
     """
-    container_name = "kkuldanji-mvp-raw"  # 또는 config에서 가져오기
+    # 인덱스 이름에 따른 동적 컨테이너명 생성
+    if index_name:
+        # 인덱스명에서 특수문자 제거 및 소문자 변환 (Azure Blob 컨테이너 명명 규칙)
+        safe_index = index_name.lower().replace('_', '-').replace(' ', '-')
+        container_name = f"{safe_index}-raw"
+    else:
+        container_name = "kkuldanji-mvp-raw"  # 기본값
+
+    print(f"📦 Using blob container: {container_name}")
     
     try:
         client = get_blob_client()
@@ -60,11 +73,23 @@ def upload_to_blob(file_name: str, file_data: bytes):
         print(f"❌ Blob upload failed: {e}")
         raise
 
-def save_processed_json(file_name: str, json_str: str):
+def save_processed_json(file_name: str, json_str: str, index_name: str = None):
     """
     처리된 JSON을 Blob Storage에 저장
+
+    Args:
+        file_name: 저장할 파일명
+        json_str: JSON 문자열
+        index_name: RAG 인덱스 이름 (None이면 기본 컨테이너 사용)
     """
-    container_name = "kkuldanji-mvp-processed"
+    # 인덱스 이름에 따른 동적 컨테이너명 생성
+    if index_name:
+        safe_index = index_name.lower().replace('_', '-').replace(' ', '-')
+        container_name = f"{safe_index}-processed"
+    else:
+        container_name = "kkuldanji-mvp-processed"  # 기본값
+
+    print(f"📦 Using processed container: {container_name}")
     
     try:
         client = get_blob_client()
