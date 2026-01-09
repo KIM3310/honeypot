@@ -53,6 +53,15 @@ def upload_to_blob(file_name: str, file_data: bytes, index_name: str = None):
         
         # 파일 업로드
         blob_client = container_client.get_blob_client(file_name)
+        
+        # 컨테이너가 없으면 생성
+        try:
+            if not container_client.exists():
+                print(f"📁 Creating container: {container_name}")
+                container_client.create_container()
+        except Exception as e:
+            print(f"⚠️ Container creation check failed: {e}")
+
         blob_client.upload_blob(file_data, overwrite=True)
         
         # SAS Token 생성 (1시간 유효)
@@ -96,6 +105,15 @@ def save_processed_json(file_name: str, json_str: str, index_name: str = None):
         container_client = client.get_container_client(container_name)
         
         blob_client = container_client.get_blob_client(file_name)
+        
+        # 컨테이너가 없으면 생성
+        try:
+            if not container_client.exists():
+                print(f"📁 Creating container: {container_name}")
+                container_client.create_container()
+        except Exception as e:
+            print(f"⚠️ Container creation check failed: {e}")
+
         blob_client.upload_blob(json_str.encode('utf-8'), overwrite=True)
         
         print(f"✅ Processed JSON saved: {file_name}")

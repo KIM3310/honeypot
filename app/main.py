@@ -54,9 +54,6 @@ async def add_security_headers(request, call_next):
     return response
 
 # ... 기존 라우터 등록 코드 ...
-app.include_router(upload.router, prefix="/api/upload", tags=["Upload"])
-app.include_router(chat.router, prefix="/api", tags=["Chat"])
-app.include_router(auth.router)
 
 # Frontend 경로
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")

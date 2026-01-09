@@ -1,4 +1,6 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Form
+from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Form, Depends, Request
+from app.auth import get_current_user
+from app.routers.auth import verify_csrf_token
 from app.services.blob_service import upload_to_blob, save_processed_json
 from app.services.document_service import extract_text_from_url, extract_text_from_docx
 from app.services.search_service import add_document_to_index, get_document_count, get_all_documents
@@ -176,12 +178,22 @@ async def process_file_background(task_id: str, file_name: str, file_data: bytes
         task_manager.update_task(task_id, status="failed", message=f"Internal Server Error: {str(e)}")
 
 
-@router.post("/upload")
+@router.post("")
 async def upload_document(
+    request: Request,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    index_name: str = Form(None)
+    index_name: str = Form(None),
+    user: dict = Depends(get_current_user)
 ):
+    # CSRF 검증 추가
+    csrf_token = request.headers.get("X-CSRF-Token")
+    if not csrf_token:
+        raise HTTPException(
+            status_code=403,
+            detail="CSRF Token이 필요합니다."
+        )
+    verify_csrf_token(csrf_token, user['email'])
     """
     파일 업로드 엔드포인트 (비동기 처리)
     파일을 받자마자 task_id를 리턴하고, 백그라운드에서 처리 시작.
