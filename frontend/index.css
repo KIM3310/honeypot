@@ -35,37 +35,65 @@ body {
 @media print {
   @page {
     size: A4;
-    margin: 10mm;
+    margin: 15mm;
   }
 
-  /* 모든 요소 숨기기 */
-  body * {
-    visibility: hidden;
+  /* 메인 UI 숨기기 */
+  .main-ui {
+    display: none !important;
   }
 
-  /* 프린트 템플릿만 보이기 */
-  .print-template,
-  .print-template * {
-    visibility: visible;
-  }
-
-  /* 템플릿 위치 및 스타일 강제 지정 */
-  .print-template {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 210mm;
-    /* min-height 제거하여 자연스럽게 늘어나도록 함 */
-    display: block !important;
-    background: white;
-    z-index: 9999;
+  /* 배경색 흰색 고정 및 높이 제한 해제 */
+  html,
+  body,
+  #root,
+  #app-container {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
     color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
-  /* 부모 요소의 overflow clipping 방지 - 매우 중요 */
-  html, body, #root, #root > div, .overflow-hidden {
+  /* 프린트 템플릿 보이기 및 레이아웃 정상화 */
+  .print-template {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+    background: white !important;
+    color: black !important;
     overflow: visible !important;
-    height: auto !important;
-    position: static !important; /* relative 등 제거 */
+  }
+
+  .print-template * {
+    visibility: visible !important;
+  }
+
+  /* 페이지 분할 방지 */
+  section,
+  .break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 2rem !important;
+  }
+
+  table {
+    break-inside: auto;
+  }
+
+  tr {
+    break-inside: avoid;
+    break-after: auto;
   }
 }

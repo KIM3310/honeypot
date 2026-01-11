@@ -23,6 +23,7 @@ import {
   chatWithGemini,
 } from "./services/geminiService";
 import { API_ENDPOINTS, fetchWithRetry } from "./config/api";
+import { HandoverPrintTemplate } from "./components/HandoverPrintTemplate";
 
 const STORAGE_KEY_SESSIONS = "honeycomb_chat_sessions";
 const STORAGE_KEY_CURRENT_SESSION = "honeycomb_current_session";
@@ -153,13 +154,23 @@ const App: React.FC = () => {
     console.log("✅ App: RAG 인덱스 변경됨:", indexName);
   };
 
+  const updateCurrentSessionMessages = (newMessages: ChatMessage[]) => {
+    if (!currentSessionId) return;
+    setChatSessions((prev) =>
+      prev.map((session) =>
+        session.id === currentSessionId
+          ? { ...session, messages: newMessages, updatedAt: new Date() }
+          : session
+      )
+    );
+  };
+
   const handleSendMessage = async (text: string) => {
     const userMsg: ChatMessage = { role: "user", text };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
     setIsProcessing(true);
 
-    // 새 세션 생성 (현재 세션이 없을 경우)
     if (!currentSessionId) {
       const newSessionId = Date.now().toString();
       const newSession: ChatSession = {
@@ -172,18 +183,7 @@ const App: React.FC = () => {
       setChatSessions((prev) => [newSession, ...prev]);
       setCurrentSessionId(newSessionId);
     } else {
-      // 기존 세션에 메시지 추가
-      setChatSessions((prev) =>
-        prev.map((session) =>
-          session.id === currentSessionId
-            ? {
-                ...session,
-                messages: updatedMessages,
-                updatedAt: new Date(),
-              }
-            : session
-        )
-      );
+      updateCurrentSessionMessages(updatedMessages);
     }
 
     try {
@@ -191,38 +191,16 @@ const App: React.FC = () => {
       const aiMsg: ChatMessage = { role: "assistant", text: responseText };
       const finalMessages = [...updatedMessages, aiMsg];
       setMessages(finalMessages);
-
-      // 세션에 AI 응답 메시지 추가
-      setChatSessions((prev) =>
-        prev.map((session) =>
-          session.id === currentSessionId
-            ? {
-                ...session,
-                messages: finalMessages,
-                updatedAt: new Date(),
-              }
-            : session
-        )
-      );
+      updateCurrentSessionMessages(finalMessages);
     } catch (error) {
       console.error(error);
       const errorMsg: ChatMessage = {
         role: "assistant",
         text: "AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
       };
-      setMessages((prev) => [...prev, errorMsg]);
-
-      setChatSessions((prev) =>
-        prev.map((session) =>
-          session.id === currentSessionId
-            ? {
-                ...session,
-                messages: [...updatedMessages, errorMsg],
-                updatedAt: new Date(),
-              }
-            : session
-        )
-      );
+      const finalMessages = [...updatedMessages, errorMsg];
+      setMessages(finalMessages);
+      updateCurrentSessionMessages(finalMessages);
     } finally {
       setIsProcessing(false);
     }
@@ -321,66 +299,70 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-[#FFFDF0] text-gray-900 overflow-hidden relative">
-      <div className="honeycomb-bg"></div>
+    <div id="app-container" className="h-screen bg-[#FFFDF0] text-gray-900 overflow-hidden relative">
+      <div className="main-ui flex h-full w-full">
+        <div className="honeycomb-bg"></div>
 
-      {/* Sidebar: Storage (Fixed Left) */}
-      <SourceSidebar
-        files={files}
-        onUpload={handleFileUpload}
-        onRemove={handleFileRemove}
-        onIndexChange={handleIndexChange}
-      />
+        {/* Sidebar: Storage (Fixed Left) */}
+        <SourceSidebar
+          files={files}
+          onUpload={handleFileUpload}
+          onRemove={handleFileRemove}
+          onIndexChange={handleIndexChange}
+        />
 
-      <main className="flex-1 flex gap-8 p-8 overflow-hidden relative z-10">
-        {/* Left Side: Handover Interactive Editor (60% Width) */}
-        <div className="w-[60%] flex flex-col h-full animate-in fade-in slide-in-from-left-8 duration-1000">
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-2.5 h-10 bg-yellow-400 rounded-full"></div>
-              <div>
-                <h2 className="text-2xl font-black text-gray-800 tracking-tighter">
-                  인수인계 리포트 마스터
-                </h2>
-                <p className="text-[10px] font-black text-yellow-600 uppercase tracking-[0.2em] mt-0.5">
-                  Interactive Handover Editor
-                </p>
+        <main className="flex-1 flex gap-8 p-8 overflow-hidden relative z-10">
+          {/* Left Side: Handover Interactive Editor (60% Width) */}
+          <div className="w-[60%] flex flex-col h-full animate-in fade-in slide-in-from-left-8 duration-1000">
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-2.5 h-10 bg-yellow-400 rounded-full"></div>
+                <div>
+                  <h2 className="text-2xl font-black text-gray-800 tracking-tighter">
+                    인수인계 리포트 마스터
+                  </h2>
+                  <p className="text-[10px] font-black text-yellow-600 uppercase tracking-[0.2em] mt-0.5">
+                    Interactive Handover Editor
+                  </p>
+                </div>
               </div>
+              {!handoverData && (
+                <button
+                  onClick={handleGenerateHandover}
+                  disabled={isProcessing}
+                  className="bg-gray-900 text-white px-6 py-3 rounded-2xl text-xs font-black shadow-xl hover:bg-black hover:scale-105 disabled:opacity-50 transition-all active:scale-95 flex items-center gap-2 group"
+                >
+                  {isProcessing ? "분석 중..." : "리포트 생성하기"}
+                  <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full group-hover:animate-ping"></div>
+                </button>
+              )}
             </div>
-            {!handoverData && (
-              <button
-                onClick={handleGenerateHandover}
-                disabled={isProcessing}
-                className="bg-gray-900 text-white px-6 py-3 rounded-2xl text-xs font-black shadow-xl hover:bg-black hover:scale-105 disabled:opacity-50 transition-all active:scale-95 flex items-center gap-2 group"
-              >
-                {isProcessing ? "분석 중..." : "리포트 생성하기"}
-                <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full group-hover:animate-ping"></div>
-              </button>
-            )}
+            <HandoverForm data={handoverData} onUpdate={setHandoverData} />
           </div>
-          <HandoverForm data={handoverData} onUpdate={setHandoverData} />
-        </div>
 
-        {/* Right Side: AI Assistant & Discussion (40% Width) */}
-        <div className="w-[40%] flex flex-col h-full animate-in fade-in slide-in-from-right-8 duration-1000 delay-200">
-          <ChatWindow
-            messages={messages}
-            onSendMessage={handleSendMessage}
-            onGenerate={handleGenerateHandover}
-            viewMode={viewMode}
-            setViewMode={setViewMode}
-            isProcessing={isProcessing}
-            files={files}
-            chatSessions={chatSessions}
-            setChatSessions={setChatSessions}
-            currentSessionId={currentSessionId}
-            setCurrentSessionId={setCurrentSessionId}
-            onNewChat={handleNewChat}
-            onSelectSession={handleSelectSession}
-            selectedRagIndex={selectedRagIndex}
-          />
-        </div>
-      </main>
+          {/* Right Side: AI Assistant & Discussion (40% Width) */}
+          <div className="w-[40%] flex flex-col h-full animate-in fade-in slide-in-from-right-8 duration-1000 delay-200">
+            <ChatWindow
+              messages={messages}
+              onSendMessage={handleSendMessage}
+              onGenerate={handleGenerateHandover}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+              isProcessing={isProcessing}
+              files={files}
+              chatSessions={chatSessions}
+              setChatSessions={setChatSessions}
+              currentSessionId={currentSessionId}
+              setCurrentSessionId={setCurrentSessionId}
+              onNewChat={handleNewChat}
+              onSelectSession={handleSelectSession}
+              selectedRagIndex={selectedRagIndex}
+            />
+          </div>
+        </main>
+      </div>
+
+      {handoverData && <HandoverPrintTemplate data={handoverData} />}
     </div>
   );
 };

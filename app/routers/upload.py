@@ -13,57 +13,7 @@ import json
 
 router = APIRouter()
 
-"""
-@router.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
-    try:
-        # 1. 파일 데이터 읽기
-        file_data = await file.read()
-        
-        # 2. 파일 확장자 확인
-        file_ext = file.filename.lower().split('.')[-1] if '.' in file.filename else ''
-        
-        # 3. txt 파일은 직접 텍스트 추출, PDF/이미지는 Document Intelligence 사용
-        if file_ext == 'txt':
-            # txt 파일은 직접 디코딩
-            try:
-                extracted_text = file_data.decode('utf-8')
-            except UnicodeDecodeError:
-                extracted_text = file_data.decode('cp949', errors='ignore')
-        else:
-            # PDF, 이미지 등은 Blob 업로드 후 Document Intelligence 사용
-            try:
-                print(f"📤 Blob 업로드 시도: {file.filename}")
-                blob_url = upload_to_blob(file.filename, file_data)
-                print(f"✅ Blob 업로드 완료: {blob_url}")
-                
-                print(f"🔍 Document Intelligence로 텍스트 추출 시작...")
-                extracted_text = extract_text_from_url(blob_url)
-                print(f"✅ 텍스트 추출 완료 ({len(extracted_text)} 글자)")
-            except Exception as doc_error:
-                print(f"⚠️  Document Intelligence 실패: {doc_error}")
-                # Document Intelligence 실패 시 파일명과 기본 메시지로 폴백
-                extracted_text = f"[파일명: {file.filename}]\n[주의: 자동 텍스트 추출 실패. Document Intelligence 설정 필요]\n\n파일을 텍스트로 변환하여 업로드해주세요."
-        
-        # 4. AI Search에 인덱싱 (실패해도 텍스트는 반환)
-        doc_id = str(uuid.uuid4())
-        try:
-            add_document_to_index(doc_id, extracted_text, file.filename)
-            print(f"✅ AI Search 인덱싱 완료")
-        except Exception as index_error:
-            print(f"⚠️  AI Search 인덱싱 실패 (계속 진행): {index_error}")
-        
-        return {
-            "message": "문서 업로드 완료",
-            "file_name": file.filename,
-            "doc_id": doc_id,
-            "extracted_text": extracted_text
-        }
-    except Exception as e:
-        print(f"❌ Upload error: {e}")
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Upload error: {str(e)}")
-"""
+# --- Async File Processing Pipeline ---
 
 #창훈 코드 추가
 

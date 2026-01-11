@@ -192,3 +192,35 @@ ipcMain.handle("save-json", async (event, { data, filename }) => {
   }
   return { success: false };
 });
+
+// IPC 핸들러 - PDF 파일 저장
+ipcMain.handle("save-pdf", async (event, { filename }) => {
+  const { dialog } = require("electron");
+  const fs = require("fs");
+
+  const { filePath } = await dialog.showSaveDialog({
+    title: "PDF로 저장",
+    defaultPath: filename || "handover.pdf",
+    filters: [{ name: "PDF Files", extensions: ["pdf"] }],
+  });
+
+  if (filePath) {
+    try {
+      // PDF 생성 옵션
+      const options = {
+        marginsType: 0, // 기본 마진
+        pageSize: "A4",
+        printBackground: true,
+        landscape: false,
+      };
+
+      const data = await mainWindow.webContents.printToPDF(options);
+      fs.writeFileSync(filePath, data);
+      return { success: true, filePath };
+    } catch (error) {
+      console.error("PDF 저장 실패:", error);
+      return { success: false, error: error.message };
+    }
+  }
+  return { success: false };
+});

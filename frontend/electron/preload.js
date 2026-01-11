@@ -8,6 +8,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // JSON 저장
   saveJson: (data, filename) => ipcRenderer.invoke('save-json', { data, filename }),
 
+  // PDF 저장
+  savePdf: (filename) => ipcRenderer.invoke('save-pdf', { filename }),
+
   // 환경 정보
   platform: process.platform,
   isElectron: true

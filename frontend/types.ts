@@ -23,9 +23,8 @@ export interface HandoverData {
     reason?: string;
     background?: string;
     period?: string;
-    schedule?: { date: string; activity: string }[];
   };
-  jobStatus?: {
+  jobStatus: {
     title: string;
     responsibilities: string[];
     authority?: string;
@@ -33,77 +32,38 @@ export interface HandoverData {
     teamMission?: string;
     teamGoals?: string[];
   };
-  jobResponsibilities?: {
-    position?: string;
-    mainDuties?: string[];
-    reportingLine?: string;
-  };
-  priorities?: {
-    rank?: number;
-    title?: string;
-    status?: string;
-    solution?: string;
+  priorities: {
+    title: string;
+    status: string;
     deadline?: string;
   }[];
-  priorityTasks?: {
-    urgent?: string[];
-    keyStakeholders?: string[];
-    teamMembers?: string[];
-  };
-  stakeholders?: {
+  stakeholders: {
     manager?: string;
-    internal?: { name: string; role: string }[];
-    external?: { name: string; role: string }[];
+    internal: { name: string; role: string; contact?: string }[];
   };
-  teamMembers?: {
+  teamMembers: {
     name: string;
     position: string;
     role: string;
     notes?: string;
   }[];
-  ongoingProjects?: {
-    name?: string;
-    owner?: string;
-    status?: string;
-    progress?: number;
-    deadline?: string;
-    description?: string;
-    activeProjects?: string[];
-    pendingIssues?: string[];
-    futurePlans?: string[];
+  ongoingProjects: {
+    name: string;
+    owner: string;
+    status: string;
+    progress: number;
+    deadline: string;
+    description: string;
   }[];
-  risks?: {
+  risks: {
     issues: string;
     risks: string;
   };
-  roadmap?: {
-    shortTerm: string;
-    longTerm: string;
+  resources: {
+    docs: { category: string; name: string; location: string }[];
+    systems: { name: string; usage: string; contact: string }[];
   };
-  keyResources?: {
-    docs?: { category?: string; name?: string; location?: string }[];
-    systems?: { name?: string; usage?: string; contact?: string }[];
-    contacts?: {
-      category?: string;
-      name?: string;
-      position?: string;
-      contact?: string;
-    }[];
-    documents?: string[];
-    systemAccess?: string[];
-  };
-  resources?: {
-    docs?: { category: string; name: string; location: string }[];
-    systems?: { name: string; usage: string; contact: string }[];
-    contacts?: {
-      category: string;
-      name: string;
-      position: string;
-      contact: string;
-    }[];
-  };
-  checklist?: { text: string; completed: boolean }[];
-  rawContent?: string;
+  checklist: { text: string; completed: boolean }[];
 }
 
 export enum ViewMode {
