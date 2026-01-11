@@ -25,12 +25,15 @@
 ## 🎯 프로젝트 개요
 
 ### 문제점
+
 - 인수인계 문서 작성에 많은 시간 소요
 - 중요한 정보 누락 위험
 - 비표준화된 인수인계 프로세스
 
 ### 솔루션
+
 꿀단지는 업무 문서를 분석하여 자동으로 체계적인 인수인계서를 생성합니다:
+
 - 📄 **자동 문서 분석**: PDF, DOCX, TXT 등 다양한 파일 형식 지원
 - 🤖 **AI 기반 생성**: Azure OpenAI와 Google Gemini를 전략적으로 활용
 - 📊 **구조화된 출력**: 6개 섹션으로 체계화된 인수인계서
@@ -42,22 +45,26 @@
 ## 🚀 핵심 기능
 
 ### 1. 파일 업로드 및 자동 처리
+
 - **지원 파일 형식**: PDF, DOCX, TXT, 이미지, 코드 파일
 - **자동 텍스트 추출**: Azure Document Intelligence 활용
 - **백그라운드 처리**: 비동기 파일 처리로 빠른 응답
 - **진행 상태 추적**: 실시간 처리 상태 확인
 
 ### 2. AI 기반 문서 분석
+
 - **컨텍스트 보존**: Gemini의 큰 컨텍스트 윈도우 활용
 - **구조화된 데이터 추출**: JSON 형태로 정보 구조화
 - **Azure AI Search 인덱싱**: 검색 최적화된 벡터 저장
 
 ### 3. 인수인계서 자동 생성
+
 - **6개 핵심 섹션**: 개요, 직무, 과제, 현황, 자료, 확인
 - **실시간 편집**: 생성된 내용을 즉시 수정 가능
 - **대화형 보완**: AI 챗봇으로 추가 정보 요청
 
 ### 4. RAG 기반 검색
+
 - **의미 기반 검색**: 벡터 임베딩으로 관련 문서 검색
 - **하이브리드 검색**: 키워드 + 벡터 검색 결합
 - **컨텍스트 인식**: 검색 결과를 바탕으로 정확한 답변 생성
@@ -112,6 +119,7 @@
 ## 🛠️ 기술 스택
 
 ### 프론트엔드
+
 - **React 19.2** - UI 프레임워크
 - **TypeScript** - 타입 안정성
 - **Vite** - 빌드 도구
@@ -119,6 +127,7 @@
 - **Lucide React** - 아이콘
 
 ### 백엔드
+
 - **FastAPI** - 고성능 웹 프레임워크
 - **Python 3.10+** - 프로그래밍 언어
 - **Uvicorn** - ASGI 서버
@@ -126,12 +135,14 @@
 - **python-multipart** - 파일 업로드 처리
 
 ### AI/ML
+
 - **Azure OpenAI (GPT-4o)** - 인수인계서 생성, 채팅
 - **Google Gemini (2.0 Flash)** - 대용량 텍스트 → JSON 변환
 - **Azure AI Search** - 벡터 검색 엔진
 - **text-embedding-3-large** - 텍스트 임베딩
 
 ### Azure Services
+
 - **Azure Blob Storage** - 파일 저장소 (Raw + Processed)
 - **Azure Document Intelligence** - OCR 및 문서 분석
 - **Azure Key Vault** - 시크릿 관리
@@ -142,11 +153,11 @@
 
 ### 왜 두 가지 LLM을 사용하는가?
 
-| 단계 | 사용 LLM | 이유 | 파일 위치 |
-|------|---------|------|-----------|
-| **1. 파일 → JSON 변환** | **Google Gemini**<br>`gemini-2.0-flash-exp` | • **대용량 컨텍스트**: 50,000자 처리<br>• **빠른 응답**: Flash 모델<br>• **비용 효율적**: 토큰당 가격 저렴 | `app/services/openai_service.py:37-125` |
-| **2. 인수인계서 생성** | **Azure OpenAI**<br>`gpt-4o` | • **정확한 구조화**: JSON 스키마 준수<br>• **일관된 품질**: 엔터프라이즈급 안정성<br>• **한국어 최적화**: 비즈니스 문서 생성 | `app/services/openai_service.py:127-287` |
-| **3. 채팅 응답** | **Azure OpenAI**<br>`gpt-4o` | • **컨텍스트 이해**: RAG 검색 결과 활용<br>• **대화 일관성**: 이전 대화 기억<br>• **전문성**: 업무 관련 정확한 답변 | `app/services/openai_service.py:289-337` |
+| 단계                    | 사용 LLM                                    | 이유                                                                                                                         | 파일 위치                                |
+| ----------------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| **1. 파일 → JSON 변환** | **Google Gemini**<br>`gemini-2.0-flash-exp` | • **대용량 컨텍스트**: 50,000자 처리<br>• **빠른 응답**: Flash 모델<br>• **비용 효율적**: 토큰당 가격 저렴                   | `app/services/openai_service.py:37-125`  |
+| **2. 인수인계서 생성**  | **Azure OpenAI**<br>`gpt-4o`                | • **정확한 구조화**: JSON 스키마 준수<br>• **일관된 품질**: 엔터프라이즈급 안정성<br>• **한국어 최적화**: 비즈니스 문서 생성 | `app/services/openai_service.py:127-287` |
+| **3. 채팅 응답**        | **Azure OpenAI**<br>`gpt-4o`                | • **컨텍스트 이해**: RAG 검색 결과 활용<br>• **대화 일관성**: 이전 대화 기억<br>• **전문성**: 업무 관련 정확한 답변          | `app/services/openai_service.py:289-337` |
 
 ### 데이터 플로우 예시
 
@@ -174,39 +185,46 @@
 honeypot_proto/
 ├── app/                          # 백엔드 FastAPI 애플리케이션
 │   ├── __init__.py
-│   ├── main.py                   # FastAPI 앱 진입점
-│   ├── config.py                 # 환경 변수 및 설정
+│   ├── main.py                   # FastAPI 앱 진입점, CORS, 보안 헤더
+│   ├── config.py                 # 환경 변수 및 Key Vault 설정
 │   ├── auth.py                   # JWT 인증 미들웨어
 │   ├── state.py                  # 인메모리 태스크 관리
 │   ├── routers/                  # API 라우터
 │   │   ├── auth.py               # 인증 엔드포인트 (로그인, CSRF)
-│   │   ├── upload.py             # 파일 업로드 및 처리
+│   │   ├── upload.py             # 비동기 파일 업로드 및 처리
 │   │   └── chat.py               # 채팅 및 분석 엔드포인트
 │   └── services/                 # 비즈니스 로직
 │       ├── openai_service.py     # LLM 통합 (Gemini + Azure OpenAI)
 │       ├── blob_service.py       # Azure Blob Storage 연동
-│       ├── search_service.py     # Azure AI Search 연동
-│       ├── document_service.py   # 텍스트 추출 (OCR)
+│       ├── search_service.py     # Azure AI Search 연동 (인덱싱, 검색)
+│       ├── document_service.py   # 텍스트 추출 (OCR, DOCX)
 │       └── prompts.py            # LLM 프롬프트 템플릿
 ├── frontend/                     # 프론트엔드 React 애플리케이션
-│   ├── App.tsx                   # 메인 앱 컴포넌트
+│   ├── App.tsx                   # 메인 앱 컴포넌트, 상태 관리
 │   ├── index.tsx                 # React 진입점
+│   ├── index.css                 # 글로벌 CSS 및 인쇄 스타일
+│   ├── types.ts                  # TypeScript 타입 정의 (HandoverData 등)
 │   ├── components/               # UI 컴포넌트
 │   │   ├── LoginScreen.tsx       # 로그인 화면
 │   │   ├── SourceSidebar.tsx     # 파일 관리 사이드바
-│   │   ├── HandoverForm.tsx      # 인수인계서 편집 폼
-│   │   └── ChatWindow.tsx        # AI 챗봇 창
+│   │   ├── HandoverForm.tsx      # 인수인계서 편집 (6개 탭, Section, ListEditor)
+│   │   ├── ChatWindow.tsx        # AI 챗봇 창
+│   │   └── HandoverPrintTemplate.tsx  # PDF 출력용 템플릿
 │   ├── services/                 # API 서비스
 │   │   ├── geminiService.ts      # 백엔드 API 호출
 │   │   └── authService.ts        # 인증 API
 │   ├── utils/                    # 유틸리티
 │   │   └── auth.ts               # 토큰 관리
-│   ├── types.ts                  # TypeScript 타입 정의
+│   ├── electron/                 # Electron 데스크톱 앱
+│   │   ├── main.js               # Electron 메인 프로세스 (IPC 핸들러)
+│   │   └── preload.js            # 프리로드 스크립트 (API 노출)
+│   ├── electron-builder.json     # Electron 빌더 설정
 │   ├── package.json              # NPM 의존성
-│   └── vite.config.ts            # Vite 설정
+│   ├── vite.config.ts            # Vite 설정
+│   └── tailwind.config.ts        # Tailwind CSS 설정
 ├── requirements.txt              # Python 의존성
 ├── proto.env                     # 환경 변수 (git ignored)
-├── test_upload.html              # 업로드 테스트 페이지
+├── ELECTRON_GUIDE.md             # Electron 설정 가이드
 └── README.md                     # 이 문서
 ```
 
@@ -215,18 +233,21 @@ honeypot_proto/
 ## 🔧 설치 및 실행
 
 ### 사전 요구사항
+
 - **Python 3.10+**
 - **Node.js 18+**
 - **Azure 계정** (OpenAI, Blob Storage, AI Search, Document Intelligence)
 - **Google Cloud 계정** (Gemini API)
 
 ### 1. 저장소 클론
+
 ```bash
 git clone https://github.com/your-org/honeypot_proto.git
 cd honeypot_proto
 ```
 
 ### 2. 환경 변수 설정
+
 프로젝트 루트에 `proto.env` 파일을 생성하세요:
 
 ```env
@@ -262,6 +283,7 @@ ENVIRONMENT=development
 ```
 
 ### 3. 백엔드 설치 및 실행
+
 ```bash
 # Python 가상환경 생성
 python -m venv venv
@@ -280,6 +302,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 백엔드가 `http://localhost:8000`에서 실행됩니다.
 
 ### 4. 프론트엔드 설치 및 실행
+
 ```bash
 cd frontend
 
@@ -292,11 +315,34 @@ npm run dev
 
 프론트엔드가 `http://localhost:5173`에서 실행됩니다.
 
+### 5. Electron 데스크톱 앱 실행 (선택 사항)
+
+프론트엔드와 백엔드가 모두 실행 중인 상태에서:
+
+```bash
+cd frontend
+
+# Electron 개발 모드 (웹 서버와 Electron 동시 실행)
+npm run electron:dev
+
+# Electron 빌드 (배포용 패키징)
+npm run electron:build
+```
+
+**Electron 기능**:
+
+- PDF 저장: 시스템 저장 대화 상자를 통해 인수인계서 PDF 저장
+- JSON 저장: 작성 중인 데이터를 JSON 형식으로 내보내기
+- 데스크톱 앱으로 패키징 가능
+
+자세한 내용은 [ELECTRON_GUIDE.md](./ELECTRON_GUIDE.md)를 참조하세요.
+
 ---
 
 ## 📖 사용 방법
 
 ### 1단계: 로그인
+
 ```
 URL: http://localhost:5173
 테스트 계정:
@@ -306,6 +352,7 @@ URL: http://localhost:5173
 ```
 
 ### 2단계: 파일 업로드
+
 1. 좌측 사이드바에서 **"자료 추가하기"** 버튼 클릭
 2. PDF, DOCX, TXT 파일 선택 (여러 파일 동시 업로드 가능)
 3. 자동으로 백그라운드 처리 시작:
@@ -315,6 +362,7 @@ URL: http://localhost:5173
    - AI Search 인덱싱
 
 ### 3단계: 인수인계서 생성
+
 1. 우측 상단 **"리포트 생성하기"** 버튼 클릭
 2. AI가 업로드된 문서를 분석하여 인수인계서 자동 생성
 3. 6개 섹션으로 구성:
@@ -326,6 +374,7 @@ URL: http://localhost:5173
    - **6. 확인**: 체크리스트, 전자서명
 
 ### 4단계: 실시간 편집 및 대화
+
 - 생성된 인수인계서는 모든 필드를 **직접 편집 가능**
 - 우측 **AI 어시스턴트**에서 추가 질문:
   ```
@@ -335,14 +384,18 @@ URL: http://localhost:5173
   ```
 
 ### 5단계: 출력 및 저장
-- 하단 **"리포트 출력 및 PDF 저장"** 버튼으로 PDF 생성
-- 브라우저의 인쇄 기능 활용
+
+- **PDF 저장**: "PDF 저장" 버튼으로 인수인계서를 PDF 파일로 저장
+- **JSON 저장**: "JSON 저장" 버튼으로 데이터를 JSON 형식으로 내보내기
+- Electron 앱에서는 시스템 저장 대화 상자가 표시됩니다.
+- 웹 브라우저에서는 직접 다운로드 또는 인쇄 기능을 사용합니다.
 
 ---
 
 ## 🔌 API 엔드포인트
 
 ### 인증 (Authentication)
+
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -363,6 +416,7 @@ Response:
 ```
 
 ### 파일 업로드 (Upload)
+
 ```http
 POST /api/upload
 Authorization: Bearer <token>
@@ -379,6 +433,7 @@ Response:
 ```
 
 ### 업로드 상태 확인
+
 ```http
 GET /api/upload/status/{task_id}
 Authorization: Bearer <token>
@@ -392,6 +447,7 @@ Response:
 ```
 
 ### 문서 목록 조회
+
 ```http
 GET /api/upload/documents
 Authorization: Bearer <token>
@@ -411,6 +467,7 @@ Response:
 ```
 
 ### 인수인계서 생성 (Analyze)
+
 ```http
 POST /api/analyze
 Authorization: Bearer <token>
@@ -439,6 +496,7 @@ Response:
 ```
 
 ### 채팅 (Chat)
+
 ```http
 POST /api/chat
 Authorization: Bearer <token>
@@ -460,6 +518,7 @@ Response:
 ## 🔄 데이터 플로우
 
 ### 전체 시스템 플로우
+
 ```
 [사용자 로그인]
     ↓
@@ -506,6 +565,7 @@ Response:
 ```
 
 ### 파일 처리 상세 플로우 (upload.py)
+
 ```python
 # app/routers/upload.py:68-173
 async def process_file_background(task_id, file_name, file_data, file_ext):
@@ -536,16 +596,19 @@ async def process_file_background(task_id, file_name, file_data, file_ext):
 ## 🔒 보안
 
 ### 인증 및 권한
+
 - **JWT (JSON Web Token)**: stateless 인증
 - **토큰 만료**: 1시간 (갱신 가능)
 - **역할 기반 접근 제어**: user, admin
 
 ### CSRF 방어
+
 - **CSRF 토큰**: 모든 state-changing 요청에 필요
 - **토큰 검증**: 서버 측 HMAC 서명 검증
 - **세션 바인딩**: 사용자 이메일에 토큰 바인딩
 
 ### 보안 헤더
+
 ```python
 # app/main.py:39-54
 X-Content-Type-Options: nosniff
@@ -555,11 +618,13 @@ Strict-Transport-Security: max-age=31536000
 ```
 
 ### 시크릿 관리
+
 - **Azure Key Vault**: 프로덕션 환경 시크릿 저장
 - **환경 변수**: 개발 환경 로컬 `.env` 사용
 - **Managed Identity**: 프로덕션 Azure 리소스 접근
 
 ### 데이터 보호
+
 - **전송 중 암호화**: HTTPS/TLS
 - **저장 시 암호화**: Azure Blob Storage 기본 암호화
 - **SAS 토큰**: Blob 접근 제한 (1시간 유효)
@@ -569,6 +634,7 @@ Strict-Transport-Security: max-age=31536000
 ## 🧪 테스트
 
 ### 백엔드 테스트
+
 ```bash
 # 단위 테스트 (예정)
 pytest app/tests/
@@ -578,6 +644,7 @@ python test_login.py
 ```
 
 ### 프론트엔드 테스트
+
 ```bash
 cd frontend
 
@@ -589,6 +656,7 @@ npm run preview
 ```
 
 ### 수동 테스트
+
 1. `http://localhost:8000/docs` - Swagger UI
 2. `http://localhost:8000/test` - 백엔드 헬스체크
 3. `test_upload.html` - 파일 업로드 테스트 페이지
@@ -598,6 +666,7 @@ npm run preview
 ## 🐛 트러블슈팅
 
 ### 문제: 백엔드가 시작되지 않음
+
 ```bash
 # 환경 변수 확인
 python -c "from app.config import validate_config; validate_config()"
@@ -607,16 +676,19 @@ pip install -r requirements.txt --force-reinstall
 ```
 
 ### 문제: 파일 업로드 실패
+
 - Azure Blob Storage 연결 확인
 - SAS 토큰 생성 권한 확인
 - 파일 크기 제한 확인 (기본 10MB)
 
 ### 문제: LLM 응답 없음
+
 - Azure OpenAI 할당량 확인
 - Gemini API 키 유효성 확인
 - 로그 확인: `backend.log`
 
 ### 문제: 인덱싱 실패
+
 - Azure AI Search 인덱스 생성 확인
 - Admin Key 권한 확인
 - 벡터 차원 일치 확인 (3072)
@@ -626,16 +698,19 @@ pip install -r requirements.txt --force-reinstall
 ## 📊 성능 최적화
 
 ### 백엔드
+
 - **비동기 처리**: FastAPI + BackgroundTasks
 - **연결 풀링**: Azure SDK 싱글톤 패턴
 - **청크 배치 인덱싱**: Azure Search 배치 API
 
 ### 프론트엔드
+
 - **코드 스플리팅**: Vite 자동 최적화
 - **Lazy Loading**: React.lazy (예정)
 - **메모이제이션**: React.memo (예정)
 
 ### LLM
+
 - **모델 선택**: Gemini Flash (빠름) → GPT-4o (정확)
 - **컨텍스트 제한**: 50,000자 (Gemini), 4,000 토큰 (GPT-4o)
 - **타임아웃**: 120초
@@ -645,6 +720,7 @@ pip install -r requirements.txt --force-reinstall
 ## 🚀 배포
 
 ### Azure App Service (예정)
+
 ```bash
 # 백엔드 배포
 az webapp up --name honeypot-backend --resource-group honeypot-rg
@@ -656,6 +732,7 @@ az storage blob upload-batch --account-name honeypot --destination '$web' --sour
 ```
 
 ### Docker (예정)
+
 ```dockerfile
 # Dockerfile
 FROM python:3.10-slim
@@ -671,6 +748,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ## 📈 향후 개선 사항
 
 ### 기능
+
 - [ ] 다국어 지원 (영어, 일본어)
 - [ ] 인수인계서 템플릿 커스터마이징
 - [ ] 버전 관리 및 히스토리
@@ -678,6 +756,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 - [ ] 모바일 반응형 개선
 
 ### 기술
+
 - [ ] Redis 캐싱 (세션, 검색 결과)
 - [ ] PostgreSQL (영구 데이터 저장)
 - [ ] WebSocket (실시간 업데이트)
@@ -685,6 +764,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 - [ ] CI/CD 파이프라인 (GitHub Actions)
 
 ### 보안
+
 - [ ] MFA (다중 인증)
 - [ ] API Rate Limiting
 - [ ] 감사 로그 (Azure Monitor)
