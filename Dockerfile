@@ -20,12 +20,14 @@ COPY app/ ./app/
 ENV PYTHONUNBUFFERED=1
 ENV ENVIRONMENT=production
 
-# 포트 노출
+# 포트 노출 (Railway는 동적 포트 사용)
 EXPOSE 8000
 
-# Health check 추가
+# Health check 추가 (Railway 호환)
+# Railway는 HTTP health check를 자체적으로 수행하므로 선택사항
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT:-8000}/api/health')" || exit 1
 
 # Uvicorn으로 FastAPI 실행
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Railway는 PORT 환경 변수를 자동으로 제공 (기본값: 8000)
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}

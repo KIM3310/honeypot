@@ -2,7 +2,21 @@
 
 이 가이드는 **하이브리드 아키텍처** 배포 방법을 설명합니다:
 - **Frontend**: Vercel에 배포
-- **Backend**: Azure Container Apps에 배포
+- **Backend**: Railway 또는 Azure Container Apps에 배포
+
+---
+
+## 🎯 Backend 배포 옵션 선택
+
+### 🚂 Option A: Railway (권장 - 간편함)
+**장점**: 간단한 설정, GitHub 자동 연동, 무료 티어, 빠른 배포
+**단점**: 소규모 프로젝트에 적합, Azure 리전 최적화 불가
+👉 **[Railway 배포 가이드 보기](./RAILWAY_DEPLOYMENT.md)**
+
+### 🐳 Option B: Azure Container Apps (엔터프라이즈)
+**장점**: Azure 서비스와 같은 리전, 대규모 스케일링, Key Vault 통합
+**단점**: 복잡한 설정, Azure CLI 필요, 비용 발생
+👉 **아래 가이드 계속 진행**
 
 ---
 
