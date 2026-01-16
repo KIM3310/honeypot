@@ -35,13 +35,23 @@ Railway를 사용한 백엔드 배포는 Azure Container Apps보다 **훨씬 간
 
 ### 2단계: 서비스 설정
 
-Railway가 자동으로 Dockerfile을 감지합니다:
+Railway가 자동으로 설정을 감지합니다:
 
-- ✅ **Build Command**: 자동 감지 (Dockerfile 사용)
-- ✅ **Start Command**: Dockerfile의 CMD 사용
-- ✅ **Port**: 자동 감지
+- ✅ **railway.json**: 빌드 및 시작 명령어 정의
+- ✅ **Procfile**: 대체 시작 명령어 정의
+- ✅ **Dockerfile**: Docker 컨테이너 빌드 설정
+- ✅ **Port**: 환경 변수 `$PORT` 자동 할당
 
-**추가 설정 불필요!** Railway가 모든 것을 자동으로 처리합니다.
+**설정 파일이 이미 준비되어 있습니다!**
+
+#### 수동 설정 (선택사항)
+
+만약 자동 감지가 안 되면, Railway Dashboard에서:
+1. 프로젝트 → **Settings** 탭
+2. **Start Command** 입력:
+   ```bash
+   uvicorn app.main:app --host 0.0.0.0 --port $PORT
+   ```
 
 ### 3단계: 환경 변수 설정
 
@@ -307,7 +317,41 @@ ALLOWED_ORIGINS=https://domain1.com,https://domain2.com
 
 ---
 
-### 문제 4: 502 Bad Gateway
+### 문제 4: "No start command was found"
+
+**증상**: Railpack이 시작 명령어를 찾지 못함
+
+**원인**:
+- `main.py`가 프로젝트 루트가 아닌 `app/` 디렉토리에 위치
+- Railway가 FastAPI 프로젝트를 자동 감지하지 못함
+
+**해결 방법 1 - railway.json (이미 준비됨)**:
+```json
+{
+  "deploy": {
+    "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+  }
+}
+```
+
+**해결 방법 2 - Railway Dashboard 수동 설정**:
+1. Railway Dashboard → 프로젝트 → **Settings**
+2. **Deploy** 섹션 → **Start Command** 입력:
+   ```bash
+   uvicorn app.main:app --host 0.0.0.0 --port $PORT
+   ```
+3. **Deploy** 버튼 클릭
+
+**해결 방법 3 - Procfile 사용 (이미 준비됨)**:
+```
+web: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+**✅ 현재 레포지토리에는 `railway.json`과 `Procfile`이 모두 준비되어 있습니다!**
+
+---
+
+### 문제 5: 502 Bad Gateway
 
 **원인**: Backend가 시작되지 않았거나 크래시됨
 
@@ -380,8 +424,10 @@ railway run python -m uvicorn app.main:app
 ## ✅ 체크리스트
 
 배포 전:
-- [ ] Dockerfile 존재 확인
-- [ ] requirements.txt 버전 명시
+- [x] Dockerfile 존재 확인 ✅
+- [x] railway.json 존재 확인 ✅
+- [x] Procfile 존재 확인 ✅
+- [x] requirements.txt 버전 명시 ✅
 - [ ] 모든 환경 변수 준비
 - [ ] JWT_SECRET 생성 (32자 이상)
 
