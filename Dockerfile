@@ -30,4 +30,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Uvicorn으로 FastAPI 실행
 # Railway는 PORT 환경 변수를 자동으로 제공 (기본값: 8000)
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Shell form을 사용하여 환경 변수 확장 보장
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
