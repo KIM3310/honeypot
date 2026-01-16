@@ -17,18 +17,39 @@ app = FastAPI(title="RAG Chatbot API")
 
 
 # CORS 미들웨어 설정
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+def get_allowed_origins():
+    """환경에 따라 허용할 Origin 목록 반환"""
+    origins = [
+        # 로컬 개발
         "http://localhost:5173",
         "http://localhost:5174",
         "http://localhost:3000",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
         "http://192.168.200.115:5173",
-        "http://192.168.200.115:5174"
-        # "*" 제거 - credentials: 'include'와 충돌
-    ],
+        "http://192.168.200.115:5174",
+    ]
+
+    # 프로덕션: 환경 변수에서 Vercel 도메인 추가
+    vercel_url = os.getenv("VERCEL_FRONTEND_URL")
+    if vercel_url:
+        origins.append(vercel_url)
+        # https가 아닌 경우 https 버전도 추가
+        if vercel_url.startswith("http://"):
+            origins.append(vercel_url.replace("http://", "https://"))
+
+    # 추가 프로덕션 도메인들
+    production_domains = os.getenv("ALLOWED_ORIGINS", "").split(",")
+    for domain in production_domains:
+        if domain.strip():
+            origins.append(domain.strip())
+
+    return origins
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_allowed_origins(),
+    allow_origin_regex=r"https://.*\.vercel\.app",  # Vercel Preview 배포 허용
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],  # CSRF Token 헤더 포함

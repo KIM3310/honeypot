@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // Electron에서 상대 경로로 리소스 로드
+  base: process.env.NODE_ENV === 'production' ? '/' : './', // Vercel: 절대 경로, Electron: 상대 경로
   server: {
     port: 5173,
     host: true,
@@ -18,6 +18,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    emptyOutDir: true
+    emptyOutDir: true,
+    sourcemap: false, // 프로덕션에서 소스맵 제거 (번들 크기 감소)
   }
 });
