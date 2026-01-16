@@ -1,0 +1,29 @@
+# Backend files (deployed separately to Azure)
+app/
+requirements.txt
+build_backend.sh
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+proto.env
+
+# Node
+node_modules/
+.cache/
+
+# Electron (not needed for web deployment)
+frontend/electron/
+
+# Development
+.DS_Store
+*.log
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
