@@ -1,13 +1,12 @@
 # app/routers/chat.py
 
-from fastapi import APIRouter, HTTPException, Depends, Request  # ← Request 추가!
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from app.services.search_service import search_documents
 from app.services.openai_service import chat_with_context, analyze_files_for_handover
-from app.auth import get_current_user  # ← 추가 (한 줄)
+from app.security import get_current_user, verify_csrf_token
 import json
 import traceback
-from app.routers.auth import verify_csrf_token, verify_token
 
 router = APIRouter()
 

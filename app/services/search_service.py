@@ -25,7 +25,7 @@ from app.config import (
 from app.services.openai_service import get_embedding
 import traceback
 
-INDEX_NAME = AZURE_SEARCH_INDEX_NAME
+DEFAULT_INDEX_NAME = AZURE_SEARCH_INDEX_NAME
 
 """
 def get_search_index_client():
@@ -45,24 +45,41 @@ def get_search_client(index_name: str = None):
 """
 
 def get_search_client(index_name: str = None):
+    endpoint = AZURE_SEARCH_ENDPOINT or AZURE_SEARCH_SERVICE_ENDPOINT
+    if not endpoint or not AZURE_SEARCH_KEY:
+        raise RuntimeError(
+            "Azure AI Search is not configured. "
+            "Set AZURE_SEARCH_ENDPOINT (or AZURE_SEARCH_SERVICE_ENDPOINT) and AZURE_SEARCH_KEY."
+        )
+
     return SearchClient(
-        endpoint=AZURE_SEARCH_ENDPOINT,
-        index_name=index_name or AZURE_SEARCH_INDEX_NAME,
-        credential=AzureKeyCredential(AZURE_SEARCH_KEY)
+        endpoint=endpoint,
+        index_name=index_name or DEFAULT_INDEX_NAME,
+        credential=AzureKeyCredential(AZURE_SEARCH_KEY),
     )
 
 def get_search_index_client():
+    endpoint = AZURE_SEARCH_SERVICE_ENDPOINT or AZURE_SEARCH_ENDPOINT
+    admin_key = AZURE_SEARCH_ADMIN_KEY or AZURE_SEARCH_KEY
+    if not endpoint or not admin_key:
+        raise RuntimeError(
+            "Azure AI Search index admin is not configured. "
+            "Set AZURE_SEARCH_SERVICE_ENDPOINT and AZURE_SEARCH_ADMIN_KEY (preferred), "
+            "or provide AZURE_SEARCH_ENDPOINT/AZURE_SEARCH_KEY with sufficient permissions."
+        )
+
     return SearchIndexClient(
-        endpoint=AZURE_SEARCH_SERVICE_ENDPOINT,
-        credential=AzureKeyCredential(AZURE_SEARCH_ADMIN_KEY)
+        endpoint=endpoint,
+        credential=AzureKeyCredential(admin_key),
     )
 
 
-def create_index_if_not_exists():
+def create_index_if_not_exists(index_name: str = None):
     index_client = get_search_index_client()
+    target_index = index_name or DEFAULT_INDEX_NAME
     
     try:
-        index_client.get_index(INDEX_NAME)
+        index_client.get_index(target_index)
         return
     except:
         pass
@@ -140,12 +157,13 @@ def create_index_if_not_exists():
     
     semantic_search = SemanticSearch(configurations=[semantic_config])
     
-    index = SearchIndex(name=INDEX_NAME, fields=fields, vector_search=vector_search, semantic_search=semantic_search)
+    index = SearchIndex(name=target_index, fields=fields, vector_search=vector_search, semantic_search=semantic_search)
     index_client.create_index(index)
 
-def add_document_to_index(doc_id: str, content: str, file_name: str):
-    create_index_if_not_exists()
-    search_client = get_search_client()
+def add_document_to_index(doc_id: str, content: str, file_name: str, index_name: str = None):
+    """Upload a single document (mainly for quick experiments)."""
+    create_index_if_not_exists(index_name=index_name)
+    search_client = get_search_client(index_name=index_name)
     
     max_length = 8000
     if len(content) > max_length:
@@ -156,7 +174,8 @@ def add_document_to_index(doc_id: str, content: str, file_name: str):
     document = {
         "id": doc_id,
         "content": content,
-        "file_name": file_name,
+        # Index schema uses camelCase; keep API responses snake_case separately.
+        "fileName": file_name,
         "content_vector": embedding
     }
     
@@ -175,7 +194,7 @@ def index_processed_chunks(chunks: list, index_name: str = None):
         print("[Warning] No chunks to index.")
         return 0
 
-    target_index = index_name or AZURE_SEARCH_INDEX_NAME
+    target_index = index_name or DEFAULT_INDEX_NAME
     print(f"🔍 Target index: {target_index}")
 
     search_client = get_search_client(index_name=index_name)
@@ -269,7 +288,7 @@ def index_processed_chunks(chunks: list, index_name: str = None):
             print(f"❌ Error preparing chunk {item.get('id')}: {e}")
             traceback.print_exc()
  
-    # 3. 배치 업로드 (자동 인덱스 생성 로직 추가)
+    # 3. 배치 업로드
     if documents_batch:
         try:
             result = search_client.upload_documents(documents=documents_batch)
@@ -280,32 +299,13 @@ def index_processed_chunks(chunks: list, index_name: str = None):
         except Exception as e:
             # 인덱스가 없어서 실패한 경우 (ResourceNotFoundError)
             if "The index" in str(e) and "was not found" in str(e):
-                print(f"⚠️ Index not found. Attempting to create index '{AZURE_SEARCH_INDEX_NAME}'...")
+                print(f"⚠️ Index not found. Attempting to create index '{target_index}'...")
                 try:
-                    # create_index.py 로직을 subprocess로 실행
-                    import subprocess
-                    import sys
-                    import os
-                    
-                    # create_index.py 위치 찾기 (루트 디렉토리 가정)
-                    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))) # app -> Proto -> proto -> project_root
-                    script_path = os.path.join(root_dir, "create_index.py")
-                    
-                    if not os.path.exists(script_path):
-                        # 경로가 다를 경우 상대 경로 시도
-                        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../create_index.py"))
-                    
-                    if os.path.exists(script_path):
-                        print(f"   Running index creation script: {script_path}")
-                        subprocess.run([sys.executable, script_path], check=True)
-                        print("✅ Index created. Retrying upload...")
-                        
-                        # 인덱스 생성 후 다시 업로드 시도
-                        result = search_client.upload_documents(documents=documents_batch)
-                        print(f"[Success] Successfully indexed {len(documents_batch)} documents (after creation).")
-                    else:
-                        print(f"❌ Could not find create_index.py at {script_path}")
-                        raise e
+                    create_index_if_not_exists(index_name=target_index)
+                    print("✅ Index created. Retrying upload...")
+
+                    result = search_client.upload_documents(documents=documents_batch)
+                    print(f"[Success] Successfully indexed {len(documents_batch)} documents (after creation).")
                 except Exception as create_error:
                     print(f"❌ Failed to create index automatically: {create_error}")
                     raise e
@@ -328,7 +328,7 @@ def search_documents(query: str, filters: dict = None, top_k: int = 5, index_nam
     """
     from azure.search.documents.models import VectorizedQuery
 
-    target_index = index_name or AZURE_SEARCH_INDEX_NAME
+    target_index = index_name or DEFAULT_INDEX_NAME
     print(f"🔍 Searching in index: {target_index}")
 
     search_client = get_search_client(index_name=index_name)
@@ -353,17 +353,20 @@ def search_documents(query: str, filters: dict = None, top_k: int = 5, index_nam
             top=top_k,
             filter=filter_expression,
             include_total_count=True,
-            # 시맨틱 설정이 create_index.py에 되어 있으므로 활용
+            # Use the semantic configuration created in `create_index_if_not_exists()`.
             query_type="semantic",
             semantic_configuration_name="my-semantic-config"
         )
 
         docs = []
         for result in results:
+            file_name = result.get("fileName") or result.get("file_name") or ""
             docs.append({
                 "id": result.get("id"),
                 "content": result.get("content"),
-                "fileName": result.get("fileName"),
+                # Keep both keys to avoid breaking older API consumers/frontends.
+                "fileName": file_name,
+                "file_name": file_name,
                 "parentSummary": result.get("parentSummary"),
                 "chunkSummary": result.get("chunkSummary"),
                 "score": result.get("@search.score"),
@@ -387,7 +390,7 @@ def get_document_count(index_name: str = None) -> int:
             top=1
         )
         count = results.get_count()
-        print(f"📊 인덱스 '{index_name or INDEX_NAME}' 문서 개수: {count}")
+        print(f"📊 인덱스 '{index_name or DEFAULT_INDEX_NAME}' 문서 개수: {count}")
         return count if count else 0
     except Exception as e:
         print(f"⚠️  문서 개수 조회 실패: {e}")
@@ -405,9 +408,10 @@ def get_all_documents() -> list:
         )
         docs = []
         for result in results:
+            file_name = result.get("fileName") or result.get("file_name") or "Unknown"
             docs.append({
                 "id": result["id"],
-                "file_name": result.get("file_name", "Unknown"),
+                "file_name": file_name,
                 "content_length": len(result.get("content", ""))
             })
         print(f"📋 인덱싱된 문서 목록: {len(docs)}개")

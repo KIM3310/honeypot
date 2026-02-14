@@ -1,4 +1,4 @@
-import { setToken, setCsrfToken, setUserInfo } from "../utils/auth";
+import { setToken, setCsrfToken, setRefreshToken, setUserInfo } from "../utils/auth";
 import { API_ENDPOINTS, fetchWithRetry } from "../config/api";
 
 // ✅ Backend 응답 형식에 맞춤
@@ -37,6 +37,7 @@ export const loginUser = async (
   // ✅ 토큰 저장 (Refresh Token 추가)
   setToken(data.access_token);
   setCsrfToken(data.csrf_token); // ← 추가!
+  setRefreshToken(data.refresh_token);
 
   // ✅ 사용자 정보 저장
   setUserInfo({

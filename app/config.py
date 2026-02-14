@@ -34,7 +34,7 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3-pro-preview")
 
 # ===== NEW: Key Vault 설정 =====
 
-KEYVAULT_URL = os.getenv("KEYVAULT_URL", "https://honeycomb-kv.vault.azure.net/")
+KEYVAULT_URL = os.getenv("KEYVAULT_URL", "")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 # ===== NEW: Key Vault 클라이언트 초기화 =====
@@ -57,6 +57,8 @@ _keyvault_client = None
 def get_keyvault_client():
     """Key Vault 클라이언트 (싱글톤)"""
     global _keyvault_client
+    if not KEYVAULT_URL:
+        return None
     if _keyvault_client is None:
         try:
             credential = get_credential()

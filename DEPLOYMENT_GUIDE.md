@@ -86,7 +86,7 @@ az acr login --name kkuldanjiacr
 
 ```bash
 # 프로젝트 루트에서 실행
-cd /path/to/honeypot_proto
+cd /path/to/honeypot-main
 
 # Docker 이미지 빌드
 docker build -t kkuldanjiacr.azurecr.io/kkuldanji-backend:latest .
@@ -208,7 +208,7 @@ git push origin claude/review-vercel-deployment-MbTDB
 npm i -g vercel
 
 # 프로젝트 루트에서 실행
-cd /path/to/honeypot_proto
+cd /path/to/honeypot-main
 vercel login
 vercel
 ```

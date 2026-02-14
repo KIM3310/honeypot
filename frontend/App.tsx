@@ -20,8 +20,8 @@ import {
 } from "./types";
 import {
   analyzeFilesForHandover,
-  chatWithGemini,
-} from "./services/geminiService";
+  chatWithAssistant,
+} from "./services/assistantService";
 import { API_ENDPOINTS, fetchWithRetry } from "./config/api";
 import { HandoverPrintTemplate } from "./components/HandoverPrintTemplate";
 
@@ -187,7 +187,12 @@ const App: React.FC = () => {
     }
 
     try {
-      const responseText = await chatWithGemini(text, files, updatedMessages, selectedRagIndex);
+      const responseText = await chatWithAssistant(
+        text,
+        files,
+        updatedMessages,
+        selectedRagIndex
+      );
       const aiMsg: ChatMessage = { role: "assistant", text: responseText };
       const finalMessages = [...updatedMessages, aiMsg];
       setMessages(finalMessages);

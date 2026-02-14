@@ -3,6 +3,7 @@ from app.config import (
     AZURE_OPENAI_ENDPOINT, 
     AZURE_OPENAI_API_KEY, 
     AZURE_OPENAI_API_VERSION,
+    AZURE_OPENAI_CHAT_DEPLOYMENT,
     AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
     GOOGLE_API_KEY,
     GEMINI_MODEL
@@ -15,7 +16,7 @@ import uuid
 def get_openai_client():
     return AzureOpenAI(
         api_key=AZURE_OPENAI_API_KEY,
-        api_version="2024-02-15-preview",
+        api_version=AZURE_OPENAI_API_VERSION,
         azure_endpoint=AZURE_OPENAI_ENDPOINT
     )
 
@@ -30,7 +31,7 @@ def get_embedding(text: str) -> list:
     client = get_openai_client()
     response = client.embeddings.create(
         input=text,
-        model="text-embedding-3-large"
+        model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT
     )
     return response.data[0].embedding
 
@@ -138,7 +139,7 @@ def analyze_files_for_handover(file_context: str) -> dict:
         
         doc_contents = []
         for result in results:
-            file_name = result.get("file_name", "Unknown")
+            file_name = result.get("fileName") or result.get("file_name") or "Unknown"
             content = result.get("content", "")
             if content and len(content) > 0:
                 # 최대 1000자까지만 포함
@@ -241,7 +242,7 @@ def analyze_files_for_handover(file_context: str) -> dict:
         print(f"   - 컨텍스트 길이: {len(file_context)}")
 
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model=AZURE_OPENAI_CHAT_DEPLOYMENT,
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message}
@@ -289,27 +290,13 @@ def analyze_files_for_handover(file_context: str) -> dict:
 def chat_with_context(query: str, context: str) -> str:
     client = get_openai_client()
     
-    system_message = """당신은 '꿀단지' 인수인계서 생성 AI입니다. 🍯
+    system_message = """당신은 업무 인수인계/문서 Q&A 어시스턴트입니다.
 
-## 핵심 원칙
-1. **문서 내용을 반드시 먼저 분석**하세요
-2. 문서에서 찾은 **실제 정보**를 답변에 포함하세요
-3. 사용자 질문에 맞게 유연하게 답변하세요
-
-## 인수인계서 생성 시 참고할 구조
-사용자가 인수인계서 생성을 요청하면, 아래 섹션 중 문서에서 확인된 정보만 작성하세요:
-
-1. **인적 정보**: 인계자/인수자 이름, 부서, 연락처, 인계 사유
-2. **직무 현황**: 직무명, 핵심 책임, 보고 체계
-3. **우선 과제**: 시급한 과제 Top 3, 주요 이해관계자, 팀 구성원
-4. **진행 중 업무**: 프로젝트 현황, 미결 사항, 향후 계획
-5. **핵심 자료**: 참고 문서, 시스템 접근 정보, 연락처
-
-## 답변 규칙
-- 📌 문서에 있는 내용은 **구체적으로 인용**하세요
-- 📌 문서에 없는 내용만 "해당 정보가 문서에 없습니다"라고 표시
-- 📌 일반적인 질문에는 문서 내용을 바탕으로 자연스럽게 답변
-- 📌 이모지를 적절히 사용해 가독성을 높이세요 🐝"""
+규칙:
+1) 아래 '참고 문서'에서 근거를 찾고, 근거가 있는 내용만 단정적으로 말하세요.
+2) 문서에 없는 내용은 추측하지 말고, "문서에서 확인되지 않습니다"라고 명시하세요.
+3) 답변은 간결하게, 필요하면 항목(불릿)으로 정리하세요.
+4) 문서의 파일명/섹션을 근거로 함께 제시하세요."""
 
     user_message = f"""[참고 문서]
 {context}
@@ -321,7 +308,7 @@ def chat_with_context(query: str, context: str) -> str:
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model=AZURE_OPENAI_CHAT_DEPLOYMENT,
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message}

@@ -22,7 +22,7 @@ pip install pyinstaller  # 백엔드 빌드용
 
 ```bash
 # 터미널 1: 백엔드 실행
-cd /home/user/honeypot_proto
+cd /home/user/honeypot-main
 python -m uvicorn app.main:app --reload
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
@@ -65,7 +65,7 @@ npm run electron:build
 ## 🏗️ 프로젝트 구조
 
 ```
-honeypot_proto/
+honeypot-main/
 ├── app/                          # Python FastAPI 백엔드
 │   ├── main.py
 │   ├── routers/

@@ -1,6 +1,22 @@
-.env
 __pycache__/
 *.pyc
-.DS_Store
+.pytest_cache/
+
+.venv/
 venv/
+
+# Local secrets (backend loads this)
 proto.env
+.env
+.env.*
+
+# Frontend local env
+frontend/.env
+frontend/.env.*
+
+# Frontend build artifacts
+frontend/node_modules/
+frontend/dist/
+
+.DS_Store
+backend.log
