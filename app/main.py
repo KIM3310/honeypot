@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from app.routers import upload, chat, auth  # ← 추가: auth import
 from app.config import validate_config
@@ -10,7 +9,7 @@ import os
 # 환경 변수 검증
 is_config_valid = validate_config()
 if not is_config_valid:
-    print("⚠️  Warning: Some environment variables are missing. Some features may not work correctly.")
+    print("Warning: Some environment variables are missing. Some features may not work correctly.")
 
 
 app = FastAPI(title="RAG Chatbot API")
@@ -19,15 +18,13 @@ app = FastAPI(title="RAG Chatbot API")
 # CORS 미들웨어 설정
 def get_allowed_origins():
     """환경에 따라 허용할 Origin 목록 반환"""
+    # Local dev defaults
     origins = [
-        # 로컬 개발
         "http://localhost:5173",
         "http://localhost:5174",
         "http://localhost:3000",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
-        "http://192.168.200.115:5173",
-        "http://192.168.200.115:5174",
     ]
 
     # 프로덕션: 환경 변수에서 Vercel 도메인 추가

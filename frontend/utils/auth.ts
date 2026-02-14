@@ -1,76 +1,63 @@
-// 🔐 Authentication Utilities
+// Authentication utilities (demo / prototype).
 
-/**
- * 토큰 저장
- */
 export const setToken = (token: string): void => {
   localStorage.setItem("access_token", token);
-  console.log("✅ 토큰 저장됨");
 };
 
-/**
- * 토큰 가져오기
- */
+export const setRefreshToken = (token: string): void => {
+  localStorage.setItem("refresh_token", token);
+};
+
 export const getToken = (): string | null => {
   return localStorage.getItem("access_token");
 };
 
-/**
- * 사용자 정보 저장
- */
-export const setUserInfo = (user: any): void => {
+export const getRefreshToken = (): string | null => {
+  return localStorage.getItem("refresh_token");
+};
+
+export type UserInfo = {
+  email: string;
+  name: string;
+  role: string;
+  department?: string;
+};
+
+export const setUserInfo = (user: UserInfo): void => {
   localStorage.setItem("user_info", JSON.stringify(user));
   localStorage.setItem("user_email", user.email);
   localStorage.setItem("user_name", user.name);
   localStorage.setItem("user_role", user.role);
-  console.log("✅ 사용자 정보 저장됨");
 };
 
-/**
- * 사용자 정보 가져오기
- */
-export const getUserInfo = (): any | null => {
+export const getUserInfo = (): UserInfo | null => {
   const userInfo = localStorage.getItem("user_info");
   return userInfo ? JSON.parse(userInfo) : null;
 };
 
-/**
- * 인증 헤더 가져오기 (API 호출 시 사용)
- */
 export const getAuthHeaders = (): HeadersInit => {
   const token = getToken();
-  const csrfToken = getCsrfToken(); // ← 추가!
+  const csrfToken = getCsrfToken();
 
   return {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),
-    ...(csrfToken && { "X-CSRF-Token": csrfToken }), // ← 추가!
+    ...(csrfToken && { "X-CSRF-Token": csrfToken }),
   };
 };
 
-/**
- * 로그인 상태 확인
- */
 export const isAuthenticated = (): boolean => {
   return !!getToken();
 };
 
-/**
- * 토큰 제거 (로그아웃)
- */
 export const removeToken = (): void => {
   localStorage.removeItem("access_token");
   localStorage.removeItem("user_info");
   localStorage.removeItem("user_email");
   localStorage.removeItem("user_name");
   localStorage.removeItem("user_role");
-  console.log("✅ 토큰 제거됨 (로그아웃)");
 };
-// frontend/utils/auth.ts - 토큰 만료 처리 추가
 
-/**
- * 토큰이 곧 만료되는지 확인 (5분 이내)
- */
 export const isTokenExpiringSoon = (): boolean => {
   const token = getToken();
   if (!token) return false;
@@ -88,9 +75,6 @@ export const isTokenExpiringSoon = (): boolean => {
   }
 };
 
-/**
- * 토큰 남은 시간 (초 단위)
- */
 export const getTokenExpiresIn = (): number => {
   const token = getToken();
   if (!token) return 0;
@@ -105,36 +89,28 @@ export const getTokenExpiresIn = (): number => {
   }
 };
 
-/**
- * 토큰이 만료되었는지 확인
- */
 export const isTokenExpired = (): boolean => {
   return getTokenExpiresIn() <= 0;
 };
 
-// ✅ CSRF Token 저장
 export const setCsrfToken = (token: string): void => {
   localStorage.setItem("csrf_token", token);
 };
 
-// ✅ CSRF Token 가져오기
 export const getCsrfToken = (): string | null => {
   return localStorage.getItem("csrf_token");
 };
 
-// ✅ CSRF Token 삭제
 export const removeCsrfToken = (): void => {
   localStorage.removeItem("csrf_token");
 };
 
-// ✅ Refresh Token 삭제
 export const removeRefreshToken = (): void => {
   localStorage.removeItem("refresh_token");
 };
 
-// ✅ 모든 토큰 삭제 (수정)
 export const removeAllTokens = (): void => {
   removeToken();
   removeRefreshToken();
-  removeCsrfToken(); // ← 추가!
+  removeCsrfToken();
 };

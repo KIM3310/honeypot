@@ -30,7 +30,7 @@ Railway를 사용한 백엔드 배포는 Azure Container Apps보다 **훨씬 간
 1. [Railway Dashboard](https://railway.app/dashboard) 접속
 2. **"New Project"** 클릭
 3. **"Deploy from GitHub repo"** 선택
-4. `honeypot_proto` 레포지토리 선택
+4. `honeypot-main` 레포지토리 선택
 5. 배포할 브랜치 선택 (예: `main` 또는 `claude/review-vercel-deployment-MbTDB`)
 
 ### 2단계: 서비스 설정

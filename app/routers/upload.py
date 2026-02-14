@@ -1,6 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Form, Depends, Request
-from app.auth import get_current_user
-from app.routers.auth import verify_csrf_token
+from app.security import get_current_user, verify_csrf_token
 from app.services.blob_service import upload_to_blob, save_processed_json
 from app.services.document_service import extract_text_from_url, extract_text_from_docx
 from app.services.search_service import add_document_to_index, get_document_count, get_all_documents
@@ -222,9 +221,11 @@ async def list_documents():
         
         docs = []
         for result in results:
+            file_name = result.get("fileName") or result.get("file_name") or "Unknown"
             docs.append({
                 "id": result.get("id", ""),
-                "file_name": result.get("file_name", "Unknown"),
+                # Frontend expects snake_case.
+                "file_name": file_name,
                 "content": result.get("content", ""),  # 실제 content 포함!
                 "content_length": len(result.get("content", ""))
             })

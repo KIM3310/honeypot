@@ -26,7 +26,7 @@ function getApiBaseUrl(): string {
   // 4. 프로덕션 환경 (배포된 경우)
   // ⚠️ Vercel 배포 시에는 반드시 VITE_API_BASE_URL 환경 변수 설정 필요
   // 예: https://your-backend.azurecontainerapps.io
-  console.warn('⚠️ VITE_API_BASE_URL not set in production. API calls may fail.');
+  console.warn("VITE_API_BASE_URL is not set in production. API calls may fail.");
   return window.location.origin;
 }
 
@@ -112,9 +112,3 @@ export async function checkBackendHealth(): Promise<boolean> {
     return false;
   }
 }
-
-console.log('🔧 API 설정:', {
-  isElectron,
-  isDev,
-  baseUrl: API_BASE_URL,
-});
