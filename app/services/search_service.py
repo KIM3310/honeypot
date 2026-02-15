@@ -20,7 +20,8 @@ from app.config import (
     AZURE_SEARCH_KEY,
     AZURE_SEARCH_INDEX_NAME,
     AZURE_SEARCH_ADMIN_KEY,
-    AZURE_SEARCH_SERVICE_ENDPOINT
+    AZURE_SEARCH_SERVICE_ENDPOINT,
+    is_demo_mode,
 )
 from app.services.openai_service import get_embedding
 import traceback
@@ -326,6 +327,11 @@ def search_documents(query: str, filters: dict = None, top_k: int = 5, index_nam
         top_k: 반환할 최대 결과 수
         index_name: 검색할 RAG 인덱스 이름 (None이면 기본 인덱스)
     """
+    if is_demo_mode():
+        from app.services import demo_store
+
+        return demo_store.search_documents(query, top_k=top_k, index_name=index_name)
+
     from azure.search.documents.models import VectorizedQuery
 
     target_index = index_name or DEFAULT_INDEX_NAME
@@ -382,6 +388,11 @@ def search_documents(query: str, filters: dict = None, top_k: int = 5, index_nam
     
 def get_document_count(index_name: str = None) -> int:
     """AI Search 인덱스의 총 문서 개수 조회"""
+    if is_demo_mode():
+        from app.services import demo_store
+
+        return demo_store.get_document_count(index_name)
+
     try:
         search_client = get_search_client(index_name)
         results = search_client.search(
@@ -397,10 +408,28 @@ def get_document_count(index_name: str = None) -> int:
         traceback.print_exc()
         return 0
 
-def get_all_documents() -> list:
+def get_all_documents(index_name: str = None) -> list:
     """AI Search 인덱스의 모든 문서 목록 조회"""
+    if is_demo_mode():
+        from app.services import demo_store
+
+        docs = demo_store.get_all_documents(index_name)
+        out = []
+        for d in docs:
+            file_name = d.get("fileName") or d.get("file_name") or "Unknown"
+            content = str(d.get("content") or "")
+            out.append(
+                {
+                    "id": d.get("id") or "",
+                    "file_name": file_name,
+                    "content": content,
+                    "content_length": len(content),
+                }
+            )
+        return out
+
     try:
-        search_client = get_search_client()
+        search_client = get_search_client(index_name=index_name)
         results = search_client.search(
             search_text="*",
             include_total_count=True,
@@ -412,6 +441,7 @@ def get_all_documents() -> list:
             docs.append({
                 "id": result["id"],
                 "file_name": file_name,
+                "content": result.get("content", ""),
                 "content_length": len(result.get("content", ""))
             })
         print(f"📋 인덱싱된 문서 목록: {len(docs)}개")

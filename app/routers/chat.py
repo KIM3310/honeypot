@@ -20,6 +20,7 @@ class ChatRequest(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     messages: list
+    index_name: str = None
 
 # ===== 변경 1: analyze 함수 =====
 @router.post("/analyze")
@@ -56,7 +57,7 @@ async def analyze(
 
         # OpenAI API를 호출하여 인수인계서 JSON 생성
         print("🤖 OpenAI API 호출 시작...")
-        response = analyze_files_for_handover(user_message)
+        response = analyze_files_for_handover(user_message, index_name=analyze_request.index_name)
 
         print(f"✅ OpenAI 응답 완료 - 타입: {type(response)}")
         print(f"응답 샘플: {str(response)[:200]}")

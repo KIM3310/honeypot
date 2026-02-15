@@ -113,7 +113,8 @@ async function postJsonWithAuth(url: string, payload: unknown): Promise<unknown>
 }
 
 export async function analyzeFilesForHandover(
-  files: SourceFile[]
+  files: SourceFile[],
+  indexName?: string
 ): Promise<HandoverData> {
   const fileContext = files
     .map((f) => {
@@ -133,6 +134,7 @@ export async function analyzeFilesForHandover(
         content: `다음 자료를 분석해 인수인계서 JSON을 만들어줘. 파일이 없으면 샘플 데이터로 만들어줘:\n\n${fileContext}`,
       },
     ],
+    index_name: indexName || null,
     response_format: { type: "json_object" },
   };
 

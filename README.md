@@ -119,6 +119,12 @@ Configuration is controlled by `proto.env`:
 - Node.js 18+
 
 ### 1) Backend
+Demo mode (no cloud keys):
+- You can run the full UI end-to-end without Azure/Gemini credentials.
+- If `proto.env` is missing or incomplete, the backend auto-falls back to `APP_MODE=demo`.
+- Demo mode supports: `txt`, `md`, code files, and `docx` uploads (PDF/images require live mode).
+
+Live mode (Azure/OpenAI/Search/Gemini):
 Create `proto.env`:
 ```bash
 cp proto.env.example proto.env
@@ -169,13 +175,13 @@ All state-changing requests must include:
 - `POST /api/upload` (multipart)
   - fields: `file`, optional `index_name`
 - `GET /api/upload/status/{task_id}`
-- `GET /api/upload/documents`
+- `GET /api/upload/documents` (optional query: `index_name`)
 - `GET /api/upload/indexes`
 
 ### Analyze / Chat
 Frontend sends a message array (OpenAI-style):
 - `POST /api/analyze`
-  - body: `{ "messages": [{ "role": "user", "content": "..." }, ...] }`
+  - body: `{ "messages": [{ "role": "user", "content": "..." }, ...], "index_name": "..." }`
 - `POST /api/chat`
   - body: `{ "messages": [...], "index_name": "..." }`
 
@@ -252,6 +258,9 @@ If you run into CORS/environment issues, see:
   - Embedding vector dimension must match the index schema (default: 3072 for `text-embedding-3-large`).
 
 ## Limitations
-- Requires cloud credentials for the full pipeline (Blob / Document Intelligence / AI Search / Azure OpenAI / Gemini).
+- Live mode requires cloud credentials for the full pipeline (Blob / Document Intelligence / AI Search / Azure OpenAI / Gemini).
+- Demo mode upload support: `txt`, `md`, code files, and `docx` (PDF/images require Azure Document Intelligence in live mode).
+- Demo mode retrieval is keyword-based (no vector/semantic ranking).
+- Demo mode index is in-memory (resets when the backend restarts).
+- Demo mode report generation / chat are deterministic (no external LLM calls).
 - Token stores (refresh/CSRF) are in-memory for demo purposes.
-- No long-term persistence layer (docs are stored in Azure Search/Blob in the cloud-based flow).

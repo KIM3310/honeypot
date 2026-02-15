@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Form, Depends, Request
 from app.security import get_current_user, verify_csrf_token
+from app.config import APP_MODE, is_demo_mode
 from app.services.blob_service import upload_to_blob, save_processed_json
 from app.services.document_service import extract_text_from_url, extract_text_from_docx
 from app.services.search_service import add_document_to_index, get_document_count, get_all_documents
@@ -31,6 +32,55 @@ async def process_file_background(task_id: str, file_name: str, file_data: bytes
     try:
         print(f"[Background] Processing task {task_id} for file {file_name}...")
         task_manager.update_task(task_id, status="processing", progress=10, message=f"Uploading raw file: {file_name}")
+
+        # Demo-mode: local extraction -> demo chunking -> in-memory index (no cloud creds needed).
+        if is_demo_mode():
+            from app.services.demo_pipeline import build_demo_chunks
+            from app.services import demo_store
+
+            task_manager.update_task(task_id, progress=20, message=f"[Demo mode] Extracting text: {file_name}")
+
+            extracted_text = ""
+            if file_ext in ['txt', 'py', 'js', 'java', 'c', 'cpp', 'h', 'cs', 'ts', 'tsx', 'html', 'css', 'json', 'md']:
+                try:
+                    extracted_text = file_data.decode('utf-8')
+                except UnicodeDecodeError:
+                    extracted_text = file_data.decode('cp949', errors='ignore')
+            elif file_ext == 'docx':
+                try:
+                    extracted_text = extract_text_from_docx(file_data)
+                except Exception as e:
+                    task_manager.update_task(task_id, status="failed", message=f"[Demo mode] DOCX extraction failed: {str(e)}")
+                    return
+            else:
+                task_manager.update_task(
+                    task_id,
+                    status="failed",
+                    message=f"[Demo mode] Unsupported file type: .{file_ext or 'unknown'}. "
+                    f"Demo mode supports txt/md/code/docx. Use live mode for PDF/images.",
+                )
+                return
+
+            if not extracted_text.strip():
+                task_manager.update_task(task_id, status="failed", message="[Demo mode] No text extracted from file.")
+                return
+
+            file_type = "code" if file_ext in ['py', 'js', 'java', 'cpp', 'ts', 'tsx', 'cs'] else "doc"
+            task_manager.update_task(task_id, progress=60, message="[Demo mode] Preprocessing (chunking)...")
+            chunks = build_demo_chunks(extracted_text, file_name, file_type=file_type)
+            if not chunks:
+                task_manager.update_task(task_id, status="failed", message="[Demo mode] Preprocessing failed (no chunks).")
+                return
+
+            task_manager.update_task(task_id, progress=85, message="[Demo mode] Indexing locally...")
+            indexed_count = demo_store.add_chunks(index_name, chunks)
+            task_manager.update_task(
+                task_id,
+                status="completed",
+                progress=100,
+                message=f"[Demo mode] Upload complete. Indexed {indexed_count} chunks to '{demo_store.normalize_index_name(index_name)}'.",
+            )
+            return
         
         # 1. Blob 업로드 (Raw)
         # 중요: 파일명에 한글/특수문자/공백이 있으면 Document Intelligence가 URL 다운로드에 실패함.
@@ -198,8 +248,9 @@ async def get_stats(index_name: str = "documents-index"):
         return {
             "total_documents": doc_count,
             "recent_uploads": doc_count,  # AI Search에 인덱싱된 모든 문서
-            "status": "✅ Active",
-            "index_name": index_name
+            "status": "🧪 Demo" if APP_MODE == "demo" else "✅ Active",
+            "index_name": index_name,
+            "mode": APP_MODE,
         }
     except Exception as e:
         print(f"❌ Stats error: {e}")
@@ -207,16 +258,36 @@ async def get_stats(index_name: str = "documents-index"):
             "total_documents": 0,
             "recent_uploads": 0,
             "status": "⚠️ Error",
-            "index_name": index_name
+            "index_name": index_name,
+            "mode": APP_MODE,
         }
 
 @router.get("/documents")
-async def list_documents():
+async def list_documents(index_name: str = "documents-index"):
     """AI Search 인덱스에 저장된 모든 문서 목록 조회 - 실제 content 포함"""
     try:
+        if is_demo_mode():
+            from app.services import demo_store
+
+            docs = demo_store.get_all_documents(index_name)
+            out = []
+            for d in docs:
+                file_name = d.get("fileName") or d.get("file_name") or "Unknown"
+                content = str(d.get("content") or "")
+                out.append(
+                    {
+                        "id": d.get("id") or "",
+                        "file_name": file_name,
+                        "content": content,
+                        "content_length": len(content),
+                    }
+                )
+
+            return {"count": len(out), "documents": out}
+
         from app.services.search_service import get_search_client
         
-        search_client = get_search_client()
+        search_client = get_search_client(index_name=index_name)
         results = search_client.search(search_text="*", include_total_count=True, top=100)
         
         docs = []
@@ -248,6 +319,12 @@ async def list_documents():
 async def list_indexes():
     """사용 가능한 모든 RAG 인덱스 목록 조회"""
     try:
+        if is_demo_mode():
+            from app.services import demo_store
+
+            indexes = demo_store.list_indexes()
+            return {"count": len(indexes), "indexes": indexes}
+
         from app.services.search_service import get_search_index_client
         
         index_client = get_search_index_client()

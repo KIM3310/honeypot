@@ -42,6 +42,7 @@ export const API_ENDPOINTS = {
   UPLOAD: `${API_BASE_URL}/api/upload`,
   DOCUMENTS: `${API_BASE_URL}/api/upload/documents`,
   INDEXES: `${API_BASE_URL}/api/upload/indexes`,
+  STATS: `${API_BASE_URL}/api/upload/stats`,
 
   // 채팅
   CHAT: `${API_BASE_URL}/api/chat`,
