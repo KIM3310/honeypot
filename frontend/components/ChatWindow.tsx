@@ -9,6 +9,7 @@ import {
   Info,
 } from "lucide-react";
 import { ChatMessage, ViewMode, SourceFile, ChatSession } from "../types";
+import { API_ENDPOINTS, fetchWithRetry } from "../config/api";
 
 interface Props {
   messages: ChatMessage[];
@@ -31,6 +32,9 @@ interface Stats {
   total_documents: number;
   recent_uploads: number;
   status: string;
+  index_name?: string;
+  mode?: string;
+  config_valid?: boolean;
 }
 
 const ChatWindow: React.FC<Props> = ({
@@ -56,15 +60,25 @@ const ChatWindow: React.FC<Props> = ({
     status: "⏳ 연결중...",
   });
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isOffline = stats.status?.toLowerCase?.().includes("offline");
+  const systemDotClass = isOffline
+    ? "bg-red-500"
+    : stats.mode === "demo"
+      ? "bg-yellow-500"
+      : "bg-green-500";
+  const systemLabel = isOffline
+    ? "System Offline"
+    : stats.mode === "demo"
+      ? "System Demo"
+      : "System Live";
 
   // 통계 조회
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:8000/api/upload/stats?index_name=${
-            selectedRagIndex || "documents-index"
-          }`
+        const indexName = selectedRagIndex || "documents-index";
+        const response = await fetchWithRetry(
+          `${API_ENDPOINTS.STATS}?index_name=${encodeURIComponent(indexName)}`
         );
         if (response.ok) {
           const data = await response.json();
@@ -73,7 +87,7 @@ const ChatWindow: React.FC<Props> = ({
         }
       } catch (error) {
         console.error("❌ 통계 조회 실패:", error);
-        setStats((prev) => ({ ...prev, status: "⚠️ 오류" }));
+        setStats((prev) => ({ ...prev, status: "⚠️ Offline" }));
       }
     };
 
@@ -103,9 +117,9 @@ const ChatWindow: React.FC<Props> = ({
       <div className="bg-gradient-to-r from-yellow-50 to-white px-5 py-2 border-b border-yellow-100 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+            <div className={`w-1.5 h-1.5 ${systemDotClass} rounded-full animate-pulse`}></div>
             <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
-              System Live
+              {systemLabel}
             </span>
           </div>
         </div>

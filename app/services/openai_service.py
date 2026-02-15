@@ -6,7 +6,8 @@ from app.config import (
     AZURE_OPENAI_CHAT_DEPLOYMENT,
     AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
     GOOGLE_API_KEY,
-    GEMINI_MODEL
+    GEMINI_MODEL,
+    is_demo_mode,
 )
 from app.services.prompts import DOC_PROMPT, CODE_PROMPT
 import json
@@ -14,6 +15,13 @@ import traceback
 import uuid
 
 def get_openai_client():
+    if is_demo_mode():
+        raise RuntimeError("Azure OpenAI client is not available in demo mode.")
+    if not AZURE_OPENAI_ENDPOINT or not AZURE_OPENAI_API_KEY:
+        raise RuntimeError(
+            "Azure OpenAI is not configured. "
+            "Set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY in proto.env (or switch to APP_MODE=demo)."
+        )
     return AzureOpenAI(
         api_key=AZURE_OPENAI_API_KEY,
         api_version=AZURE_OPENAI_API_VERSION,
@@ -22,12 +30,20 @@ def get_openai_client():
 
 def get_google_client():
     """Google Gemini 클라이언트 (채팅/분석용)"""
+    if is_demo_mode():
+        raise RuntimeError("Gemini client is not available in demo mode.")
+    if not GOOGLE_API_KEY:
+        raise RuntimeError(
+            "Gemini is not configured. Set GOOGLE_API_KEY in proto.env (or switch to APP_MODE=demo)."
+        )
     return OpenAI(
         api_key=GOOGLE_API_KEY,
         base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
     )
 
 def get_embedding(text: str) -> list:
+    if is_demo_mode():
+        raise RuntimeError("Embeddings are not available in demo mode.")
     client = get_openai_client()
     response = client.embeddings.create(
         input=text,
@@ -40,6 +56,12 @@ def analyze_text_for_search(text: str, file_name: str, file_type: str = "doc") -
     [복구됨] 추출된 텍스트를 LLM(Gemini)에 보내 구조화된 JSON(청크 리스트)으로 변환합니다.
     file_type: 'code' 또는 'doc' (그 외는 doc으로 처리)
     """
+    if is_demo_mode():
+        # Demo-grade preprocessing: no external LLM calls.
+        from app.services.demo_pipeline import build_demo_chunks
+
+        return build_demo_chunks(text, file_name, file_type=file_type)
+
     client = get_google_client()
     
     # 1. 파일 유형에 따른 프롬프트 선택
@@ -125,37 +147,70 @@ def analyze_text_for_search(text: str, file_name: str, file_type: str = "doc") -
         traceback.print_exc()
         return []
     
-def analyze_files_for_handover(file_context: str) -> dict:
+def _needs_index_enrichment(file_context: str) -> bool:
+    s = (file_context or "").strip()
+    if len(s) < 80:
+        return True
+    markers = [
+        "Task ID",
+        "백그라운드 처리",
+        "업로드 완료",
+        "Upload started",
+        "업로드 중 오류",
+    ]
+    return any(m in s for m in markers)
+
+
+def analyze_files_for_handover(file_context: str, *, index_name: str = None) -> dict:
     """파일 내용을 분석하여 인수인계서 JSON 생성 - 프론트엔드 HandoverData 형식으로 반환"""
-    from app.services.search_service import get_search_client
-    
+    if is_demo_mode():
+        from app.services import demo_store
+        from app.services.demo_pipeline import generate_demo_handover
+
+        if _needs_index_enrichment(file_context):
+            docs = demo_store.get_all_documents(index_name)
+            doc_contents = []
+            for d in docs[:10]:
+                fn = d.get("fileName") or d.get("file_name") or "Unknown"
+                content = str(d.get("content") or "")
+                if content:
+                    doc_contents.append(f"[파일: {fn}]\n{content[:1000]}\n")
+            if doc_contents:
+                indexed_context = "\n".join(doc_contents)
+                file_context = indexed_context if not file_context else file_context + "\n\n---\n\n" + indexed_context
+
+        return generate_demo_handover(file_context or "")
+
     client = get_openai_client()
-    
-    # Azure Search에서 모든 문서의 실제 내용 직접 검색
-    print("📄 Azure Search에서 모든 문서 검색 중...")
-    try:
-        search_client = get_search_client()
-        results = search_client.search(search_text="*", include_total_count=True, top=10)
-        
-        doc_contents = []
-        for result in results:
-            file_name = result.get("fileName") or result.get("file_name") or "Unknown"
-            content = result.get("content", "")
-            if content and len(content) > 0:
-                # 최대 1000자까지만 포함
-                content_preview = content[:1000]
-                doc_contents.append(f"[파일: {file_name}]\n{content_preview}\n")
-                print(f"✅ 문서 포함됨: {file_name} ({len(content)} 글자)")
-        
-        if doc_contents:
-            print(f"📋 {len(doc_contents)}개 문서 검색됨")
-            indexed_context = "\n".join(doc_contents)
-            file_context = indexed_context if not file_context else file_context + "\n\n---\n\n" + indexed_context
-        else:
-            print("⚠️  검색 결과가 비어있음")
-    except Exception as e:
-        print(f"⚠️  문서 검색 실패: {e}")
-        traceback.print_exc()
+
+    # Azure Search에서 모든 문서의 실제 내용 직접 검색 (placeholder/empty context일 때만)
+    if _needs_index_enrichment(file_context):
+        from app.services.search_service import get_search_client
+
+        print("📄 Azure Search에서 모든 문서 검색 중...")
+        try:
+            search_client = get_search_client(index_name=index_name)
+            results = search_client.search(search_text="*", include_total_count=True, top=10)
+
+            doc_contents = []
+            for result in results:
+                file_name = result.get("fileName") or result.get("file_name") or "Unknown"
+                content = result.get("content", "")
+                if content and len(content) > 0:
+                    # 최대 1000자까지만 포함
+                    content_preview = content[:1000]
+                    doc_contents.append(f"[파일: {file_name}]\n{content_preview}\n")
+                    print(f"✅ 문서 포함됨: {file_name} ({len(content)} 글자)")
+
+            if doc_contents:
+                print(f"📋 {len(doc_contents)}개 문서 검색됨")
+                indexed_context = "\n".join(doc_contents)
+                file_context = indexed_context if not file_context else file_context + "\n\n---\n\n" + indexed_context
+            else:
+                print("⚠️  검색 결과가 비어있음")
+        except Exception as e:
+            print(f"⚠️  문서 검색 실패: {e}")
+            traceback.print_exc()
     
     # 파일이 없거나 매우 짧으면 샘플 데이터 추가
     if not file_context or len(file_context.strip()) < 20:
@@ -288,6 +343,11 @@ def analyze_files_for_handover(file_context: str) -> dict:
         raise Exception(f"API 에러: {e}")
 
 def chat_with_context(query: str, context: str) -> str:
+    if is_demo_mode():
+        from app.services.demo_pipeline import generate_demo_chat_answer
+
+        return generate_demo_chat_answer(query, context)
+
     client = get_openai_client()
     
     system_message = """당신은 업무 인수인계/문서 Q&A 어시스턴트입니다.

@@ -2,14 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from app.routers import upload, chat, auth  # ← 추가: auth import
-from app.config import validate_config
+from app.config import APP_MODE, CONFIG_VALID
 import os
 
 
-# 환경 변수 검증
-is_config_valid = validate_config()
-if not is_config_valid:
-    print("Warning: Some environment variables are missing. Some features may not work correctly.")
+if not CONFIG_VALID:
+    print("⚠️ Live cloud config is incomplete. Running in demo mode by default.")
 
 
 app = FastAPI(title="RAG Chatbot API")
@@ -91,7 +89,7 @@ app.include_router(auth.router)  # ← 추가
 # Health check endpoint
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "config_valid": is_config_valid}
+    return {"status": "ok", "mode": APP_MODE, "config_valid": CONFIG_VALID}
 
 
 @app.get("/test")

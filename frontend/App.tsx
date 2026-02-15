@@ -222,8 +222,9 @@ const App: React.FC = () => {
           "📚 업로드된 파일이 없음 - AI Search 인덱스에서 문서 조회..."
         );
         try {
+          const indexName = selectedRagIndex || "documents-index";
           const response = await fetchWithRetry(
-            API_ENDPOINTS.DOCUMENTS,
+            `${API_ENDPOINTS.DOCUMENTS}?index_name=${encodeURIComponent(indexName)}`,
             {
               headers: getAuthHeaders(), // ← 토큰 포함
             }
@@ -280,7 +281,7 @@ const App: React.FC = () => {
       }
 
       console.log("📊 인수인계서 분석 시작...", filesToAnalyze);
-      const data = await analyzeFilesForHandover(filesToAnalyze);
+      const data = await analyzeFilesForHandover(filesToAnalyze, selectedRagIndex || undefined);
       console.log("✅ 분석 완료:", data);
       setHandoverData(data);
       setMessages((prev) => [

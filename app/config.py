@@ -111,3 +111,20 @@ def validate_config():
         print(f"⚠️ Missing environment variables: {', '.join(missing)}")
         print("   Please check your proto.env file")
     return len(missing) == 0
+
+
+# ===== App mode =====
+#
+# This portfolio repo is designed to be reviewable without cloud credentials.
+# If the live (Azure/OpenAI/Search) config is missing, we automatically fall back
+# to demo mode so the UI + pipeline can still be exercised end-to-end.
+CONFIG_VALID = validate_config()
+APP_MODE = os.getenv("APP_MODE", "live" if CONFIG_VALID else "demo").strip().lower()
+
+if APP_MODE not in {"live", "demo"}:
+    print(f"⚠️ Unknown APP_MODE={APP_MODE!r}. Falling back to demo mode.")
+    APP_MODE = "demo"
+
+
+def is_demo_mode() -> bool:
+    return APP_MODE == "demo"
