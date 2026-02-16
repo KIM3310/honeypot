@@ -11,6 +11,11 @@ This repo was built as a portfolio prototype to practice:
 
 Status: prototype. Some security features use in-memory stores (suitable for demo/dev, not production).
 
+## My Role (Team Project)
+- System architecture design (end-to-end flow + component boundaries)
+- Backend implementation (FastAPI ingestion/status, extraction routing, blob/search integration)
+- RAG quality improvement support (schema-first chunking + retrieval tuning)
+
 ## Table of Contents
 - [Problem](#problem)
 - [Key Features](#key-features)
@@ -264,3 +269,10 @@ If you run into CORS/environment issues, see:
 - Demo mode index is in-memory (resets when the backend restarts).
 - Demo mode report generation / chat are deterministic (no external LLM calls).
 - Token stores (refresh/CSRF) are in-memory for demo purposes.
+
+## Glossary (first-time readers)
+- RAG: Retrieval-Augmented Generation
+- OCR: Optical Character Recognition
+- JWT: JSON Web Token
+- CSRF: Cross-Site Request Forgery
+- CORS: Cross-Origin Resource Sharing
