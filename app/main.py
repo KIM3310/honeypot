@@ -26,8 +26,10 @@ def get_allowed_origins():
     ]
 
     # 프로덕션: 환경 변수에서 Vercel 도메인 추가
-    vercel_url = os.getenv("VERCEL_FRONTEND_URL")
+    vercel_url = (os.getenv("VERCEL_FRONTEND_URL") or "").strip()
     if vercel_url:
+        if not vercel_url.startswith(("http://", "https://")):
+            vercel_url = f"https://{vercel_url}"
         origins.append(vercel_url)
         # https가 아닌 경우 https 버전도 추가
         if vercel_url.startswith("http://"):
@@ -39,7 +41,15 @@ def get_allowed_origins():
         if domain.strip():
             origins.append(domain.strip())
 
-    return origins
+    # Keep first-seen order while removing duplicates.
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for origin in origins:
+        if origin not in seen:
+            deduped.append(origin)
+            seen.add(origin)
+
+    return deduped
 
 app.add_middleware(
     CORSMiddleware,
@@ -62,6 +72,8 @@ async def add_security_headers(request, call_next):
     
     # Clickjacking 방지
     response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     
     # HTTPS 강제 (프로덕션)
     if os.getenv("ENVIRONMENT") == "production":
