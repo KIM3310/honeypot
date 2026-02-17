@@ -1,16 +1,22 @@
 // API 설정 파일
 // Electron 환경 감지
-const isElectron = !!(window as any).electronAPI;
+const hasWindow = typeof window !== 'undefined';
+const isElectron = hasWindow && !!(window as any).electronAPI;
 
 // 개발/프로덕션 환경 감지
 const isDev = import.meta.env.DEV;
+
+function normalizeBaseUrl(value: string): string {
+  return String(value || '').trim().replace(/\/+$/, '');
+}
 
 // API 베이스 URL 결정
 function getApiBaseUrl(): string {
   // 1. 환경 변수에서 URL 가져오기 (최우선)
   // Vercel 프로덕션: VITE_API_BASE_URL을 Azure Container Apps URL로 설정
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
+  const envBaseUrl = normalizeBaseUrl(String(import.meta.env.VITE_API_BASE_URL || ''));
+  if (envBaseUrl) {
+    return envBaseUrl;
   }
 
   // 2. 개발 환경 (Web & Electron Dev) -> Proxy 사용
@@ -26,30 +32,37 @@ function getApiBaseUrl(): string {
   // 4. 프로덕션 환경 (배포된 경우)
   // ⚠️ Vercel 배포 시에는 반드시 VITE_API_BASE_URL 환경 변수 설정 필요
   // 예: https://your-backend.azurecontainerapps.io
-  console.warn("VITE_API_BASE_URL is not set in production. API calls may fail.");
-  return window.location.origin;
+  if (hasWindow) {
+    console.warn("VITE_API_BASE_URL is not set in production. API calls may fail.");
+    return normalizeBaseUrl(window.location.origin);
+  }
+  return '';
 }
 
 export const API_BASE_URL = getApiBaseUrl();
 
+function apiPath(path: string): string {
+  return API_BASE_URL ? `${API_BASE_URL}${path}` : path;
+}
+
 // API 엔드포인트
 export const API_ENDPOINTS = {
   // 인증
-  LOGIN: `${API_BASE_URL}/api/auth/login`,
-  REFRESH: `${API_BASE_URL}/api/auth/refresh`,
+  LOGIN: apiPath('/api/auth/login'),
+  REFRESH: apiPath('/api/auth/refresh'),
 
   // 업로드
-  UPLOAD: `${API_BASE_URL}/api/upload`,
-  DOCUMENTS: `${API_BASE_URL}/api/upload/documents`,
-  INDEXES: `${API_BASE_URL}/api/upload/indexes`,
-  STATS: `${API_BASE_URL}/api/upload/stats`,
+  UPLOAD: apiPath('/api/upload'),
+  DOCUMENTS: apiPath('/api/upload/documents'),
+  INDEXES: apiPath('/api/upload/indexes'),
+  STATS: apiPath('/api/upload/stats'),
 
   // 채팅
-  CHAT: `${API_BASE_URL}/api/chat`,
-  ANALYZE: `${API_BASE_URL}/api/analyze`,
+  CHAT: apiPath('/api/chat'),
+  ANALYZE: apiPath('/api/analyze'),
 
   // 헬스체크
-  HEALTH: `${API_BASE_URL}/api/health`,
+  HEALTH: apiPath('/api/health'),
 };
 
 // Fetch 헬퍼 함수 (타임아웃 및 재시도 지원)
