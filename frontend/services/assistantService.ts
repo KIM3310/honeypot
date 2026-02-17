@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from "../config/api";
+import { API_ENDPOINTS, fetchWithRetry } from "../config/api";
 import {
   getAuthHeaders,
   getRefreshToken,
@@ -22,15 +22,24 @@ async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return null;
 
-  const response = await fetch(API_ENDPOINTS.REFRESH, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-  });
+  let response: Response;
+  try {
+    response = await fetchWithRetry(
+      API_ENDPOINTS.REFRESH,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      },
+      2
+    );
+  } catch {
+    return null;
+  }
 
   if (!response.ok) return null;
 
-  const data = await response.json();
+  const data = await response.json().catch(() => ({}));
   const newAccessToken = data?.access_token;
   if (typeof newAccessToken === "string" && newAccessToken) {
     setToken(newAccessToken);
