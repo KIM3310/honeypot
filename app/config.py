@@ -39,11 +39,20 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 # ===== NEW: Key Vault 클라이언트 초기화 =====
 
-from azure.identity import DefaultAzureCredential
-from azure.keyvault.secrets import SecretClient
+try:
+    from azure.identity import DefaultAzureCredential
+    from azure.keyvault.secrets import SecretClient
+    AZURE_KEYVAULT_AVAILABLE = True
+except Exception:
+    # Keep local/demo imports working even when Azure SDK is not installed.
+    DefaultAzureCredential = None  # type: ignore[assignment]
+    SecretClient = None  # type: ignore[assignment]
+    AZURE_KEYVAULT_AVAILABLE = False
 
 def get_credential():
     """Azure 자격증명 가져오기"""
+    if not AZURE_KEYVAULT_AVAILABLE:
+        raise RuntimeError("azure-keyvault optional dependencies are not installed")
     if ENVIRONMENT == "development":
         # 로컬 개발: Azure CLI 자격증명 사용
         # 먼저 `az login` 실행해야 함
@@ -58,6 +67,9 @@ def get_keyvault_client():
     """Key Vault 클라이언트 (싱글톤)"""
     global _keyvault_client
     if not KEYVAULT_URL:
+        return None
+    if not AZURE_KEYVAULT_AVAILABLE:
+        print("⚠️ Azure Key Vault SDK 미설치: Key Vault 조회를 건너뜁니다.")
         return None
     if _keyvault_client is None:
         try:

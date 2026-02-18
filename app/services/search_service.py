@@ -1,20 +1,39 @@
-from azure.search.documents import SearchClient
-from azure.search.documents.indexes import SearchIndexClient
-from azure.search.documents.indexes.models import (
-    SearchIndex,
-    SimpleField,
-    SearchableField,
-    SearchFieldDataType,
-    VectorSearch,
-    HnswAlgorithmConfiguration,
-    VectorSearchProfile,
-    SearchField,
-    SemanticConfiguration,
-    SemanticPrioritizedFields,
-    SemanticField,
-    SemanticSearch
-)
-from azure.core.credentials import AzureKeyCredential
+try:
+    from azure.search.documents import SearchClient
+    from azure.search.documents.indexes import SearchIndexClient
+    from azure.search.documents.indexes.models import (
+        SearchIndex,
+        SimpleField,
+        SearchableField,
+        SearchFieldDataType,
+        VectorSearch,
+        HnswAlgorithmConfiguration,
+        VectorSearchProfile,
+        SearchField,
+        SemanticConfiguration,
+        SemanticPrioritizedFields,
+        SemanticField,
+        SemanticSearch,
+    )
+    from azure.core.credentials import AzureKeyCredential
+    AZURE_SEARCH_AVAILABLE = True
+except Exception:
+    SearchClient = None  # type: ignore[assignment]
+    SearchIndexClient = None  # type: ignore[assignment]
+    SearchIndex = None  # type: ignore[assignment]
+    SimpleField = None  # type: ignore[assignment]
+    SearchableField = None  # type: ignore[assignment]
+    SearchFieldDataType = None  # type: ignore[assignment]
+    VectorSearch = None  # type: ignore[assignment]
+    HnswAlgorithmConfiguration = None  # type: ignore[assignment]
+    VectorSearchProfile = None  # type: ignore[assignment]
+    SearchField = None  # type: ignore[assignment]
+    SemanticConfiguration = None  # type: ignore[assignment]
+    SemanticPrioritizedFields = None  # type: ignore[assignment]
+    SemanticField = None  # type: ignore[assignment]
+    SemanticSearch = None  # type: ignore[assignment]
+    AzureKeyCredential = None  # type: ignore[assignment]
+    AZURE_SEARCH_AVAILABLE = False
 from app.config import (
     AZURE_SEARCH_ENDPOINT,
     AZURE_SEARCH_KEY,
@@ -46,6 +65,8 @@ def get_search_client(index_name: str = None):
 """
 
 def get_search_client(index_name: str = None):
+    if not AZURE_SEARCH_AVAILABLE:
+        raise RuntimeError("azure-search-documents dependencies are not installed")
     endpoint = AZURE_SEARCH_ENDPOINT or AZURE_SEARCH_SERVICE_ENDPOINT
     if not endpoint or not AZURE_SEARCH_KEY:
         raise RuntimeError(
@@ -60,6 +81,8 @@ def get_search_client(index_name: str = None):
     )
 
 def get_search_index_client():
+    if not AZURE_SEARCH_AVAILABLE:
+        raise RuntimeError("azure-search-documents dependencies are not installed")
     endpoint = AZURE_SEARCH_SERVICE_ENDPOINT or AZURE_SEARCH_ENDPOINT
     admin_key = AZURE_SEARCH_ADMIN_KEY or AZURE_SEARCH_KEY
     if not endpoint or not admin_key:

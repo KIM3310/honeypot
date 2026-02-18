@@ -1,11 +1,25 @@
-from azure.ai.formrecognizer import DocumentAnalysisClient
-from azure.core.credentials import AzureKeyCredential
+try:
+    from azure.ai.formrecognizer import DocumentAnalysisClient
+    from azure.core.credentials import AzureKeyCredential
+    AZURE_DOCINTEL_AVAILABLE = True
+except Exception:
+    DocumentAnalysisClient = None  # type: ignore[assignment]
+    AzureKeyCredential = None  # type: ignore[assignment]
+    AZURE_DOCINTEL_AVAILABLE = False
+
 from app.config import AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT, AZURE_DOCUMENT_INTELLIGENCE_KEY
 
 from io import BytesIO
-from docx import Document
+try:
+    from docx import Document
+    DOCX_AVAILABLE = True
+except Exception:
+    Document = None  # type: ignore[assignment]
+    DOCX_AVAILABLE = False
 
 def get_document_client():
+    if not AZURE_DOCINTEL_AVAILABLE:
+        raise RuntimeError("azure-ai-formrecognizer dependencies are not installed")
     return DocumentAnalysisClient(
         endpoint=AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
         credential=AzureKeyCredential(AZURE_DOCUMENT_INTELLIGENCE_KEY)
@@ -29,6 +43,8 @@ def extract_text_from_docx(file_data: bytes) -> str:
     Azure API를 타지 않으므로 빠르고 비용이 들지 않습니다.
     """
     try:
+        if not DOCX_AVAILABLE:
+            raise RuntimeError("python-docx dependency is not installed")
         print("[DocService] Extracting text locally using python-docx...")
         doc = Document(BytesIO(file_data))
         full_text = []

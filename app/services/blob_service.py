@@ -1,7 +1,16 @@
-from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
+try:
+    from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
+    from azure.identity import DefaultAzureCredential
+    AZURE_BLOB_AVAILABLE = True
+except Exception:
+    BlobServiceClient = None  # type: ignore[assignment]
+    BlobSasPermissions = None  # type: ignore[assignment]
+    generate_blob_sas = None  # type: ignore[assignment]
+    DefaultAzureCredential = None  # type: ignore[assignment]
+    AZURE_BLOB_AVAILABLE = False
+
 from datetime import datetime, timedelta
 from app.config import AZURE_STORAGE_ACCOUNT_NAME, AZURE_STORAGE_ACCOUNT_KEY, ENVIRONMENT
-from azure.identity import DefaultAzureCredential
 import os
 
 # ===== Blob 클라이언트 초기화 =====
@@ -11,6 +20,8 @@ _blob_client = None
 def get_blob_client():
     """Blob Service Client (싱글톤)"""
     global _blob_client
+    if not AZURE_BLOB_AVAILABLE:
+        raise RuntimeError("azure-storage-blob dependencies are not installed")
     if _blob_client is None:
         if ENVIRONMENT == "development":
             # 로컬: 연결 문자열 사용
