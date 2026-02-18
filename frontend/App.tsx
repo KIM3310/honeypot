@@ -13,6 +13,7 @@ import HandoverForm from "./components/HandoverForm";
 import LoginScreen from "./components/LoginScreen";
 import EngagementHub from "./components/EngagementHub";
 import AdSenseSlot from "./components/AdSenseSlot";
+import LlmApiKeyPanel from "./components/LlmApiKeyPanel";
 import {
   SourceFile,
   ChatMessage,
@@ -351,22 +352,38 @@ const App: React.FC = () => {
 
           {/* Right Side: AI Assistant & Discussion (40% Width) */}
           <div className="w-[40%] flex flex-col h-full animate-in fade-in slide-in-from-right-8 duration-1000 delay-200">
-            <ChatWindow
-              messages={messages}
-              onSendMessage={handleSendMessage}
-              onGenerate={handleGenerateHandover}
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-              isProcessing={isProcessing}
-              files={files}
-              chatSessions={chatSessions}
-              setChatSessions={setChatSessions}
-              currentSessionId={currentSessionId}
-              setCurrentSessionId={setCurrentSessionId}
-              onNewChat={handleNewChat}
-              onSelectSession={handleSelectSession}
-              selectedRagIndex={selectedRagIndex}
-            />
+            <div className="mb-3 grid gap-3">
+              <LlmApiKeyPanel />
+              <section className="rounded-2xl border border-gray-300 bg-white/95 p-4 shadow-sm">
+                <p className="text-[10px] font-black tracking-[0.16em] text-gray-500 uppercase">
+                  Sponsored
+                </p>
+                <p className="mt-1 text-[11px] text-gray-700 leading-relaxed">
+                  Google AdSense 광고 영역
+                </p>
+                <div className="mt-2">
+                  <AdSenseSlot />
+                </div>
+              </section>
+            </div>
+            <div className="min-h-0 flex-1">
+              <ChatWindow
+                messages={messages}
+                onSendMessage={handleSendMessage}
+                onGenerate={handleGenerateHandover}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                isProcessing={isProcessing}
+                files={files}
+                chatSessions={chatSessions}
+                setChatSessions={setChatSessions}
+                currentSessionId={currentSessionId}
+                setCurrentSessionId={setCurrentSessionId}
+                onNewChat={handleNewChat}
+                onSelectSession={handleSelectSession}
+                selectedRagIndex={selectedRagIndex}
+              />
+            </div>
           </div>
         </main>
       </div>
@@ -387,9 +404,6 @@ const App: React.FC = () => {
           <a className="underline" href="/contact.html">Contact</a> ·{" "}
           <a className="underline" href="/compliance.html">Compliance</a>
         </p>
-        <div className="mt-3">
-          <AdSenseSlot />
-        </div>
       </aside>
 
       <button

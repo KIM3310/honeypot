@@ -10,9 +10,11 @@ from app.config import (
     is_demo_mode,
 )
 from app.services.prompts import DOC_PROMPT, CODE_PROMPT
+from app.services.llm_override import LLMOverrideConfig, summarize_override_for_log
 import json
 import traceback
 import uuid
+from typing import Optional
 
 def get_openai_client():
     if is_demo_mode():
@@ -41,6 +43,43 @@ def get_google_client():
         base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
     )
 
+
+def _get_user_llm_client(llm_override: LLMOverrideConfig) -> OpenAI:
+    kwargs = {"api_key": llm_override.api_key}
+    if llm_override.base_url:
+        kwargs["base_url"] = llm_override.base_url
+    return OpenAI(**kwargs)
+
+
+def _create_chat_completion_with_json_fallback(
+    *,
+    client,
+    model: str,
+    messages: list,
+    temperature: float,
+    max_tokens: int,
+    timeout: Optional[int] = None,
+):
+    options = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "response_format": {"type": "json_object"},
+    }
+    if timeout is not None:
+        options["timeout"] = timeout
+
+    try:
+        return client.chat.completions.create(**options)
+    except Exception as exc:
+        # Some OpenAI-compatible providers do not support response_format=json_object.
+        if "response_format" not in str(exc):
+            raise
+
+    options.pop("response_format", None)
+    return client.chat.completions.create(**options)
+
 def get_embedding(text: str) -> list:
     if is_demo_mode():
         raise RuntimeError("Embeddings are not available in demo mode.")
@@ -51,18 +90,30 @@ def get_embedding(text: str) -> list:
     )
     return response.data[0].embedding
 
-def analyze_text_for_search(text: str, file_name: str, file_type: str = "doc") -> list:
+def analyze_text_for_search(
+    text: str,
+    file_name: str,
+    file_type: str = "doc",
+    llm_override: Optional[LLMOverrideConfig] = None,
+) -> list:
     """
     [복구됨] 추출된 텍스트를 LLM(Gemini)에 보내 구조화된 JSON(청크 리스트)으로 변환합니다.
     file_type: 'code' 또는 'doc' (그 외는 doc으로 처리)
     """
-    if is_demo_mode():
+    if is_demo_mode() and not llm_override:
         # Demo-grade preprocessing: no external LLM calls.
         from app.services.demo_pipeline import build_demo_chunks
 
         return build_demo_chunks(text, file_name, file_type=file_type)
 
-    client = get_google_client()
+    if llm_override:
+        client = _get_user_llm_client(llm_override)
+        model = llm_override.model
+        provider_label = f"user LLM ({summarize_override_for_log(llm_override)})"
+    else:
+        client = get_google_client()
+        model = GEMINI_MODEL
+        provider_label = "Gemini"
     
     # 1. 파일 유형에 따른 프롬프트 선택
     if file_type == "code":
@@ -83,25 +134,27 @@ def analyze_text_for_search(text: str, file_name: str, file_type: str = "doc") -
     # 50000자 제한: Gemini Context Window는 크지만 안전하게 제한
 
     try:
-        print(f"🧠 Processing with Gemini ({file_type})... Input length: {len(text[:50000])}", flush=True)
+        print(
+            f"🧠 Processing with {provider_label} ({file_type})... Input length: {len(text[:50000])}",
+            flush=True,
+        )
         
-        # Gemini 호출
-        response = client.chat.completions.create(
-            model=GEMINI_MODEL,
+        response = _create_chat_completion_with_json_fallback(
+            client=client,
+            model=model,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message}
             ],
             temperature=0.1, # 정형 데이터 추출이므로 낮게 설정
-            response_format={"type": "json_object"},
             max_tokens=16000,
-            timeout=120
+            timeout=120,
         )
         
-        print("✅ Gemini response received.", flush=True)
+        print("✅ LLM response received.", flush=True)
         response_text = response.choices[0].message.content
 
-        print("\n=== [Gemini Response Output] ===")
+        print("\n=== [LLM Response Output] ===")
         print(response_text)
         print("================================\n")
         
@@ -139,11 +192,11 @@ def analyze_text_for_search(text: str, file_name: str, file_type: str = "doc") -
             return chunks
             
         except json.JSONDecodeError:
-            print(f"❌ Gemini response is not valid JSON: {response_text[:100]}...")
+            print(f"❌ LLM response is not valid JSON: {response_text[:100]}...")
             return []
             
     except Exception as e:
-        print(f"❌ Gemini Chat Completion failed: {e}")
+        print(f"❌ LLM Chat Completion failed: {e}")
         traceback.print_exc()
         return []
     
@@ -161,9 +214,14 @@ def _needs_index_enrichment(file_context: str) -> bool:
     return any(m in s for m in markers)
 
 
-def analyze_files_for_handover(file_context: str, *, index_name: str = None) -> dict:
+def analyze_files_for_handover(
+    file_context: str,
+    *,
+    index_name: str = None,
+    llm_override: Optional[LLMOverrideConfig] = None,
+) -> dict:
     """파일 내용을 분석하여 인수인계서 JSON 생성 - 프론트엔드 HandoverData 형식으로 반환"""
-    if is_demo_mode():
+    if is_demo_mode() and not llm_override:
         from app.services import demo_store
         from app.services.demo_pipeline import generate_demo_handover
 
@@ -181,36 +239,48 @@ def analyze_files_for_handover(file_context: str, *, index_name: str = None) -> 
 
         return generate_demo_handover(file_context or "")
 
-    client = get_openai_client()
-
-    # Azure Search에서 모든 문서의 실제 내용 직접 검색 (placeholder/empty context일 때만)
+    # 문서 컨텍스트 보강 (placeholder/empty context일 때)
     if _needs_index_enrichment(file_context):
-        from app.services.search_service import get_search_client
+        if is_demo_mode():
+            from app.services import demo_store
 
-        print("📄 Azure Search에서 모든 문서 검색 중...")
-        try:
-            search_client = get_search_client(index_name=index_name)
-            results = search_client.search(search_text="*", include_total_count=True, top=10)
-
+            docs = demo_store.get_all_documents(index_name)
             doc_contents = []
-            for result in results:
-                file_name = result.get("fileName") or result.get("file_name") or "Unknown"
-                content = result.get("content", "")
-                if content and len(content) > 0:
-                    # 최대 1000자까지만 포함
-                    content_preview = content[:1000]
-                    doc_contents.append(f"[파일: {file_name}]\n{content_preview}\n")
-                    print(f"✅ 문서 포함됨: {file_name} ({len(content)} 글자)")
-
+            for d in docs[:10]:
+                fn = d.get("fileName") or d.get("file_name") or "Unknown"
+                content = str(d.get("content") or "")
+                if content:
+                    doc_contents.append(f"[파일: {fn}]\n{content[:1000]}\n")
             if doc_contents:
-                print(f"📋 {len(doc_contents)}개 문서 검색됨")
                 indexed_context = "\n".join(doc_contents)
                 file_context = indexed_context if not file_context else file_context + "\n\n---\n\n" + indexed_context
-            else:
-                print("⚠️  검색 결과가 비어있음")
-        except Exception as e:
-            print(f"⚠️  문서 검색 실패: {e}")
-            traceback.print_exc()
+        else:
+            from app.services.search_service import get_search_client
+
+            print("📄 Azure Search에서 모든 문서 검색 중...")
+            try:
+                search_client = get_search_client(index_name=index_name)
+                results = search_client.search(search_text="*", include_total_count=True, top=10)
+
+                doc_contents = []
+                for result in results:
+                    file_name = result.get("fileName") or result.get("file_name") or "Unknown"
+                    content = result.get("content", "")
+                    if content and len(content) > 0:
+                        # 최대 1000자까지만 포함
+                        content_preview = content[:1000]
+                        doc_contents.append(f"[파일: {file_name}]\n{content_preview}\n")
+                        print(f"✅ 문서 포함됨: {file_name} ({len(content)} 글자)")
+
+                if doc_contents:
+                    print(f"📋 {len(doc_contents)}개 문서 검색됨")
+                    indexed_context = "\n".join(doc_contents)
+                    file_context = indexed_context if not file_context else file_context + "\n\n---\n\n" + indexed_context
+                else:
+                    print("⚠️  검색 결과가 비어있음")
+            except Exception as e:
+                print(f"⚠️  문서 검색 실패: {e}")
+                traceback.print_exc()
     
     # 파일이 없거나 매우 짧으면 샘플 데이터 추가
     if not file_context or len(file_context.strip()) < 20:
@@ -291,20 +361,28 @@ def analyze_files_for_handover(file_context: str, *, index_name: str = None) -> 
 위의 JSON 형식을 반드시 따르세요.
 """
 
+    if llm_override:
+        client = _get_user_llm_client(llm_override)
+        model = llm_override.model
+        provider_label = summarize_override_for_log(llm_override)
+    else:
+        client = get_openai_client()
+        model = AZURE_OPENAI_CHAT_DEPLOYMENT
+        provider_label = "azure-default"
+
     try:
-        print(f"🚀 Azure OpenAI 호출 시작...")
-        print(f"   - 엔드포인트: {AZURE_OPENAI_ENDPOINT}")
+        print(f"🚀 LLM 호출 시작... provider={provider_label}")
         print(f"   - 컨텍스트 길이: {len(file_context)}")
 
-        response = client.chat.completions.create(
-            model=AZURE_OPENAI_CHAT_DEPLOYMENT,
+        response = _create_chat_completion_with_json_fallback(
+            client=client,
+            model=model,
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message}
             ],
             temperature=0.7,
             max_tokens=4000,
-            response_format={"type": "json_object"}
         )
 
         print(f"✅ OpenAI 응답 수신")
@@ -337,18 +415,27 @@ def analyze_files_for_handover(file_context: str, *, index_name: str = None) -> 
                 "rawContent": response_text
             }
     except Exception as e:
-        print(f"❌ Azure OpenAI 호출 실패: {e}")
+        print(f"❌ LLM 호출 실패: {e}")
         traceback.print_exc()
         # system_message 등 로컬 변수 참조 없이 에러만 반환
         raise Exception(f"API 에러: {e}")
 
-def chat_with_context(query: str, context: str) -> str:
-    if is_demo_mode():
+def chat_with_context(
+    query: str,
+    context: str,
+    llm_override: Optional[LLMOverrideConfig] = None,
+) -> str:
+    if is_demo_mode() and not llm_override:
         from app.services.demo_pipeline import generate_demo_chat_answer
 
         return generate_demo_chat_answer(query, context)
 
-    client = get_openai_client()
+    if llm_override:
+        client = _get_user_llm_client(llm_override)
+        model = llm_override.model
+    else:
+        client = get_openai_client()
+        model = AZURE_OPENAI_CHAT_DEPLOYMENT
     
     system_message = """당신은 업무 인수인계/문서 Q&A 어시스턴트입니다.
 
@@ -368,7 +455,7 @@ def chat_with_context(query: str, context: str) -> str:
 
     try:
         response = client.chat.completions.create(
-            model=AZURE_OPENAI_CHAT_DEPLOYMENT,
+            model=model,
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message}
