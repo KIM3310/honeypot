@@ -1,9 +1,12 @@
-from fastapi import FastAPI
+import os
+import time
+import uuid
+
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from app.routers import upload, chat, auth  # ← 추가: auth import
 from app.config import APP_MODE, CONFIG_VALID
-import os
 
 
 if not CONFIG_VALID:
@@ -11,6 +14,7 @@ if not CONFIG_VALID:
 
 
 app = FastAPI(title="RAG Chatbot API")
+APP_STARTED_AT = int(time.time())
 
 
 # CORS 미들웨어 설정
@@ -63,8 +67,24 @@ app.add_middleware(
 
 # ✅ 보안 헤더 미들웨어 추가 (CORS 다음에)
 @app.middleware("http")
-async def add_security_headers(request, call_next):
-    response = await call_next(request)
+async def add_security_headers(request: Request, call_next):
+    request_id = request.headers.get("x-request-id") or f"req-{uuid.uuid4().hex[:12]}"
+    request.state.request_id = request_id
+    started = time.time()
+    try:
+        response = await call_next(request)
+    except Exception as exc:  # noqa: BLE001
+        latency_ms = int((time.time() - started) * 1000)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "internal server error",
+                "request_id": request_id,
+                "latency_ms": latency_ms,
+                "error": str(exc),
+            },
+            headers={"x-request-id": request_id, "cache-control": "no-store"},
+        )
     
     # XSS 방지
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -78,8 +98,22 @@ async def add_security_headers(request, call_next):
     # HTTPS 강제 (프로덕션)
     if os.getenv("ENVIRONMENT") == "production":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
+    response.headers["x-request-id"] = request_id
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
     
     return response
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    request_id = getattr(request.state, "request_id", f"req-{uuid.uuid4().hex[:12]}")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail, "request_id": request_id},
+        headers={"x-request-id": request_id, "cache-control": "no-store"},
+    )
 
 # ... 기존 라우터 등록 코드 ...
 
@@ -100,8 +134,15 @@ app.include_router(auth.router)  # ← 추가
 
 # Health check endpoint
 @app.get("/api/health")
-def health_check():
-    return {"status": "ok", "mode": APP_MODE, "config_valid": CONFIG_VALID}
+def health_check(request: Request):
+    return {
+        "status": "ok",
+        "mode": APP_MODE,
+        "config_valid": CONFIG_VALID,
+        "uptime_seconds": max(0, int(time.time()) - APP_STARTED_AT),
+        "allowed_origins_count": len(get_allowed_origins()),
+        "request_id": getattr(request.state, "request_id", None),
+    }
 
 
 @app.get("/test")
