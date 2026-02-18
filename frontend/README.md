@@ -18,3 +18,17 @@ View your app in AI Studio: https://ai.studio/apps/drive/1GA80pEv9RpbyWhYILBYR9u
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Optional Community + AdSense Env
+
+- `VITE_FORMSPREE_ENDPOINT`
+- `VITE_DISQUS_SHORTNAME`
+- `VITE_DISQUS_IDENTIFIER`
+- `VITE_GISCUS_REPO`
+- `VITE_GISCUS_REPO_ID`
+- `VITE_GISCUS_CATEGORY`
+- `VITE_GISCUS_CATEGORY_ID`
+- `VITE_ADSENSE_CLIENT` (for example `ca-pub-xxxxxxxxxxxxxxxx`)
+- `VITE_ADSENSE_SLOT`
+
+AdSense review helpers are provided in `public/ads.txt`, `public/robots.txt`, and `public/sitemap.xml`.
