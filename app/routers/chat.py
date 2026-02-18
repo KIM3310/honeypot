@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from app.services.search_service import search_documents
 from app.services.openai_service import chat_with_context, analyze_files_for_handover
+from app.services.llm_override import parse_llm_override_from_request, summarize_override_for_log
 from app.security import get_current_user, verify_csrf_token
 import json
 import traceback
@@ -43,6 +44,7 @@ async def analyze(
     try:
         # 사용자 정보 로깅 (감사 추적)
         print(f"🔍 [{user['name']}] /analyze 요청 - messages: {len(analyze_request.messages)}")
+        llm_override = parse_llm_override_from_request(request)
 
         # 프론트엔드에서 보낸 메시지 형식 처리
         messages = analyze_request.messages  # ← analyze_request 사용!
@@ -56,8 +58,12 @@ async def analyze(
             print("⚠️ 빈 메시지 - 샘플 데이터로 응답")
 
         # OpenAI API를 호출하여 인수인계서 JSON 생성
-        print("🤖 OpenAI API 호출 시작...")
-        response = analyze_files_for_handover(user_message, index_name=analyze_request.index_name)
+        print(f"🤖 LLM 호출 시작... provider={summarize_override_for_log(llm_override)}")
+        response = analyze_files_for_handover(
+            user_message,
+            index_name=analyze_request.index_name,
+            llm_override=llm_override,
+        )
 
         print(f"✅ OpenAI 응답 완료 - 타입: {type(response)}")
         print(f"응답 샘플: {str(response)[:200]}")
@@ -113,6 +119,7 @@ async def chat(
     채팅 (로그인 필수)
     """
     try:
+        llm_override = parse_llm_override_from_request(request)
         # messages 배열에서 사용자 메시지 추출
         messages = chat_request.messages  # ← chat_request 사용!
         user_message = next((m["content"] for m in messages if m["role"] == "user"), "")
@@ -142,7 +149,7 @@ async def chat(
         ])
 
         # 3. GPT로 답변 생성
-        response = chat_with_context(user_message, context)
+        response = chat_with_context(user_message, context, llm_override=llm_override)
 
         print(f"✅ [{user['name']}] 채팅 응답 완료 - {len(response)} 글자")
 

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { SourceFile } from "../types.ts";
 import { API_ENDPOINTS, fetchWithRetry } from "../config/api";
+import { getLlmHeaders } from "../utils/llmConfig";
 
 interface Props {
   onIndexChange?: (indexName: string) => void;
@@ -82,7 +83,10 @@ const SourceSidebar: React.FC<Props> = ({
         }
 
         try {
-          const headers = getAuthHeaders();
+          const headers = {
+            ...(getAuthHeaders() as Record<string, string>),
+            ...getLlmHeaders(),
+          };
           delete headers["Content-Type"]; // FormData는 Content-Type 자동 설정
 
           console.log(`📤 업로드 시작: ${file.name} → 인덱스: ${selectedIndex || "default"}`);

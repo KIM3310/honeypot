@@ -6,6 +6,7 @@ import {
   removeCsrfToken,
   setToken,
 } from "../utils/auth";
+import { getLlmHeaders } from "../utils/llmConfig";
 import { HandoverData, SourceFile } from "../types";
 
 type ChatHistoryMessage = { role: string; text: string };
@@ -73,7 +74,10 @@ async function postJsonWithAuth(url: string, payload: unknown): Promise<unknown>
     }
   };
 
-  const baseHeaders = getAuthHeaders() as Record<string, string>;
+  const baseHeaders = {
+    ...(getAuthHeaders() as Record<string, string>),
+    ...getLlmHeaders(),
+  };
   let response = await fetchOnce(baseHeaders);
 
   if (response.status === 429) {
@@ -93,7 +97,10 @@ async function postJsonWithAuth(url: string, payload: unknown): Promise<unknown>
   if (response.status === 401) {
     const newAccessToken = await refreshAccessToken();
     if (newAccessToken) {
-      const retryHeaders = getAuthHeaders() as Record<string, string>;
+      const retryHeaders = {
+        ...(getAuthHeaders() as Record<string, string>),
+        ...getLlmHeaders(),
+      };
       response = await fetchOnce(retryHeaders);
     }
   }

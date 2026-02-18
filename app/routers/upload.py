@@ -6,9 +6,11 @@ from app.services.document_service import extract_text_from_url, extract_text_fr
 from app.services.search_service import add_document_to_index, get_document_count, get_all_documents
 import uuid
 import traceback
+from typing import Optional
 from app.state import task_manager
 from app.services.openai_service import analyze_text_for_search
 from app.services.search_service import index_processed_chunks
+from app.services.llm_override import LLMOverrideConfig, parse_llm_override_from_request, summarize_override_for_log
 import json
 
 router = APIRouter()
@@ -17,7 +19,14 @@ router = APIRouter()
 
 #창훈 코드 추가
 
-async def process_file_background(task_id: str, file_name: str, file_data: bytes, file_ext: str, index_name: str = None):
+async def process_file_background(
+    task_id: str,
+    file_name: str,
+    file_data: bytes,
+    file_ext: str,
+    index_name: str = None,
+    llm_override: Optional[LLMOverrideConfig] = None,
+):
     """
     백그라운드에서 실행될 실제 파이프라인 로직
     1. Blob 업로드 (Raw)
@@ -33,7 +42,7 @@ async def process_file_background(task_id: str, file_name: str, file_data: bytes
         print(f"[Background] Processing task {task_id} for file {file_name}...")
         task_manager.update_task(task_id, status="processing", progress=10, message=f"Uploading raw file: {file_name}")
 
-        # Demo-mode: local extraction -> demo chunking -> in-memory index (no cloud creds needed).
+        # Demo-mode: local extraction -> local/demo chunking -> in-memory index (no cloud creds needed).
         if is_demo_mode():
             from app.services.demo_pipeline import build_demo_chunks
             from app.services import demo_store
@@ -66,8 +75,17 @@ async def process_file_background(task_id: str, file_name: str, file_data: bytes
                 return
 
             file_type = "code" if file_ext in ['py', 'js', 'java', 'cpp', 'ts', 'tsx', 'cs'] else "doc"
-            task_manager.update_task(task_id, progress=60, message="[Demo mode] Preprocessing (chunking)...")
-            chunks = build_demo_chunks(extracted_text, file_name, file_type=file_type)
+            if llm_override:
+                task_manager.update_task(task_id, progress=60, message="[Demo mode] Preprocessing with user LLM...")
+                chunks = analyze_text_for_search(
+                    extracted_text,
+                    file_name,
+                    file_type=file_type,
+                    llm_override=llm_override,
+                )
+            else:
+                task_manager.update_task(task_id, progress=60, message="[Demo mode] Preprocessing (chunking)...")
+                chunks = build_demo_chunks(extracted_text, file_name, file_type=file_type)
             if not chunks:
                 task_manager.update_task(task_id, status="failed", message="[Demo mode] Preprocessing failed (no chunks).")
                 return
@@ -136,7 +154,12 @@ async def process_file_background(task_id: str, file_name: str, file_data: bytes
         file_type = "code" if file_ext in ['py', 'js', 'java', 'cpp', 'ts', 'tsx', 'cs'] else "doc"
         
         # print(f"extracted_text : {extracted_text}")
-        chunks = analyze_text_for_search(extracted_text, file_name, file_type=file_type)
+        chunks = analyze_text_for_search(
+            extracted_text,
+            file_name,
+            file_type=file_type,
+            llm_override=llm_override,
+        )
         print(f"[Background] LLM analysis returned {len(chunks) if chunks else 0} chunks.")
         
         if not chunks:
@@ -202,6 +225,7 @@ async def upload_document(
         index_name: RAG 인덱스 이름 (선택 사항, 지정하지 않으면 기본 인덱스)
     """
     try:
+        llm_override = parse_llm_override_from_request(request)
         # 1. 파일 데이터 읽기 (메모리)
         file_data = await file.read()
         file_name = file.filename
@@ -212,8 +236,19 @@ async def upload_document(
         task_manager.create_task(task_id)
 
         # 3. 백그라운드 작업 등록
-        print(f"📋 Upload request: file={file_name}, index={index_name or 'default'}")
-        background_tasks.add_task(process_file_background, task_id, file_name, file_data, file_ext, index_name)
+        print(
+            f"📋 Upload request: file={file_name}, index={index_name or 'default'}, "
+            f"llm={summarize_override_for_log(llm_override)}"
+        )
+        background_tasks.add_task(
+            process_file_background,
+            task_id,
+            file_name,
+            file_data,
+            file_ext,
+            index_name,
+            llm_override,
+        )
 
         return {
             "message": "Upload started",
