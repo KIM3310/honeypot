@@ -384,7 +384,8 @@ const App: React.FC = () => {
         <p className="mt-1 text-[11px] text-gray-700 leading-relaxed">
           Links: <a className="underline" href="/privacy.html">Privacy</a> ·{" "}
           <a className="underline" href="/terms.html">Terms</a> ·{" "}
-          <a className="underline" href="/contact.html">Contact</a>
+          <a className="underline" href="/contact.html">Contact</a> ·{" "}
+          <a className="underline" href="/compliance.html">Compliance</a>
         </p>
         <div className="mt-3">
           <AdSenseSlot />

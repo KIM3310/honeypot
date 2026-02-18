@@ -31,4 +31,4 @@ View your app in AI Studio: https://ai.studio/apps/drive/1GA80pEv9RpbyWhYILBYR9u
 - `VITE_ADSENSE_CLIENT` (for example `ca-pub-xxxxxxxxxxxxxxxx`)
 - `VITE_ADSENSE_SLOT`
 
-AdSense review helpers are provided in `public/ads.txt`, `public/robots.txt`, and `public/sitemap.xml`.
+AdSense review helpers are provided in `public/ads.txt`, `public/robots.txt`, `public/sitemap.xml`, `public/compliance.html`, and `public/_headers`.
