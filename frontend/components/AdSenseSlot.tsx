@@ -19,7 +19,10 @@ export default function AdSenseSlot() {
     if (!ADS_READY || typeof document === "undefined") {
       return;
     }
-    if (document.getElementById("honeypot-adsbygoogle-script")) {
+    if (
+      document.getElementById("honeypot-adsbygoogle-script") ||
+      document.querySelector('script[src*="pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]')
+    ) {
       return;
     }
     const script = document.createElement("script");
