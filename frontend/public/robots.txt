@@ -4,4 +4,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://honeypot.pages.dev/sitemap.xml
+Sitemap: https://honeypot-3st.pages.dev/sitemap.xml
