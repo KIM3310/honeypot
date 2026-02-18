@@ -12,6 +12,7 @@ import ChatWindow from "./components/ChatWindow";
 import HandoverForm from "./components/HandoverForm";
 import LoginScreen from "./components/LoginScreen";
 import EngagementHub from "./components/EngagementHub";
+import AdSenseSlot from "./components/AdSenseSlot";
 import {
   SourceFile,
   ChatMessage,
@@ -371,6 +372,24 @@ const App: React.FC = () => {
       </div>
 
       {handoverData && <HandoverPrintTemplate data={handoverData} />}
+
+      <aside className="fixed left-5 bottom-5 z-[65] max-w-[360px] rounded-2xl border border-gray-300 bg-white/95 shadow-xl p-4">
+        <p className="text-[10px] font-black tracking-[0.16em] text-gray-500 uppercase">Trust & Policy</p>
+        <p className="mt-1 text-[11px] text-gray-700 leading-relaxed">
+          Contact: ops-handover@team.local · Privacy: only handover workflow data needed for this service is retained.
+        </p>
+        <p className="mt-1 text-[11px] text-gray-700 leading-relaxed">
+          Terms: generated handover drafts require human approval before production use.
+        </p>
+        <p className="mt-1 text-[11px] text-gray-700 leading-relaxed">
+          Links: <a className="underline" href="/privacy.html">Privacy</a> ·{" "}
+          <a className="underline" href="/terms.html">Terms</a> ·{" "}
+          <a className="underline" href="/contact.html">Contact</a>
+        </p>
+        <div className="mt-3">
+          <AdSenseSlot />
+        </div>
+      </aside>
 
       <button
         onClick={() => setShowEngagementHub(true)}
