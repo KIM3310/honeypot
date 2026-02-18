@@ -11,6 +11,7 @@ import SourceSidebar from "./components/SourceSidebar";
 import ChatWindow from "./components/ChatWindow";
 import HandoverForm from "./components/HandoverForm";
 import LoginScreen from "./components/LoginScreen";
+import EngagementHub from "./components/EngagementHub";
 import {
   SourceFile,
   ChatMessage,
@@ -41,6 +42,7 @@ const App: React.FC = () => {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [selectedRagIndex, setSelectedRagIndex] =
     useState<string>("documents-index");
+  const [showEngagementHub, setShowEngagementHub] = useState(false);
 
   // 토큰 시간 state
   const [tokenExpiresIn, setTokenExpiresIn] = useState(0);
@@ -369,6 +371,14 @@ const App: React.FC = () => {
       </div>
 
       {handoverData && <HandoverPrintTemplate data={handoverData} />}
+
+      <button
+        onClick={() => setShowEngagementHub(true)}
+        className="fixed bottom-5 right-5 z-[65] rounded-2xl bg-gray-900 text-white px-4 py-2 text-[11px] font-black tracking-wide shadow-xl hover:bg-black"
+      >
+        COMMUNITY HUB
+      </button>
+      <EngagementHub open={showEngagementHub} onClose={() => setShowEngagementHub(false)} />
     </div>
   );
 };
