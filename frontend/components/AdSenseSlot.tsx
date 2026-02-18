@@ -8,12 +8,15 @@ declare global {
 
 const ADSENSE_CLIENT = String(import.meta.env.VITE_ADSENSE_CLIENT || "").trim();
 const ADSENSE_SLOT = String(import.meta.env.VITE_ADSENSE_SLOT || "").trim();
+const VALID_CLIENT = /^ca-pub-\d{16}$/.test(ADSENSE_CLIENT) && ADSENSE_CLIENT !== "ca-pub-0000000000000000";
+const VALID_SLOT = /^\d{8,20}$/.test(ADSENSE_SLOT) && ADSENSE_SLOT !== "1234567890";
+const ADS_READY = VALID_CLIENT && VALID_SLOT;
 
 export default function AdSenseSlot() {
   const pushedRef = useRef(false);
 
   useEffect(() => {
-    if (!ADSENSE_CLIENT || typeof document === "undefined") {
+    if (!ADS_READY || typeof document === "undefined") {
       return;
     }
     if (document.getElementById("honeypot-adsbygoogle-script")) {
@@ -28,7 +31,7 @@ export default function AdSenseSlot() {
   }, []);
 
   useEffect(() => {
-    if (!ADSENSE_CLIENT || !ADSENSE_SLOT || pushedRef.current) {
+    if (!ADS_READY || pushedRef.current) {
       return;
     }
     try {
@@ -39,10 +42,10 @@ export default function AdSenseSlot() {
     }
   }, []);
 
-  if (!ADSENSE_CLIENT || !ADSENSE_SLOT) {
+  if (!ADS_READY) {
     return (
       <div className="rounded-xl border border-dashed border-gray-300 bg-white/80 p-3 text-[11px] text-gray-700">
-        Set `VITE_ADSENSE_CLIENT` and `VITE_ADSENSE_SLOT` to enable AdSense.
+        Sponsored slot is in standby mode. Set valid `VITE_ADSENSE_CLIENT` and `VITE_ADSENSE_SLOT`.
       </div>
     );
   }
