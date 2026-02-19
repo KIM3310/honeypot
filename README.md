@@ -176,6 +176,9 @@ All state-changing requests must include:
 - `Authorization: Bearer <access_token>`
 - `X-CSRF-Token: <csrf_token>`
 
+Read endpoints that expose indexed/document metadata also require:
+- `Authorization: Bearer <access_token>`
+
 ### Auth
 - `POST /api/auth/login`
   - body: `{ "email": "...", "password": "..." }`
@@ -187,9 +190,14 @@ All state-changing requests must include:
 ### Upload
 - `POST /api/upload` (multipart)
   - fields: `file`, optional `index_name`
-- `GET /api/upload/status/{task_id}`
+  - constraints:
+    - file extension must be one of: `txt`, `text`, `md`, `pdf`, `docx`, `py`, `js`, `java`, `c`, `cpp`, `h`, `cs`, `ts`, `tsx`, `html`, `css`, `json`
+    - size limit: `MAX_UPLOAD_BYTES` (default 20MB)
+    - `index_name` format: lowercase letters/numbers/`-`/`_`, 2-63 chars
+- `GET /api/upload/status/{task_id}` (owner/admin only)
 - `GET /api/upload/documents` (optional query: `index_name`)
 - `GET /api/upload/indexes`
+- `GET /api/upload/stats` (optional query: `index_name`)
 
 ### Analyze / Chat
 Frontend sends a message array (OpenAI-style):
@@ -197,6 +205,11 @@ Frontend sends a message array (OpenAI-style):
   - body: `{ "messages": [{ "role": "user", "content": "..." }, ...], "index_name": "..." }`
 - `POST /api/chat`
   - body: `{ "messages": [...], "index_name": "..." }`
+
+### Ops (admin only)
+- `GET /api/ops/metrics`
+- `GET /api/ops/runtime`
+  - includes security store/rate-limit key counts for runtime monitoring
 
 ## Data Flow
 1. Upload (`POST /api/upload`)
@@ -221,9 +234,16 @@ Implementation pointers:
 Implemented (prototype-grade):
 - JWT access token + refresh token
 - CSRF token issued at login; required via `X-CSRF-Token` header
+- CSRF token rotation per state-changing request (response returns next `X-CSRF-Token`)
 - Basic login rate limiting (in-memory per IP)
 - Security headers (`X-Content-Type-Options`, `X-Frame-Options`, etc.)
 - Safe blob naming: use `task_id`-based filenames to avoid OCR failures on non-ASCII/whitespace filenames
+- Upload status ownership checks (`/api/upload/status/{task_id}` is owner/admin scoped)
+- Endpoint-level rate limiting for upload/chat/analyze/read APIs (in-memory sliding window)
+- Runtime security guard: production blocks default JWT secret
+- Security in-memory stores auto-maintained (expired token cleanup + max-size cap)
+- Request metrics use route templates and cap tracked route cardinality (`METRICS_MAX_ROUTES`)
+- Task status store uses lock+TTL+size cap to reduce race/memory risks under concurrent uploads
 
 Not implemented (out of scope for this prototype):
 - Persistent token store / revocation (e.g., Redis)
@@ -276,7 +296,7 @@ If you run into CORS/environment issues, see:
 - Demo mode retrieval is keyword-based (no vector/semantic ranking).
 - Demo mode index is in-memory (resets when the backend restarts).
 - Demo mode report generation / chat are deterministic (no external LLM calls).
-- Token stores (refresh/CSRF) are in-memory for demo purposes.
+- Token stores (refresh/CSRF) are in-memory for demo purposes (restart resets sessions).
 
 ## Glossary (first-time readers)
 - RAG: Retrieval-Augmented Generation

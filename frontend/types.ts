@@ -4,6 +4,10 @@ export interface SourceFile {
   type: string;
   content: string; // base64
   mimeType: string;
+  uploadTaskId?: string;
+  uploadStatus?: "pending" | "processing" | "completed" | "completed_with_warning" | "failed";
+  uploadProgress?: number;
+  uploadMessage?: string;
 }
 
 export interface ChatMessage {

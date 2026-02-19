@@ -1,12 +1,15 @@
 import os
 import time
+import traceback
 import uuid
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
-from app.routers import upload, chat, auth  # ← 추가: auth import
+from app.routers import upload, chat, auth, ops  # ← 추가: auth import
 from app.config import APP_MODE, CONFIG_VALID
+from app.metrics import get_metrics_snapshot, record_request
+from app.security import validate_security_runtime
 
 
 if not CONFIG_VALID:
@@ -15,6 +18,19 @@ if not CONFIG_VALID:
 
 app = FastAPI(title="RAG Chatbot API")
 APP_STARTED_AT = int(time.time())
+
+
+@app.on_event("startup")
+def on_startup() -> None:
+    validate_security_runtime()
+
+
+def get_metrics_route_path(request: Request) -> str:
+    route = request.scope.get("route")
+    route_path = getattr(route, "path", None)
+    if isinstance(route_path, str) and route_path:
+        return route_path
+    return request.url.path
 
 
 # CORS 미들웨어 설정
@@ -74,18 +90,23 @@ async def add_security_headers(request: Request, call_next):
     try:
         response = await call_next(request)
     except Exception as exc:  # noqa: BLE001
+        print(f"❌ Unhandled error request_id={request_id}: {exc}")
+        traceback.print_exc()
         latency_ms = int((time.time() - started) * 1000)
+        record_request(request.method, get_metrics_route_path(request), 500, latency_ms)
         return JSONResponse(
             status_code=500,
             content={
                 "detail": "internal server error",
                 "request_id": request_id,
                 "latency_ms": latency_ms,
-                "error": str(exc),
             },
             headers={"x-request-id": request_id, "cache-control": "no-store"},
         )
     
+    latency_ms = int((time.time() - started) * 1000)
+    record_request(request.method, get_metrics_route_path(request), response.status_code, latency_ms)
+
     # XSS 방지
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-XSS-Protection"] = "1; mode=block"
@@ -109,10 +130,13 @@ async def add_security_headers(request: Request, call_next):
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     request_id = getattr(request.state, "request_id", f"req-{uuid.uuid4().hex[:12]}")
+    headers = dict(exc.headers or {})
+    headers["x-request-id"] = request_id
+    headers["cache-control"] = "no-store"
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail, "request_id": request_id},
-        headers={"x-request-id": request_id, "cache-control": "no-store"},
+        headers=headers,
     )
 
 # ... 기존 라우터 등록 코드 ...
@@ -130,17 +154,23 @@ def root():
 app.include_router(upload.router, prefix="/api/upload", tags=["Upload"])
 app.include_router(chat.router, prefix="/api", tags=["Chat"])
 app.include_router(auth.router)  # ← 추가
+app.include_router(ops.router)
 
 
 # Health check endpoint
 @app.get("/api/health")
 def health_check(request: Request):
+    metrics = get_metrics_snapshot(include_routes=False)
+    totals = metrics.get("totals", {})
     return {
         "status": "ok",
         "mode": APP_MODE,
         "config_valid": CONFIG_VALID,
         "uptime_seconds": max(0, int(time.time()) - APP_STARTED_AT),
         "allowed_origins_count": len(get_allowed_origins()),
+        "requests_total": totals.get("requests", 0),
+        "errors_total": totals.get("errors", 0),
+        "error_rate": totals.get("error_rate", 0.0),
         "request_id": getattr(request.state, "request_id", None),
     }
 

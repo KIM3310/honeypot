@@ -1,9 +1,8 @@
-import { getAuthHeaders } from "../utils/auth";
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import {
   Plus,
   Search,
-  File,
+  File as FileIcon,
   Trash2,
   Image as ImageIcon,
   Archive,
@@ -11,34 +10,48 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { SourceFile } from "../types.ts";
-import { API_ENDPOINTS, fetchWithRetry } from "../config/api";
+import { API_ENDPOINTS } from "../config/api";
 import { getLlmHeaders } from "../utils/llmConfig";
+import { fetchWithSession } from "../services/sessionFetch";
 
 interface Props {
   onIndexChange?: (indexName: string) => void;
   files: SourceFile[];
   onUpload: (newFiles: SourceFile[]) => void;
+  onUpdate: (id: string, patch: Partial<SourceFile>) => void;
   onRemove: (id: string) => void;
 }
 
 const SourceSidebar: React.FC<Props> = ({
   files,
   onUpload,
+  onUpdate,
   onRemove,
   onIndexChange,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMountedRef = useRef(true);
+  const cancelledFileIdsRef = useRef<Set<string>>(new Set());
 
   // RAG 인덱스 선택 (단일 선택)
   const [selectedIndex, setSelectedIndex] = useState<string>("");
   const [availableIndexes, setAvailableIndexes] = useState<string[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const UPLOAD_CONCURRENCY = 2;
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // 백엔드에서 RAG 인덱스 목록 가져오기
   useEffect(() => {
     const fetchIndexes = async () => {
       try {
-        const response = await fetchWithRetry(API_ENDPOINTS.INDEXES);
+        const response = await fetchWithSession(API_ENDPOINTS.INDEXES);
         if (response.ok) {
           const data = await response.json();
           const indexNames = data.indexes.map((idx: any) => idx.name);
@@ -67,63 +80,180 @@ const SourceSidebar: React.FC<Props> = ({
     fetchIndexes();
   }, []);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles: SourceFile[] = [];
-      for (let i = 0; i < e.target.files.length; i++) {
-        const file = e.target.files[i];
-        let content = "";
-
-        // 모든 파일을 백엔드로 업로드 (RAG 파이프라인 처리)
-        const formData = new FormData();
-        formData.append("file", file);
-        // RAG 인덱스 선택 정보 전송
-        if (selectedIndex) {
-          formData.append("index_name", selectedIndex);
-        }
-
-        try {
-          const headers = {
-            ...(getAuthHeaders() as Record<string, string>),
-            ...getLlmHeaders(),
-          };
-          delete headers["Content-Type"]; // FormData는 Content-Type 자동 설정
-
-          console.log(`📤 업로드 시작: ${file.name} → 인덱스: ${selectedIndex || "default"}`);
-          const response = await fetchWithRetry(API_ENDPOINTS.UPLOAD, {
-            method: "POST",
-            headers: headers,
-            body: formData,
-          });
-
-          if (!response.ok) {
-            throw new Error(`Upload failed: ${response.statusText}`);
-          }
-          const data = await response.json();
-          console.log(`✅ 업로드 완료: ${file.name}, task_id: ${data.task_id}`);
-
-          // 백엔드에서 비동기 처리되므로 content는 비워둠
-          content = `[업로드 완료 - 백그라운드 처리 중] Task ID: ${data.task_id}`;
-        } catch (error) {
-          console.error("❌ 파일 업로드 실패:", error);
-          const errorMsg = error instanceof Error ? error.message : String(error);
-          content = `[업로드 중 오류 발생: ${errorMsg}]`;
-          alert(`파일 업로드에 실패했습니다: ${file.name}\n\n${errorMsg}`);
-        }
-
-        newFiles.push({
-          id: Math.random().toString(36).substr(2, 9),
-          name: file.name,
-          type: file.type,
-          content: content,
-          mimeType: file.type,
-        });
+  const pollTaskStatus = async (fileId: string, taskId: string): Promise<void> => {
+    const maxPolls = 120; // about 3 minutes at 1.5s interval
+    for (let i = 0; i < maxPolls; i++) {
+      if (!isMountedRef.current || cancelledFileIdsRef.current.has(fileId)) {
+        return;
       }
-      onUpload(newFiles);
+      try {
+        const response = await fetchWithSession(
+          `${API_ENDPOINTS.UPLOAD}/status/${encodeURIComponent(taskId)}`
+        );
+        if (!response.ok) {
+          throw new Error(`status check failed (${response.status})`);
+        }
+        const data = await response.json();
+        const status = String(data.status || "processing");
+        const progress = Number(data.progress || 0);
+        const message = String(data.message || "");
+
+        if (!isMountedRef.current || cancelledFileIdsRef.current.has(fileId)) {
+          return;
+        }
+
+        onUpdate(fileId, {
+          uploadStatus: status as SourceFile["uploadStatus"],
+          uploadProgress: Math.max(0, Math.min(100, progress)),
+          uploadMessage: message,
+          content: `[${status}] ${message}`,
+        });
+
+        if (status === "completed" || status === "completed_with_warning" || status === "failed") {
+          return;
+        }
+      } catch (error) {
+        if (!isMountedRef.current || cancelledFileIdsRef.current.has(fileId)) {
+          return;
+        }
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        onUpdate(fileId, {
+          uploadStatus: "failed",
+          uploadMessage: `상태 조회 실패: ${errorMsg}`,
+          content: `[failed] 상태 조회 실패: ${errorMsg}`,
+        });
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
+
+    if (!isMountedRef.current || cancelledFileIdsRef.current.has(fileId)) {
+      return;
+    }
+    onUpdate(fileId, {
+      uploadStatus: "failed",
+      uploadMessage: "업로드 상태 확인 시간 초과",
+      content: "[failed] 업로드 상태 확인 시간 초과",
+    });
+  };
+
+  const uploadSingleFile = async (entry: SourceFile, rawFile: globalThis.File): Promise<void> => {
+    const formData = new FormData();
+    formData.append("file", rawFile);
+    if (selectedIndex) {
+      formData.append("index_name", selectedIndex);
+    }
+
+    try {
+      cancelledFileIdsRef.current.delete(entry.id);
+      onUpdate(entry.id, {
+        uploadStatus: "processing",
+        uploadProgress: 5,
+        uploadMessage: "업로드 요청 전송 중...",
+      });
+      console.log(`📤 업로드 시작: ${rawFile.name} → 인덱스: ${selectedIndex || "default"}`);
+
+      const response = await fetchWithSession(API_ENDPOINTS.UPLOAD, {
+        method: "POST",
+        headers: getLlmHeaders(),
+        body: formData,
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(String(payload?.detail || response.statusText || "upload failed"));
+      }
+
+      const taskId = String(payload.task_id || "");
+      if (!taskId) {
+        throw new Error("task_id가 응답에 없습니다.");
+      }
+      console.log(`✅ 업로드 접수: ${rawFile.name}, task_id: ${taskId}`);
+      onUpdate(entry.id, {
+        uploadTaskId: taskId,
+        uploadStatus: "processing",
+        uploadProgress: 10,
+        uploadMessage: "백그라운드 처리 시작",
+        content: `[processing] 업로드 완료 - 백그라운드 처리 중 (Task ID: ${taskId})`,
+      });
+
+      await pollTaskStatus(entry.id, taskId);
+    } catch (error) {
+      if (!isMountedRef.current || cancelledFileIdsRef.current.has(entry.id)) {
+        return;
+      }
+      console.error("❌ 파일 업로드 실패:", error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      onUpdate(entry.id, {
+        uploadStatus: "failed",
+        uploadProgress: 0,
+        uploadMessage: `업로드 실패: ${errorMsg}`,
+        content: `[failed] 업로드 실패: ${errorMsg}`,
+      });
+      alert(`파일 업로드에 실패했습니다: ${rawFile.name}\n\n${errorMsg}`);
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files);
+      const entries: SourceFile[] = selectedFiles.map((file) => ({
+        id: Math.random().toString(36).slice(2, 11),
+        name: file.name,
+        type: file.type,
+        content: "[pending] 업로드 대기 중",
+        mimeType: file.type,
+        uploadStatus: "pending",
+        uploadProgress: 0,
+        uploadMessage: "업로드 대기 중",
+      }));
+      onUpload(entries);
+      const workerCount = Math.min(UPLOAD_CONCURRENCY, entries.length);
+      let cursor = 0;
+      const workers = Array.from({ length: workerCount }, async () => {
+        while (cursor < entries.length) {
+          const current = cursor;
+          cursor += 1;
+          await uploadSingleFile(entries[current], selectedFiles[current]);
+        }
+      });
+      void Promise.all(workers);
+    }
+    e.target.value = "";
+  };
+
   const isImage = (mimeType: string) => mimeType.startsWith("image/");
+
+  const getUploadTone = (status: SourceFile["uploadStatus"]) => {
+    if (status === "completed") return "text-emerald-600";
+    if (status === "completed_with_warning") return "text-amber-600";
+    if (status === "failed") return "text-red-600";
+    return "text-yellow-600";
+  };
+
+  const filteredFiles = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return files;
+    return files.filter((file) => {
+      const haystack = `${file.name} ${file.type} ${file.uploadMessage || ""}`.toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [files, searchQuery]);
+
+  const uploadSummary = useMemo(() => {
+    let pending = 0;
+    let processing = 0;
+    let completed = 0;
+    let failed = 0;
+    for (const file of files) {
+      const status = file.uploadStatus;
+      if (status === "completed" || status === "completed_with_warning") completed += 1;
+      else if (status === "failed") failed += 1;
+      else if (status === "processing") processing += 1;
+      else if (status === "pending") pending += 1;
+    }
+    return { pending, processing, completed, failed };
+  }, [files]);
 
   return (
     <div className="w-80 h-full bg-white border-r flex flex-col p-5 shadow-sm relative overflow-hidden">
@@ -167,6 +297,8 @@ const SourceSidebar: React.FC<Props> = ({
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-yellow-400 w-4 h-4" />
           <input
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="자료 검색..."
             className="w-full pl-11 pr-4 py-3 bg-yellow-50 border border-yellow-100 rounded-2xl text-sm focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none transition-all placeholder:text-yellow-300"
           />
@@ -245,20 +377,32 @@ const SourceSidebar: React.FC<Props> = ({
         </div>
 
         <div className="mt-2 space-y-2 overflow-y-auto pr-1 flex-1 no-scrollbar">
-          {files.length === 0 ? (
+          <div className="mb-2 grid grid-cols-4 gap-2 text-[10px] font-bold">
+            <div className="rounded-lg bg-gray-100 px-2 py-1 text-center text-gray-500">대기 {uploadSummary.pending}</div>
+            <div className="rounded-lg bg-yellow-100 px-2 py-1 text-center text-yellow-700">처리 {uploadSummary.processing}</div>
+            <div className="rounded-lg bg-emerald-100 px-2 py-1 text-center text-emerald-700">완료 {uploadSummary.completed}</div>
+            <div className="rounded-lg bg-red-100 px-2 py-1 text-center text-red-700">실패 {uploadSummary.failed}</div>
+          </div>
+          {filteredFiles.length === 0 ? (
             <div className="text-center py-16 px-6">
               <div className="text-4xl mb-4 grayscale opacity-30">🐝</div>
               <p className="text-gray-400 text-sm font-medium">
-                아직 저장된 자료가 없어요.
+                {files.length === 0 ? "아직 저장된 자료가 없어요." : "검색 결과가 없습니다."}
               </p>
               <p className="text-gray-300 text-xs mt-1">
-                업무 매뉴얼이나 보고서를
-                <br />
-                추가해 보세요!
+                {files.length === 0 ? (
+                  <>
+                    업무 매뉴얼이나 보고서를
+                    <br />
+                    추가해 보세요!
+                  </>
+                ) : (
+                  <>다른 검색어로 다시 시도해 보세요.</>
+                )}
               </p>
             </div>
           ) : (
-            files.map((file) => (
+            filteredFiles.map((file) => (
               <div
                 key={file.id}
                 className="group flex items-center gap-3 p-3 bg-gray-50 hover:bg-yellow-50 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-yellow-100 shadow-sm hover:shadow-md"
@@ -267,7 +411,7 @@ const SourceSidebar: React.FC<Props> = ({
                   {isImage(file.mimeType) ? (
                     <ImageIcon className="w-4 h-4 text-yellow-500" />
                   ) : (
-                    <File className="w-4 h-4 text-yellow-500" />
+                    <FileIcon className="w-4 h-4 text-yellow-500" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -277,10 +421,26 @@ const SourceSidebar: React.FC<Props> = ({
                   <p className="text-[10px] text-yellow-500 font-bold uppercase">
                     {file.type.split("/")[1] || "FILE"}
                   </p>
+                  {file.uploadStatus && (
+                    <div className="mt-1.5">
+                      <p className={`text-[10px] font-bold ${getUploadTone(file.uploadStatus)}`}>
+                        {file.uploadMessage || file.uploadStatus}
+                      </p>
+                      {(file.uploadStatus === "pending" || file.uploadStatus === "processing") && (
+                        <div className="mt-1 h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
+                          <div
+                            className="h-full bg-yellow-400 transition-all duration-300"
+                            style={{ width: `${Math.max(5, Math.min(100, file.uploadProgress || 0))}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    cancelledFileIdsRef.current.add(file.id);
                     onRemove(file.id);
                   }}
                   className="opacity-0 group-hover:opacity-100 p-2 text-gray-300 hover:text-red-500 transition-all rounded-lg hover:bg-white"

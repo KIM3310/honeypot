@@ -9,7 +9,8 @@ import {
   Info,
 } from "lucide-react";
 import { ChatMessage, ViewMode, SourceFile, ChatSession } from "../types";
-import { API_ENDPOINTS, fetchWithRetry } from "../config/api";
+import { API_ENDPOINTS } from "../config/api";
+import { fetchWithSession } from "../services/sessionFetch";
 
 interface Props {
   messages: ChatMessage[];
@@ -77,8 +78,9 @@ const ChatWindow: React.FC<Props> = ({
     const fetchStats = async () => {
       try {
         const indexName = selectedRagIndex || "documents-index";
-        const response = await fetchWithRetry(
-          `${API_ENDPOINTS.STATS}?index_name=${encodeURIComponent(indexName)}`
+        const response = await fetchWithSession(
+          `${API_ENDPOINTS.STATS}?index_name=${encodeURIComponent(indexName)}`,
+          {}
         );
         if (response.ok) {
           const data = await response.json();

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Form, Depends, Request
-from app.security import get_current_user, verify_csrf_token
+from fastapi.responses import JSONResponse
+from app.security import get_current_user, verify_and_rotate_csrf_from_request, enforce_api_rate_limit
 from app.config import APP_MODE, is_demo_mode
 from app.services.blob_service import upload_to_blob, save_processed_json
 from app.services.document_service import extract_text_from_url, extract_text_from_docx
@@ -7,6 +8,8 @@ from app.services.search_service import add_document_to_index, get_document_coun
 import uuid
 import traceback
 from typing import Optional
+import os
+import re
 from app.state import task_manager
 from app.services.openai_service import analyze_text_for_search
 from app.services.search_service import index_processed_chunks
@@ -14,6 +17,63 @@ from app.services.llm_override import LLMOverrideConfig, parse_llm_override_from
 import json
 
 router = APIRouter()
+
+MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(20 * 1024 * 1024)))
+MAX_FILENAME_LENGTH = 255
+INDEX_NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{1,62}$")
+ALLOWED_UPLOAD_EXTENSIONS = {
+    "txt",
+    "text",
+    "md",
+    "pdf",
+    "docx",
+    "py",
+    "js",
+    "java",
+    "c",
+    "cpp",
+    "h",
+    "cs",
+    "ts",
+    "tsx",
+    "html",
+    "css",
+    "json",
+}
+
+
+def normalize_index_name(index_name: Optional[str]) -> Optional[str]:
+    raw = (index_name or "").strip()
+    if not raw:
+        return None
+    normalized = raw.lower()
+    if not INDEX_NAME_PATTERN.match(normalized):
+        raise HTTPException(
+            status_code=400,
+            detail="index_name 형식이 유효하지 않습니다. (영문 소문자/숫자/`-`/`_`, 2~63자)",
+        )
+    return normalized
+
+
+def validate_upload_input(file_name: str, file_data: bytes, file_ext: str) -> None:
+    if not file_name:
+        raise HTTPException(status_code=400, detail="파일명이 비어 있습니다.")
+    if len(file_name) > MAX_FILENAME_LENGTH:
+        raise HTTPException(status_code=400, detail=f"파일명 길이는 {MAX_FILENAME_LENGTH}자를 초과할 수 없습니다.")
+
+    if len(file_data) <= 0:
+        raise HTTPException(status_code=400, detail="빈 파일은 업로드할 수 없습니다.")
+    if len(file_data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"파일 크기 제한({MAX_UPLOAD_BYTES // (1024 * 1024)}MB)을 초과했습니다.",
+        )
+
+    if file_ext not in ALLOWED_UPLOAD_EXTENSIONS:
+        raise HTTPException(
+            status_code=415,
+            detail=f"지원하지 않는 파일 형식입니다: .{file_ext or 'unknown'}",
+        )
 
 # --- Async File Processing Pipeline ---
 
@@ -208,14 +268,14 @@ async def upload_document(
     index_name: str = Form(None),
     user: dict = Depends(get_current_user)
 ):
-    # CSRF 검증 추가
-    csrf_token = request.headers.get("X-CSRF-Token")
-    if not csrf_token:
-        raise HTTPException(
-            status_code=403,
-            detail="CSRF Token이 필요합니다."
-        )
-    verify_csrf_token(csrf_token, user['email'])
+    new_csrf_token = verify_and_rotate_csrf_from_request(request, user["email"])
+    enforce_api_rate_limit(
+        request,
+        bucket="upload-post",
+        limit=20,
+        window_seconds=60,
+        user_email=user.get("email"),
+    )
     """
     파일 업로드 엔드포인트 (비동기 처리)
     파일을 받자마자 task_id를 리턴하고, 백그라운드에서 처리 시작.
@@ -225,19 +285,21 @@ async def upload_document(
         index_name: RAG 인덱스 이름 (선택 사항, 지정하지 않으면 기본 인덱스)
     """
     try:
+        normalized_index_name = normalize_index_name(index_name)
         llm_override = parse_llm_override_from_request(request)
         # 1. 파일 데이터 읽기 (메모리)
         file_data = await file.read()
         file_name = file.filename
         file_ext = file_name.lower().split('.')[-1] if '.' in file_name else ''
+        validate_upload_input(file_name, file_data, file_ext)
 
         # 2. Task 생성
         task_id = str(uuid.uuid4())
-        task_manager.create_task(task_id)
+        task_manager.create_task(task_id, owner_email=user.get("email", ""))
 
         # 3. 백그라운드 작업 등록
         print(
-            f"📋 Upload request: file={file_name}, index={index_name or 'default'}, "
+            f"📋 Upload request: file={file_name}, index={normalized_index_name or 'default'}, "
             f"llm={summarize_override_for_log(llm_override)}"
         )
         background_tasks.add_task(
@@ -246,37 +308,72 @@ async def upload_document(
             file_name,
             file_data,
             file_ext,
-            index_name,
+            normalized_index_name,
             llm_override,
         )
 
-        return {
-            "message": "Upload started",
-            "task_id": task_id,
-            "file_name": file_name,
-            "index_name": index_name or "default"
-        }
+        return JSONResponse(
+            content={
+                "message": "Upload started",
+                "task_id": task_id,
+                "file_name": file_name,
+                "index_name": normalized_index_name or "default",
+            },
+            headers={"X-CSRF-Token": new_csrf_token},
+        )
+
+    except HTTPException as exc:
+        headers = dict(exc.headers or {})
+        headers["X-CSRF-Token"] = new_csrf_token
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail, headers=headers)
         
     except Exception as e:
         print(f"❌ Upload request failed: {e}")
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail="파일 업로드 요청 처리 중 오류가 발생했습니다.",
+            headers={"X-CSRF-Token": new_csrf_token},
+        )
 
 
 @router.get("/status/{task_id}")
-async def get_task_status(task_id: str):
+async def get_task_status(request: Request, task_id: str, user: dict = Depends(get_current_user)):
     """백그라운드 작업 상태 조회"""
-    task = task_manager.get_task(task_id)
-    if not task:
+    enforce_api_rate_limit(
+        request,
+        bucket="upload-status",
+        limit=300,
+        window_seconds=60,
+        user_email=user.get("email"),
+    )
+    task = task_manager.get_task(task_id, include_private=True)
+    if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
-    return task
+
+    email = user.get("email")
+    role = user.get("role")
+    if role != "admin" and task.get("owner_email") != email:
+        raise HTTPException(status_code=403, detail="해당 작업에 접근할 권한이 없습니다.")
+
+    safe_task = dict(task)
+    safe_task.pop("owner_email", None)
+    return safe_task
 
 
 
 @router.get("/stats")
-async def get_stats(index_name: str = "documents-index"):
+async def get_stats(request: Request, index_name: str = "documents-index", _user: dict = Depends(get_current_user)):
     """시스템 통계 조회 - 최근 업로드 갯수, 인덱스 문서 갯수"""
     try:
+        enforce_api_rate_limit(
+            request,
+            bucket="upload-stats",
+            limit=120,
+            window_seconds=60,
+            user_email=_user.get("email"),
+        )
+        index_name = normalize_index_name(index_name) or "documents-index"
         doc_count = get_document_count(index_name)
         print(f"📊 시스템 통계: {doc_count}개 문서 인덱싱됨")
         
@@ -298,9 +395,17 @@ async def get_stats(index_name: str = "documents-index"):
         }
 
 @router.get("/documents")
-async def list_documents(index_name: str = "documents-index"):
+async def list_documents(request: Request, index_name: str = "documents-index", _user: dict = Depends(get_current_user)):
     """AI Search 인덱스에 저장된 모든 문서 목록 조회 - 실제 content 포함"""
     try:
+        enforce_api_rate_limit(
+            request,
+            bucket="upload-documents",
+            limit=120,
+            window_seconds=60,
+            user_email=_user.get("email"),
+        )
+        index_name = normalize_index_name(index_name) or "documents-index"
         if is_demo_mode():
             from app.services import demo_store
 
@@ -351,9 +456,16 @@ async def list_documents(index_name: str = "documents-index"):
         }
 
 @router.get("/indexes")
-async def list_indexes():
+async def list_indexes(request: Request, _user: dict = Depends(get_current_user)):
     """사용 가능한 모든 RAG 인덱스 목록 조회"""
     try:
+        enforce_api_rate_limit(
+            request,
+            bucket="upload-indexes",
+            limit=120,
+            window_seconds=60,
+            user_email=_user.get("email"),
+        )
         if is_demo_mode():
             from app.services import demo_store
 
