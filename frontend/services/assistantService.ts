@@ -4,12 +4,20 @@ import {
   getRefreshToken,
   removeAllTokens,
   removeCsrfToken,
+  setCsrfToken,
   setToken,
 } from "../utils/auth";
 import { getLlmHeaders } from "../utils/llmConfig";
 import { HandoverData, SourceFile } from "../types";
 
 type ChatHistoryMessage = { role: string; text: string };
+
+function applyCsrfFromResponse(response: Response): void {
+  const nextCsrf = response.headers.get("X-CSRF-Token");
+  if (nextCsrf) {
+    setCsrfToken(nextCsrf);
+  }
+}
 
 function tryParseJson(value: string): unknown {
   try {
@@ -42,8 +50,12 @@ async function refreshAccessToken(): Promise<string | null> {
 
   const data = await response.json().catch(() => ({}));
   const newAccessToken = data?.access_token;
+  const refreshedCsrf = data?.csrf_token;
   if (typeof newAccessToken === "string" && newAccessToken) {
     setToken(newAccessToken);
+    if (typeof refreshedCsrf === "string" && refreshedCsrf) {
+      setCsrfToken(refreshedCsrf);
+    }
     return newAccessToken;
   }
   return null;
@@ -51,6 +63,7 @@ async function refreshAccessToken(): Promise<string | null> {
 
 async function postJsonWithAuth(url: string, payload: unknown): Promise<unknown> {
   const body = JSON.stringify(payload);
+  let retriedAfterRefresh = false;
 
   const fetchOnce = async (headers: Record<string, string>) => {
     const controller = new AbortController();
@@ -79,6 +92,7 @@ async function postJsonWithAuth(url: string, payload: unknown): Promise<unknown>
     ...getLlmHeaders(),
   };
   let response = await fetchOnce(baseHeaders);
+  applyCsrfFromResponse(response);
 
   if (response.status === 429) {
     const retryAfter = response.headers.get("Retry-After");
@@ -90,8 +104,19 @@ async function postJsonWithAuth(url: string, payload: unknown): Promise<unknown>
   }
 
   if (response.status === 403) {
-    removeCsrfToken();
-    throw new Error("Security validation failed. Please sign in again.");
+    const newAccessToken = await refreshAccessToken();
+    if (newAccessToken && !retriedAfterRefresh) {
+      retriedAfterRefresh = true;
+      const retryHeaders = {
+        ...(getAuthHeaders() as Record<string, string>),
+        ...getLlmHeaders(),
+      };
+      response = await fetchOnce(retryHeaders);
+      applyCsrfFromResponse(response);
+    } else {
+      removeCsrfToken();
+      throw new Error("Security validation failed. Please sign in again.");
+    }
   }
 
   if (response.status === 401) {
@@ -102,6 +127,7 @@ async function postJsonWithAuth(url: string, payload: unknown): Promise<unknown>
         ...getLlmHeaders(),
       };
       response = await fetchOnce(retryHeaders);
+      applyCsrfFromResponse(response);
     }
   }
 

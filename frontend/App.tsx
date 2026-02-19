@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
-  isAuthenticated,
-  removeToken,
-  getUserInfo,
-  isTokenExpired,
+  removeAllTokens,
   getTokenExpiresIn,
-  getAuthHeaders, // ← 추가
 } from "./utils/auth";
 import SourceSidebar from "./components/SourceSidebar";
 import ChatWindow from "./components/ChatWindow";
@@ -25,8 +21,9 @@ import {
   analyzeFilesForHandover,
   chatWithAssistant,
 } from "./services/assistantService";
-import { API_ENDPOINTS, fetchWithRetry } from "./config/api";
+import { API_ENDPOINTS } from "./config/api";
 import { HandoverPrintTemplate } from "./components/HandoverPrintTemplate";
+import { fetchWithSession } from "./services/sessionFetch";
 
 const STORAGE_KEY_SESSIONS = "honeycomb_chat_sessions";
 const STORAGE_KEY_CURRENT_SESSION = "honeycomb_current_session";
@@ -45,21 +42,6 @@ const App: React.FC = () => {
   const [selectedRagIndex, setSelectedRagIndex] =
     useState<string>("documents-index");
   const [showEngagementHub, setShowEngagementHub] = useState(false);
-
-  // 토큰 시간 state
-  const [tokenExpiresIn, setTokenExpiresIn] = useState(0);
-
-  useEffect(() => {
-    if (!isLoggedIn) return;
-
-    // 매초 업데이트
-    const interval = setInterval(() => {
-      const remaining = getTokenExpiresIn();
-      setTokenExpiresIn(remaining);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isLoggedIn]);
 
   // localStorage에서 세션 로드
   useEffect(() => {
@@ -113,8 +95,6 @@ const App: React.FC = () => {
     }
   }, [currentSessionId, chatSessions]);
 
-  // ✅ 추가할 코드: App.tsx 맨 아래 useEffect
-
   useEffect(() => {
     if (!isLoggedIn) return;
 
@@ -124,7 +104,7 @@ const App: React.FC = () => {
 
       if (remainingSeconds <= 0) {
         console.log("⚠️ 토큰 만료됨! 자동 로그아웃합니다.");
-        removeToken();
+        removeAllTokens();
         setIsLoggedIn(false);
         alert("세션이 만료되었습니다. 다시 로그인해주세요.");
       } else if (remainingSeconds < 300) {
@@ -151,7 +131,15 @@ const App: React.FC = () => {
     setFiles((prev) => [...prev, ...newFiles]);
   };
 
-  const handleFileRemove = (id: string) => {};
+  const handleFileUpdate = (id: string, patch: Partial<SourceFile>) => {
+    setFiles((prev) =>
+      prev.map((file) => (file.id === id ? { ...file, ...patch } : file))
+    );
+  };
+
+  const handleFileRemove = (id: string) => {
+    setFiles((prev) => prev.filter((file) => file.id !== id));
+  };
 
   const handleIndexChange = (indexName: string) => {
     setSelectedRagIndex(indexName);
@@ -218,31 +206,30 @@ const App: React.FC = () => {
   const handleGenerateHandover = async () => {
     setIsProcessing(true);
     try {
-      let filesToAnalyze = files;
+      let filesToAnalyze = files.filter(
+        (file) =>
+          !file.uploadStatus ||
+          file.uploadStatus === "completed" ||
+          file.uploadStatus === "completed_with_warning"
+      );
 
       // 업로드된 파일이 없으면 AI Search 인덱스에서 문서 가져오기
-      if (files.length === 0) {
+      if (files.length > 0 && filesToAnalyze.length === 0) {
+        alert("업로드 작업이 아직 진행 중입니다. 상태가 완료된 뒤 다시 시도해주세요.");
+        setIsProcessing(false);
+        return;
+      }
+
+      if (filesToAnalyze.length === 0) {
         console.log(
           "📚 업로드된 파일이 없음 - AI Search 인덱스에서 문서 조회..."
         );
         try {
           const indexName = selectedRagIndex || "documents-index";
-          const response = await fetchWithRetry(
+          const response = await fetchWithSession(
             `${API_ENDPOINTS.DOCUMENTS}?index_name=${encodeURIComponent(indexName)}`,
-            {
-              headers: getAuthHeaders(), // ← 토큰 포함
-            }
+            {}
           );
-
-          // ✅ 401 에러 처리 추가
-          if (response.status === 401) {
-            console.error("⚠️ 토큰 만료됨");
-            removeToken();
-            setIsLoggedIn(false);
-            alert("세션이 만료되었습니다. 다시 로그인해주세요.");
-            window.location.href = "/";
-            return;
-          }
           if (response.ok) {
             const data = await response.json();
             if (data.documents && data.documents.length > 0) {
@@ -317,6 +304,7 @@ const App: React.FC = () => {
         <SourceSidebar
           files={files}
           onUpload={handleFileUpload}
+          onUpdate={handleFileUpdate}
           onRemove={handleFileRemove}
           onIndexChange={handleIndexChange}
         />

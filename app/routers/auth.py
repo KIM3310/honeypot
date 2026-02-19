@@ -9,7 +9,6 @@ from pydantic import BaseModel
 
 from app.security import (
     CSRF_TOKEN_EXPIRE_MINUTES,
-    ISSUED_REFRESH_TOKENS,
     JWT_ALGORITHM,
     JWT_EXPIRE_HOURS,
     JWT_REFRESH_EXPIRE_HOURS,
@@ -20,8 +19,11 @@ from app.security import (
     create_access_token,
     create_csrf_token,
     create_refresh_token,
+    enforce_api_rate_limit,
     get_client_ip,
     invalidate_csrf_token,
+    is_refresh_token_issued,
+    revoke_refresh_token,
     verify_csrf_token,
     verify_token,
 )
@@ -55,6 +57,8 @@ class RefreshTokenResponse(BaseModel):
     access_token: str
     token_type: str
     expires_in: int
+    csrf_token: str
+    csrf_expires_in: int
 
 
 class LogoutRequest(BaseModel):
@@ -109,10 +113,16 @@ async def login(request: Request, login_request: LoginRequest):
 
 
 @router.post("/refresh", response_model=RefreshTokenResponse)
-async def refresh_access_token(request: RefreshTokenRequest):
-    refresh_token = request.refresh_token
+async def refresh_access_token(payload: RefreshTokenRequest, request: Request):
+    enforce_api_rate_limit(
+        request,
+        bucket="auth-refresh",
+        limit=120,
+        window_seconds=60,
+    )
+    refresh_token = payload.refresh_token
 
-    if refresh_token not in ISSUED_REFRESH_TOKENS:
+    if not is_refresh_token_issued(refresh_token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="유효하지 않은 Refresh Token입니다.",
@@ -122,7 +132,7 @@ async def refresh_access_token(request: RefreshTokenRequest):
     try:
         payload = jwt.decode(refresh_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     except jwt.ExpiredSignatureError:
-        ISSUED_REFRESH_TOKENS.pop(refresh_token, None)
+        revoke_refresh_token(refresh_token)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh Token이 만료되었습니다. 다시 로그인해주세요.",
@@ -150,17 +160,20 @@ async def refresh_access_token(request: RefreshTokenRequest):
 
     user = MOCK_USERS[email]
     new_access_token = create_access_token(email=email, name=user["name"], role=user["role"])
+    csrf_token = create_csrf_token(email)
 
     return RefreshTokenResponse(
         access_token=new_access_token,
         token_type="bearer",
         expires_in=int(JWT_EXPIRE_HOURS * 3600),
+        csrf_token=csrf_token,
+        csrf_expires_in=int(CSRF_TOKEN_EXPIRE_MINUTES * 60),
     )
 
 
 @router.post("/logout")
 async def logout(request: LogoutRequest):
-    ISSUED_REFRESH_TOKENS.pop(request.refresh_token, None)
+    revoke_refresh_token(request.refresh_token)
     return {"message": "로그아웃 되었습니다."}
 
 
@@ -230,4 +243,3 @@ def verify_csrf_header(
     verify_csrf_token(csrf_token_from_header, email)
     invalidate_csrf_token(csrf_token_from_header)
     return True
-
