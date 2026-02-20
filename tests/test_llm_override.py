@@ -3,7 +3,7 @@ from typing import Dict, Optional
 
 from fastapi import Request
 
-from app.services.llm_override import parse_llm_override_from_request
+from app.services.llm_override import LOCAL_OVERRIDE_API_KEY, parse_llm_override_from_request
 
 
 def _build_request(headers: Optional[Dict[str, str]] = None) -> Request:
@@ -28,6 +28,30 @@ def _build_request(headers: Optional[Dict[str, str]] = None) -> Request:
 class TestLlmOverride(unittest.TestCase):
     def test_returns_none_when_api_key_header_missing(self) -> None:
         request = _build_request()
+        self.assertIsNone(parse_llm_override_from_request(request))
+
+    def test_allows_local_override_without_api_key(self) -> None:
+        request = _build_request(
+            {
+                "X-LLM-Model": "llama3.2:latest",
+                "X-LLM-Base-URL": "127.0.0.1:11434/v1",
+            }
+        )
+        cfg = parse_llm_override_from_request(request)
+
+        self.assertIsNotNone(cfg)
+        assert cfg is not None
+        self.assertEqual(cfg.api_key, LOCAL_OVERRIDE_API_KEY)
+        self.assertEqual(cfg.model, "llama3.2:latest")
+        self.assertEqual(cfg.base_url, "http://127.0.0.1:11434/v1")
+
+    def test_rejects_external_base_url_without_api_key(self) -> None:
+        request = _build_request(
+            {
+                "X-LLM-Model": "gpt-4o-mini",
+                "X-LLM-Base-URL": "api.openai.com/v1",
+            }
+        )
         self.assertIsNone(parse_llm_override_from_request(request))
 
     def test_parses_headers_and_normalizes_base_url(self) -> None:

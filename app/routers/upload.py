@@ -40,6 +40,12 @@ ALLOWED_UPLOAD_EXTENSIONS = {
     "css",
     "json",
 }
+DEMO_LLM_PREPROCESS_ENABLED = os.getenv("DEMO_LLM_PREPROCESS", "false").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 
 
 def normalize_index_name(index_name: Optional[str]) -> Optional[str]:
@@ -135,7 +141,9 @@ async def process_file_background(
                 return
 
             file_type = "code" if file_ext in ['py', 'js', 'java', 'cpp', 'ts', 'tsx', 'cs'] else "doc"
-            if llm_override:
+            # Keep demo uploads deterministic/fast by default.
+            # User LLM preprocess can be enabled explicitly via DEMO_LLM_PREPROCESS=true.
+            if llm_override and DEMO_LLM_PREPROCESS_ENABLED:
                 task_manager.update_task(task_id, progress=60, message="[Demo mode] Preprocessing with user LLM...")
                 chunks = analyze_text_for_search(
                     extracted_text,
@@ -144,7 +152,7 @@ async def process_file_background(
                     llm_override=llm_override,
                 )
             else:
-                task_manager.update_task(task_id, progress=60, message="[Demo mode] Preprocessing (chunking)...")
+                task_manager.update_task(task_id, progress=60, message="[Demo mode] Preprocessing (deterministic chunking)...")
                 chunks = build_demo_chunks(extracted_text, file_name, file_type=file_type)
             if not chunks:
                 task_manager.update_task(task_id, status="failed", message="[Demo mode] Preprocessing failed (no chunks).")

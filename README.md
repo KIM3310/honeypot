@@ -86,6 +86,11 @@ This project uses "model role separation" to reduce failure modes and cost:
 - Provider: Azure OpenAI (configurable deployment)
 - Goal: higher answer quality and consistent schema output
 
+3) Optional local provider override (BYO LLM)
+- Provider: any OpenAI-compatible endpoint (for example, Ollama local)
+- Goal: run real LLM inference in local demo without cloud keys
+- Scope: per-request override via headers from the frontend BYO LLM panel
+
 Configuration is controlled by `proto.env`:
 - `GEMINI_MODEL` (preprocess)
 - `AZURE_OPENAI_CHAT_DEPLOYMENT` (generate report, chat)
@@ -128,6 +133,8 @@ Demo mode (no cloud keys):
 - You can run the full UI end-to-end without Azure/Gemini credentials.
 - If `proto.env` is missing or incomplete, the backend auto-falls back to `APP_MODE=demo`.
 - Demo mode supports: `txt`, `md`, code files, and `docx` uploads (PDF/images require live mode).
+- Upload preprocessing is deterministic by default in demo mode (stable/faster local flow).
+- To force user LLM preprocessing during upload, set `DEMO_LLM_PREPROCESS=true`.
 
 Live mode (Azure/OpenAI/Search/Gemini):
 Create `proto.env`:
@@ -164,6 +171,22 @@ npm run dev
 
 Open:
 - `http://localhost:5173`
+
+### 3) Optional: Ollama local demo path (no cloud key)
+Run Ollama locally:
+```bash
+ollama pull llama3.2
+ollama serve
+```
+
+Then in the web UI:
+- Open `BYO LLM` panel
+- Click `Ollama 빠른 연결`
+- Keep API key empty (local mode supports no-key override)
+- Run upload/analyze/chat as usual
+
+Default local endpoint:
+- `http://127.0.0.1:11434/v1`
 
 ### Demo Accounts
 For the local prototype login:
@@ -205,6 +228,11 @@ Frontend sends a message array (OpenAI-style):
   - body: `{ "messages": [{ "role": "user", "content": "..." }, ...], "index_name": "..." }`
 - `POST /api/chat`
   - body: `{ "messages": [...], "index_name": "..." }`
+
+Optional request headers for BYO LLM:
+- `X-LLM-Api-Key` (optional for local endpoints like Ollama)
+- `X-LLM-Model`
+- `X-LLM-Base-URL` (example: `http://127.0.0.1:11434/v1`)
 
 ### Ops (admin only)
 - `GET /api/ops/metrics`
