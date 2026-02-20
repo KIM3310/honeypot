@@ -14,6 +14,8 @@ azure-keyvault-secrets==4.7.0
 
 # AI & LLM
 openai==1.12.0
+# openai==1.12.0 passes `proxies=` to httpx.Client; pin below 0.28 for compatibility.
+httpx<0.28
 
 # File Processing
 python-multipart==0.0.6
