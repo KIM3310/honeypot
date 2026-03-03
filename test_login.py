@@ -1,22 +1,27 @@
-"""
-Manual login smoke check for a locally running backend.
+"""Manual login check script.
 
-This file is intentionally executable as a script, and has no import-time side effects
-so it won't break automated pytest runs.
+This file is intentionally not a pytest test module.
+Run directly:
+  python test_login.py
 """
+
+from __future__ import annotations
 
 import requests
 
 
-def main() -> None:
+def run_manual_login_check(base_url: str = "http://localhost:8000") -> dict:
     response = requests.post(
-        "http://localhost:8000/api/auth/login",
+        f"{base_url}/api/auth/login",
         json={"email": "user1@company.com", "password": "password123"},
-        timeout=5,
+        timeout=10,
     )
     response.raise_for_status()
-    print(response.json())
+    return response.json()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        print(run_manual_login_check())
+    except Exception as exc:  # pragma: no cover - manual utility output
+        print({"ok": False, "error": str(exc)})
