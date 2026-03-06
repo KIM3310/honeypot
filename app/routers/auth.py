@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 import jwt
@@ -207,10 +207,11 @@ async def validate_token(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="토큰 검증 실패")
 
     try:
-        remaining_seconds = int(exp_timestamp - datetime.utcnow().timestamp())
+        remaining_seconds = int(exp_timestamp - datetime.now(timezone.utc).timestamp())
     except TypeError:
         # If exp was parsed as datetime by a different issuer, best-effort conversion.
-        remaining_seconds = int((exp_timestamp - datetime.utcnow()).total_seconds())
+        expiry_dt = exp_timestamp if exp_timestamp.tzinfo else exp_timestamp.replace(tzinfo=timezone.utc)
+        remaining_seconds = int((expiry_dt - datetime.now(timezone.utc)).total_seconds())
 
     return {
         "valid": True,

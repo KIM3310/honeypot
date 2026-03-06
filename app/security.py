@@ -4,7 +4,7 @@ import os
 import secrets
 import threading
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import time
 from typing import Optional
 
@@ -68,10 +68,16 @@ MOCK_USERS = {
 }
 
 
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 def _safe_datetime(value: object) -> datetime:
     if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
         return value
-    return datetime.min
+    return datetime.min.replace(tzinfo=timezone.utc)
 
 
 def _cleanup_token_store(store: dict[str, dict], *, now_dt: datetime, max_items: int) -> None:
@@ -126,7 +132,7 @@ def run_security_maintenance(*, force: bool = False) -> None:
     if not force and now_ts - _LAST_SECURITY_CLEANUP_TS < SECURITY_CLEANUP_INTERVAL_SECONDS:
         return
 
-    now_dt = datetime.utcnow()
+    now_dt = _utcnow()
     with _STORE_LOCK:
         if not force and now_ts - _LAST_SECURITY_CLEANUP_TS < SECURITY_CLEANUP_INTERVAL_SECONDS:
             return
@@ -243,12 +249,12 @@ def validate_security_runtime() -> None:
 def create_csrf_token(email: str) -> str:
     run_security_maintenance()
     token = secrets.token_urlsafe(32)
-    expire = datetime.utcnow() + timedelta(minutes=CSRF_TOKEN_EXPIRE_MINUTES)
+    expire = _utcnow() + timedelta(minutes=CSRF_TOKEN_EXPIRE_MINUTES)
     with _STORE_LOCK:
         ISSUED_CSRF_TOKENS[token] = {
             "email": email,
             "exp": expire,
-            "created_at": datetime.utcnow(),
+            "created_at": _utcnow(),
         }
     return token
 
@@ -264,7 +270,7 @@ def verify_csrf_token(token: str, email: str) -> bool:
 
         csrf_data = ISSUED_CSRF_TOKENS[token]
 
-        if datetime.utcnow() > csrf_data["exp"]:
+        if _utcnow() > _safe_datetime(csrf_data["exp"]):
             ISSUED_CSRF_TOKENS.pop(token, None)
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -309,21 +315,21 @@ def verify_and_rotate_csrf_from_request(request: Request, email: str) -> str:
 
 
 def create_access_token(email: str, name: str, role: str) -> str:
-    expire = datetime.utcnow() + timedelta(hours=JWT_EXPIRE_HOURS)
+    expire = _utcnow() + timedelta(hours=JWT_EXPIRE_HOURS)
     to_encode = {"email": email, "name": name, "role": role, "exp": expire}
     return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
 def create_refresh_token(email: str) -> str:
     run_security_maintenance()
-    expire = datetime.utcnow() + timedelta(hours=JWT_REFRESH_EXPIRE_HOURS)
+    expire = _utcnow() + timedelta(hours=JWT_REFRESH_EXPIRE_HOURS)
     to_encode = {"email": email, "type": "refresh", "exp": expire}
     token = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
     with _STORE_LOCK:
         ISSUED_REFRESH_TOKENS[token] = {
             "email": email,
             "exp": expire,
-            "created_at": datetime.utcnow(),
+            "created_at": _utcnow(),
         }
     return token
 
