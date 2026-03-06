@@ -23,6 +23,8 @@ class TestSmoke(unittest.TestCase):
         self.assertEqual(payload["service"], "honeypot")
         self.assertEqual(payload["links"]["ops_runtime"], "/api/ops/runtime")
         self.assertIn("security-guardrails", payload["capabilities"])
+        self.assertEqual(payload["ops_contract"]["schema"], "ops-envelope-v1")
+        self.assertIn("next_action", payload["diagnostics"])
 
 
 if __name__ == "__main__":
