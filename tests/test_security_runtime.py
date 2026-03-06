@@ -1,6 +1,6 @@
 import os
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import time
 from unittest.mock import patch
 
@@ -65,7 +65,7 @@ class TestSecurityRuntime(unittest.TestCase):
         self.assertIn("Retry-After", ctx.exception.headers or {})
 
     def test_security_maintenance_prunes_expired_csrf_tokens(self) -> None:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         security.ISSUED_CSRF_TOKENS["expired"] = {
             "email": "user@test.com",
             "exp": now - timedelta(minutes=1),

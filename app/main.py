@@ -2,6 +2,7 @@ import os
 import time
 import traceback
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,13 +17,16 @@ if not CONFIG_VALID:
     print("⚠️ Live cloud config is incomplete. Running in demo mode by default.")
 
 
-app = FastAPI(title="RAG Chatbot API")
 APP_STARTED_AT = int(time.time())
 
 
-@app.on_event("startup")
-def on_startup() -> None:
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
     validate_security_runtime()
+    yield
+
+
+app = FastAPI(title="RAG Chatbot API", lifespan=lifespan)
 
 
 def get_metrics_route_path(request: Request) -> str:

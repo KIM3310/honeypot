@@ -4,7 +4,19 @@ from __future__ import annotations
 
 import os
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _coerce_utc(value: datetime | None) -> datetime:
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
+    return datetime.min.replace(tzinfo=timezone.utc)
 
 
 class TaskManager:
@@ -20,7 +32,7 @@ class TaskManager:
         if not self.tasks:
             return
 
-        now = datetime.utcnow()
+        now = _utcnow()
         ttl = timedelta(minutes=max(5, self.TASK_TTL_MINUTES))
 
         expired = []
@@ -28,7 +40,7 @@ class TaskManager:
             updated_at = task.get("updated_at") or task.get("created_at")
             if not isinstance(updated_at, datetime):
                 continue
-            if now - updated_at > ttl:
+            if now - _coerce_utc(updated_at) > ttl:
                 expired.append(task_id)
 
         for task_id in expired:
@@ -40,7 +52,7 @@ class TaskManager:
         # Keep most recently updated tasks.
         items = sorted(
             self.tasks.items(),
-            key=lambda kv: kv[1].get("updated_at") or kv[1].get("created_at") or datetime.min,
+            key=lambda kv: _coerce_utc(kv[1].get("updated_at") or kv[1].get("created_at")),
             reverse=True,
         )
         keep_ids = {task_id for task_id, _ in items[: self.TASK_MAX_ITEMS]}
@@ -49,7 +61,7 @@ class TaskManager:
     def create_task(self, task_id: str, owner_email: str = ""):
         with self._lock:
             self._cleanup()
-            now = datetime.utcnow()
+            now = _utcnow()
             self.tasks[task_id] = {
                 "status": "pending",
                 "progress": 0,
@@ -74,7 +86,7 @@ class TaskManager:
                     self.tasks[task_id]["progress"] = max(0, min(100, normalized_progress))
                 if message is not None:
                     self.tasks[task_id]["message"] = message
-                self.tasks[task_id]["updated_at"] = datetime.utcnow()
+                self.tasks[task_id]["updated_at"] = _utcnow()
 
     def add_detail(self, task_id: str, detail: str):
         with self._lock:
@@ -85,7 +97,7 @@ class TaskManager:
                 max_items = max(1, self.TASK_DETAIL_MAX_ITEMS)
                 if len(details) > max_items:
                     del details[:-max_items]
-                self.tasks[task_id]["updated_at"] = datetime.utcnow()
+                self.tasks[task_id]["updated_at"] = _utcnow()
 
     def get_task(self, task_id: str, include_private: bool = False):
         with self._lock:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import threading
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 
@@ -35,7 +35,7 @@ def list_indexes() -> List[Dict[str, Any]]:
 
 def add_chunks(index_name: Optional[str], chunks: Iterable[Dict[str, Any]]) -> int:
     name = ensure_index(index_name)
-    now_iso = datetime.utcnow().isoformat() + "Z"
+    now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     batch = []
     for c in chunks:
         if not isinstance(c, dict):
@@ -128,4 +128,3 @@ def clear_all() -> None:
     """Test helper."""
     with _lock:
         _indexes.clear()
-

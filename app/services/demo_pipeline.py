@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 
 def _now_iso() -> str:
-    return datetime.utcnow().isoformat() + "Z"
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _safe_strip(s: str, max_len: int) -> str:
@@ -249,4 +249,3 @@ def generate_demo_chat_answer(query: str, context: str) -> str:
 
     bullets = "\n".join(f"- {h}" for h in hits)
     return f"문서 근거 기반 답변 (Demo 모드)\n\n질문: {q}\n\n근거:\n{bullets}"
-

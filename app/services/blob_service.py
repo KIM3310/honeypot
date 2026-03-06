@@ -9,7 +9,7 @@ except Exception:
     DefaultAzureCredential = None  # type: ignore[assignment]
     AZURE_BLOB_AVAILABLE = False
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.config import AZURE_STORAGE_ACCOUNT_NAME, AZURE_STORAGE_ACCOUNT_KEY, ENVIRONMENT
 import os
 
@@ -82,7 +82,7 @@ def upload_to_blob(file_name: str, file_data: bytes, index_name: str = None):
             blob_name=file_name,
             account_key=AZURE_STORAGE_ACCOUNT_KEY,
             permission=BlobSasPermissions(read=True),
-            expiry=datetime.utcnow() + timedelta(hours=1)
+            expiry=datetime.now(timezone.utc) + timedelta(hours=1)
         )
         
         blob_url_with_sas = f"https://{AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/{container_name}/{file_name}?{sas_token}"
