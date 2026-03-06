@@ -177,6 +177,15 @@ def health_check(request: Request):
         "errors_total": totals.get("errors", 0),
         "error_rate": totals.get("error_rate", 0.0),
         "request_id": getattr(request.state, "request_id", None),
+        "diagnostics": {
+            "runtime_mode": APP_MODE,
+            "next_action": "Open /api/ops/runtime to inspect live route diagnostics.",
+        },
+        "ops_contract": {
+            "schema": "ops-envelope-v1",
+            "version": 1,
+            "required_fields": ["service", "status", "diagnostics.next_action"],
+        },
         "capabilities": [
             "document-ingest",
             "handover-chat",
