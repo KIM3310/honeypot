@@ -164,6 +164,7 @@ def health_check(request: Request):
     totals = metrics.get("totals", {})
     return {
         "status": "ok",
+        "service": "honeypot",
         "mode": APP_MODE,
         "config_valid": CONFIG_VALID,
         "uptime_seconds": max(0, int(time.time()) - APP_STARTED_AT),
@@ -172,6 +173,18 @@ def health_check(request: Request):
         "errors_total": totals.get("errors", 0),
         "error_rate": totals.get("error_rate", 0.0),
         "request_id": getattr(request.state, "request_id", None),
+        "capabilities": [
+            "document-ingest",
+            "handover-chat",
+            "ops-runtime-observability",
+            "security-guardrails",
+        ],
+        "links": {
+            "ops_metrics": "/api/ops/metrics",
+            "ops_runtime": "/api/ops/runtime",
+            "upload": "/api/upload",
+            "chat": "/api/chat",
+        },
     }
 
 

@@ -12,6 +12,18 @@ class TestSmoke(unittest.TestCase):
         paths = {route.path for route in app.routes}
         self.assertIn("/api/health", paths)
 
+    def test_health_payload_exposes_runtime_links(self):
+        from fastapi.testclient import TestClient
+        from app.main import app
+
+        client = TestClient(app)
+        response = client.get("/api/health")
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["service"], "honeypot")
+        self.assertEqual(payload["links"]["ops_runtime"], "/api/ops/runtime")
+        self.assertIn("security-guardrails", payload["capabilities"])
+
 
 if __name__ == "__main__":
     unittest.main()
