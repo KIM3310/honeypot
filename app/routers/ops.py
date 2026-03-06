@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 
 from app.config import APP_MODE, CONFIG_VALID
-from app.metrics import get_metrics_snapshot
+from app.metrics import get_metrics_snapshot, get_route_diagnostics
 from app.security import enforce_api_rate_limit, get_security_runtime_snapshot, require_role
 
 
@@ -42,5 +42,6 @@ async def get_ops_runtime(
         "mode": APP_MODE,
         "config_valid": CONFIG_VALID,
         "metrics": metrics.get("totals", {}),
+        "route_diagnostics": get_route_diagnostics(),
         "security": get_security_runtime_snapshot(),
     }

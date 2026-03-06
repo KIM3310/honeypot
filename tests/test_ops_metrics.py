@@ -68,9 +68,19 @@ class TestOpsMetrics(unittest.TestCase):
                 runtime_payload = runtime.json()
                 self.assertIn("mode", runtime_payload)
                 self.assertIn("metrics", runtime_payload)
+                self.assertIn("route_diagnostics", runtime_payload)
                 self.assertIn("security", runtime_payload)
                 self.assertIn("csrf_tokens", runtime_payload["security"])
                 self.assertIn("refresh_tokens", runtime_payload["security"])
+                self.assertIn("hottest_routes", runtime_payload["route_diagnostics"])
+                self.assertIn("slowest_routes", runtime_payload["route_diagnostics"])
+                self.assertIn("error_prone_routes", runtime_payload["route_diagnostics"])
+                self.assertTrue(
+                    any(
+                        item["route"] == "GET /api/upload/status/{task_id}"
+                        for item in runtime_payload["route_diagnostics"]["hottest_routes"]
+                    )
+                )
 
         asyncio.run(_run())
 

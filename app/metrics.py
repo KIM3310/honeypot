@@ -104,6 +104,76 @@ def get_metrics_snapshot(*, include_routes: bool = True, top_n: int = 15) -> dic
         return {"totals": totals, "routes": route_items[: max(1, int(top_n))]}
 
 
+def get_route_diagnostics(
+    *,
+    top_n: int = 5,
+    slow_p95_threshold_ms: int = 1200,
+    error_rate_threshold_pct: float = 20.0,
+    min_requests_for_alert: int = 3,
+) -> dict:
+    with _LOCK:
+        route_items = []
+        for route_key, metric in _ROUTES.items():
+            avg_ms = int(metric.total_latency_ms / metric.count) if metric.count else 0
+            p95_ms = _calc_p95(list(metric.recent_latency_ms))
+            route_items.append(
+                {
+                    "route": route_key,
+                    "count": metric.count,
+                    "errors": metric.errors,
+                    "error_rate": (round((metric.errors / metric.count) * 100, 2) if metric.count else 0.0),
+                    "avg_latency_ms": avg_ms,
+                    "p95_latency_ms": p95_ms,
+                }
+            )
+        overflow_requests = _ROUTE_OVERFLOW_REQUESTS
+
+    hottest_routes = sorted(route_items, key=lambda item: item["count"], reverse=True)[: max(1, int(top_n))]
+    slowest_routes = sorted(route_items, key=lambda item: item["p95_latency_ms"], reverse=True)[: max(1, int(top_n))]
+    error_prone_routes = sorted(
+        route_items,
+        key=lambda item: (item["errors"], item["error_rate"], item["count"]),
+        reverse=True,
+    )[: max(1, int(top_n))]
+
+    alerts = []
+    if overflow_requests > 0:
+        alerts.append(
+            {
+                "code": "route_cardinality_overflow",
+                "severity": "warning",
+                "message": f"{overflow_requests} requests were collapsed into the overflow route bucket.",
+            }
+        )
+
+    for route in route_items:
+        if route["count"] >= min_requests_for_alert and route["p95_latency_ms"] >= slow_p95_threshold_ms:
+            alerts.append(
+                {
+                    "code": "slow_route",
+                    "severity": "warning",
+                    "route": route["route"],
+                    "message": f"P95 latency is {route['p95_latency_ms']}ms.",
+                }
+            )
+        if route["count"] >= min_requests_for_alert and route["error_rate"] >= error_rate_threshold_pct:
+            alerts.append(
+                {
+                    "code": "error_prone_route",
+                    "severity": "critical",
+                    "route": route["route"],
+                    "message": f"Error rate is {route['error_rate']}%.",
+                }
+            )
+
+    return {
+        "hottest_routes": hottest_routes,
+        "slowest_routes": slowest_routes,
+        "error_prone_routes": error_prone_routes,
+        "alerts": alerts,
+    }
+
+
 def reset_metrics_for_tests() -> None:
     global _STARTED_AT, _TOTAL_REQUESTS, _TOTAL_ERRORS, _ROUTE_OVERFLOW_REQUESTS
     with _LOCK:
