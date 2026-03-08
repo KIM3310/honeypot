@@ -10,23 +10,219 @@ import LoginScreen from "./components/LoginScreen";
 import EngagementHub from "./components/EngagementHub";
 import AdSenseSlot from "./components/AdSenseSlot";
 import LlmApiKeyPanel from "./components/LlmApiKeyPanel";
+import ServiceReadinessBoard from "./components/ServiceReadinessBoard";
 import {
   SourceFile,
   ChatMessage,
   HandoverData,
   ViewMode,
   ChatSession,
+  HandoverSchema,
+  HealthSummary,
+  ServiceMeta,
 } from "./types";
 import {
   analyzeFilesForHandover,
   chatWithAssistant,
 } from "./services/assistantService";
-import { API_ENDPOINTS } from "./config/api";
+import { API_ENDPOINTS, fetchWithTimeout } from "./config/api";
 import { HandoverPrintTemplate } from "./components/HandoverPrintTemplate";
 import { fetchWithSession } from "./services/sessionFetch";
 
 const STORAGE_KEY_SESSIONS = "honeycomb_chat_sessions";
 const STORAGE_KEY_CURRENT_SESSION = "honeycomb_current_session";
+
+function buildStaticHealthSummary(): HealthSummary {
+  return {
+    status: "unknown",
+    service: "honeypot",
+    mode: "demo",
+    config_valid: false,
+    allowed_origins_count: 0,
+    requests_total: 0,
+    errors_total: 0,
+    error_rate: 0,
+    request_id: null,
+    diagnostics: {
+      runtime_mode: "demo",
+      next_action: "Start the backend to inspect live runtime diagnostics.",
+    },
+    capabilities: [
+      "document-ingest",
+      "handover-chat",
+      "ops-runtime-observability",
+      "security-guardrails",
+      "service-metadata-surface",
+    ],
+    links: {
+      meta: "/api/meta",
+      handover_schema: "/api/schema/handover",
+      ops_runtime: "/api/ops/runtime",
+    },
+  };
+}
+
+function buildStaticServiceMeta(): ServiceMeta {
+  return {
+    service: "honeypot",
+    contract_version: "honeypot-service-meta-v1",
+    tagline: "AI-assisted handover generation with Azure retrieval and operator review",
+    maturity_stage: "prototype with service-grade controls",
+    runtime: {
+      mode: "demo",
+      config_valid: false,
+      allowed_origins_count: 5,
+      requests_total: 0,
+      errors_total: 0,
+      error_rate: 0,
+      security_headers_enabled: true,
+      auth_controls: [
+        "jwt-access-token",
+        "refresh-token",
+        "csrf-header",
+        "route-rate-limit",
+      ],
+    },
+    evidence: {
+      test_files: 9,
+      deployment_guides: 5,
+      ops_artifacts: 4,
+      frontend_surfaces: 8,
+    },
+    platforms: [
+      "azure-blob-storage",
+      "azure-document-intelligence",
+      "azure-ai-search",
+      "azure-openai",
+      "gemini-preprocess",
+      "local-byo-llm",
+      "electron",
+    ],
+    strengths: [
+      "The product covers upload, extraction, retrieval, draft generation, and operator review in one workflow.",
+      "Azure-native retrieval is paired with a local BYO LLM path so demos can run without cloud spend.",
+      "JWT, refresh-token, CSRF rotation, security headers, and runtime diagnostics make the prototype operationally legible.",
+      "Interactive editor, print template, and retrieval-backed follow-up chat keep the output grounded in real handover work.",
+    ],
+    watchouts: [
+      "Prototype mode still uses in-memory refresh-token and CSRF stores.",
+      "Fine-grained document RBAC at retrieval time is not implemented in this prototype.",
+      "Cloud configuration is incomplete, so the full Azure-backed path is not active in static mode.",
+    ],
+    stages: [
+      {
+        key: "ingest",
+        label: "Ingest and Validation",
+        readiness: "ready",
+        artifact_count: 4,
+        highlights: [
+          { label: "Upload router", path: "app/routers/upload.py", kind: "endpoint" },
+          { label: "Input validation tests", path: "tests/test_input_validation.py", kind: "test" },
+          { label: "Upload authz tests", path: "tests/test_upload_authz.py", kind: "test" },
+          { label: "Source sidebar surface", path: "frontend/components/SourceSidebar.tsx", kind: "surface" },
+        ],
+      },
+      {
+        key: "structure",
+        label: "Structure and Extraction",
+        readiness: "ready",
+        artifact_count: 4,
+        highlights: [
+          { label: "Document service", path: "app/services/document_service.py", kind: "endpoint" },
+          { label: "Prompt templates", path: "app/services/prompts.py", kind: "endpoint" },
+          { label: "Runbook", path: "RUNBOOK.md", kind: "doc" },
+          { label: "Handover form", path: "frontend/components/HandoverForm.tsx", kind: "surface" },
+        ],
+      },
+      {
+        key: "retrieve",
+        label: "Retrieve and Search",
+        readiness: "ready",
+        artifact_count: 4,
+        highlights: [
+          { label: "Search service", path: "app/services/search_service.py", kind: "endpoint" },
+          { label: "BYO LLM override test", path: "tests/test_llm_override.py", kind: "test" },
+          { label: "Assistant service", path: "frontend/services/assistantService.ts", kind: "surface" },
+          { label: "Connection guide", path: "CONNECTION_GUIDE.md", kind: "doc" },
+        ],
+      },
+      {
+        key: "draft",
+        label: "Draft and Collaboration",
+        readiness: "ready",
+        artifact_count: 4,
+        highlights: [
+          { label: "Analyze router", path: "app/routers/chat.py", kind: "endpoint" },
+          { label: "Chat window", path: "frontend/components/ChatWindow.tsx", kind: "surface" },
+          { label: "Print template", path: "frontend/components/HandoverPrintTemplate.tsx", kind: "surface" },
+          { label: "Frontend README", path: "frontend/README.md", kind: "doc" },
+        ],
+      },
+      {
+        key: "review",
+        label: "Operator Review and Runtime",
+        readiness: "ready",
+        artifact_count: 4,
+        highlights: [
+          { label: "Ops runtime route", path: "app/routers/ops.py", kind: "endpoint" },
+          { label: "Security runtime tests", path: "tests/test_security_runtime.py", kind: "test" },
+          { label: "Ops metrics tests", path: "tests/test_ops_metrics.py", kind: "test" },
+          { label: "Postmortem template", path: "POSTMORTEM_TEMPLATE.md", kind: "doc" },
+        ],
+      },
+    ],
+    review_flow: [
+      { order: 1, title: "Login and issue a CSRF-protected session", endpoint: "/api/auth/login", persona: "operator" },
+      { order: 2, title: "Upload source documents into the selected index", endpoint: "/api/upload", persona: "operator" },
+      { order: 3, title: "Generate the editable handover draft", endpoint: "/api/analyze", persona: "buyer" },
+      { order: 4, title: "Ask retrieval-backed follow-up questions", endpoint: "/api/chat", persona: "operator" },
+      { order: 5, title: "Inspect runtime diagnostics and security posture", endpoint: "/api/ops/runtime", persona: "security" },
+    ],
+    links: {
+      health: "/api/health",
+      meta: "/api/meta",
+      handover_schema: "/api/schema/handover",
+      ops_metrics: "/api/ops/metrics",
+      ops_runtime: "/api/ops/runtime",
+      runbook: "RUNBOOK.md",
+      deployment_guide: "DEPLOYMENT_GUIDE.md",
+      railway_deployment: "RAILWAY_DEPLOYMENT.md",
+    },
+  };
+}
+
+function buildStaticHandoverSchema(): HandoverSchema {
+  return {
+    schema: "honeypot-handover-v1",
+    required_sections: [
+      "overview",
+      "jobStatus",
+      "priorities",
+      "stakeholders",
+      "teamMembers",
+      "ongoingProjects",
+      "risks",
+      "resources",
+      "checklist",
+    ],
+    required_overview_fields: [
+      "transferor.name",
+      "transferor.position",
+      "transferee.name",
+      "transferee.position",
+    ],
+    delivery_modes: ["interactive-editor", "print-template", "retrieval-backed-chat"],
+    operator_rules: [
+      "Generated handover drafts require human review before production use.",
+      "State-changing endpoints require both JWT and X-CSRF-Token.",
+      "Ops runtime surfaces remain admin-only.",
+    ],
+    links: {
+      meta: "/api/meta",
+      health: "/api/health",
+    },
+  };
+}
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -42,6 +238,15 @@ const App: React.FC = () => {
   const [selectedRagIndex, setSelectedRagIndex] =
     useState<string>("documents-index");
   const [showEngagementHub, setShowEngagementHub] = useState(false);
+  const [healthSummary, setHealthSummary] = useState<HealthSummary>(() =>
+    buildStaticHealthSummary()
+  );
+  const [serviceMeta, setServiceMeta] = useState<ServiceMeta>(() =>
+    buildStaticServiceMeta()
+  );
+  const [handoverSchema, setHandoverSchema] = useState<HandoverSchema>(() =>
+    buildStaticHandoverSchema()
+  );
 
   // localStorage에서 세션 로드
   useEffect(() => {
@@ -115,6 +320,53 @@ const App: React.FC = () => {
 
     return () => clearInterval(tokenCheckInterval);
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadServiceSurfaces() {
+      try {
+        const healthResponse = await fetchWithTimeout(API_ENDPOINTS.HEALTH, {}, 8000);
+        const healthData = await healthResponse.json().catch(() => null);
+        if (healthResponse.ok && healthData && !cancelled) {
+          setHealthSummary(healthData as HealthSummary);
+        }
+      } catch (_error) {
+        if (!cancelled) {
+          setHealthSummary(buildStaticHealthSummary());
+        }
+      }
+
+      try {
+        const metaResponse = await fetchWithTimeout(API_ENDPOINTS.META, {}, 8000);
+        const metaData = await metaResponse.json().catch(() => null);
+        if (metaResponse.ok && metaData && !cancelled) {
+          setServiceMeta(metaData as ServiceMeta);
+        }
+      } catch (_error) {
+        if (!cancelled) {
+          setServiceMeta(buildStaticServiceMeta());
+        }
+      }
+
+      try {
+        const schemaResponse = await fetchWithTimeout(API_ENDPOINTS.HANDOVER_SCHEMA, {}, 8000);
+        const schemaData = await schemaResponse.json().catch(() => null);
+        if (schemaResponse.ok && schemaData && !cancelled) {
+          setHandoverSchema(schemaData as HandoverSchema);
+        }
+      } catch (_error) {
+        if (!cancelled) {
+          setHandoverSchema(buildStaticHandoverSchema());
+        }
+      }
+    }
+
+    void loadServiceSurfaces();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleNewChat = () => {
     setMessages([]);
@@ -292,7 +544,14 @@ const App: React.FC = () => {
   };
 
   if (!isLoggedIn) {
-    return <LoginScreen onLogin={() => setIsLoggedIn(true)} />;
+    return (
+      <LoginScreen
+        handoverSchema={handoverSchema}
+        healthSummary={healthSummary}
+        onLogin={() => setIsLoggedIn(true)}
+        serviceMeta={serviceMeta}
+      />
+    );
   }
 
   return (
@@ -342,6 +601,12 @@ const App: React.FC = () => {
           <div className="w-[40%] flex flex-col h-full animate-in fade-in slide-in-from-right-8 duration-1000 delay-200">
             <div className="mb-3 grid gap-3">
               <LlmApiKeyPanel />
+              <ServiceReadinessBoard
+                handoverSchema={handoverSchema}
+                healthSummary={healthSummary}
+                serviceMeta={serviceMeta}
+                variant="compact"
+              />
               <section className="rounded-2xl border border-gray-300 bg-white/95 p-4 shadow-sm">
                 <p className="text-[10px] font-black tracking-[0.16em] text-gray-500 uppercase">
                   Sponsored

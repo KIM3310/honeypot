@@ -4,12 +4,22 @@ import React, { useState } from "react";
 import { LogIn, Sparkles, ShieldCheck, ArrowRight } from "lucide-react";
 import { loginUser } from "../services/authService.ts";
 import { setToken, setUserInfo } from "../utils/auth.ts";
+import { HandoverSchema, HealthSummary, ServiceMeta } from "../types.ts";
+import ServiceReadinessBoard from "./ServiceReadinessBoard.tsx";
 
 interface Props {
+  handoverSchema: HandoverSchema | null;
+  healthSummary: HealthSummary | null;
   onLogin: (userInfo: any) => void;
+  serviceMeta: ServiceMeta | null;
 }
 
-const LoginScreen: React.FC<Props> = ({ onLogin }) => {
+const LoginScreen: React.FC<Props> = ({
+  handoverSchema,
+  healthSummary,
+  onLogin,
+  serviceMeta,
+}) => {
   const [id, setId] = useState("");
   const [pw, setPw] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -66,6 +76,15 @@ const LoginScreen: React.FC<Props> = ({ onLogin }) => {
           </div>
           <h1 className="text-3xl font-black text-gray-800 tracking-tighter">꿀단지 접속하기</h1>
           <p className="text-sm font-bold text-yellow-600 mt-2">당신의 업무를 가장 달콤하게 이어주는 AI</p>
+        </div>
+
+        <div className="mb-6">
+          <ServiceReadinessBoard
+            handoverSchema={handoverSchema}
+            healthSummary={healthSummary}
+            serviceMeta={serviceMeta}
+            variant="compact"
+          />
         </div>
 
         {error && (

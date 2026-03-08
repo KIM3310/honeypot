@@ -11,6 +11,7 @@ from app.routers import upload, chat, auth, ops  # ← 추가: auth import
 from app.config import APP_MODE, CONFIG_VALID
 from app.metrics import get_metrics_snapshot, record_request
 from app.security import validate_security_runtime
+from app.service_meta import build_handover_schema, build_honeypot_service_meta
 
 
 if not CONFIG_VALID:
@@ -191,14 +192,36 @@ def health_check(request: Request):
             "handover-chat",
             "ops-runtime-observability",
             "security-guardrails",
+            "service-metadata-surface",
         ],
         "links": {
+            "meta": "/api/meta",
+            "handover_schema": "/api/schema/handover",
             "ops_metrics": "/api/ops/metrics",
             "ops_runtime": "/api/ops/runtime",
             "upload": "/api/upload",
             "chat": "/api/chat",
         },
     }
+
+
+@app.get("/api/meta")
+def service_meta():
+    metrics = get_metrics_snapshot(include_routes=False)
+    totals = metrics.get("totals", {})
+    return build_honeypot_service_meta(
+        allowed_origins_count=len(get_allowed_origins()),
+        config_valid=CONFIG_VALID,
+        error_rate=totals.get("error_rate", 0.0),
+        errors_total=totals.get("errors", 0),
+        mode=APP_MODE,
+        requests_total=totals.get("requests", 0),
+    )
+
+
+@app.get("/api/schema/handover")
+def handover_schema():
+    return build_handover_schema()
 
 
 @app.get("/test")

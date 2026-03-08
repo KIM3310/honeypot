@@ -82,3 +82,78 @@ export interface ChatSession {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface ServiceArtifact {
+  label: string;
+  path: string;
+  kind: "doc" | "test" | "endpoint" | "surface";
+}
+
+export interface ServiceStage {
+  key: "ingest" | "structure" | "retrieve" | "draft" | "review";
+  label: string;
+  readiness: "ready" | "in_progress" | "attention";
+  artifact_count: number;
+  highlights: ServiceArtifact[];
+}
+
+export interface ServiceMeta {
+  service: string;
+  contract_version: string;
+  tagline: string;
+  maturity_stage: string;
+  runtime: {
+    mode: string;
+    config_valid: boolean;
+    allowed_origins_count: number;
+    requests_total: number;
+    errors_total: number;
+    error_rate: number;
+    security_headers_enabled: boolean;
+    auth_controls: string[];
+  };
+  evidence: {
+    test_files: number;
+    deployment_guides: number;
+    ops_artifacts: number;
+    frontend_surfaces: number;
+  };
+  platforms: string[];
+  strengths: string[];
+  watchouts: string[];
+  stages: ServiceStage[];
+  review_flow: {
+    order: number;
+    title: string;
+    endpoint: string;
+    persona: string;
+  }[];
+  links: Record<string, string>;
+}
+
+export interface HandoverSchema {
+  schema: string;
+  required_sections: string[];
+  required_overview_fields: string[];
+  delivery_modes: string[];
+  operator_rules: string[];
+  links: Record<string, string>;
+}
+
+export interface HealthSummary {
+  status: string;
+  service: string;
+  mode: string;
+  config_valid: boolean;
+  allowed_origins_count: number;
+  requests_total: number;
+  errors_total: number;
+  error_rate: number;
+  request_id?: string | null;
+  diagnostics: {
+    runtime_mode: string;
+    next_action: string;
+  };
+  capabilities: string[];
+  links: Record<string, string>;
+}

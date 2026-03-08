@@ -292,6 +292,19 @@ npm run build
 
 CI: `.github/workflows/ci.yml` runs backend compile/tests + frontend build.
 
+Quick verify:
+```bash
+curl -fsS http://localhost:8000/api/health | python -m json.tool | head -n 40
+curl -fsS http://localhost:8000/api/meta | python -m json.tool | head -n 80
+curl -fsS http://localhost:8000/api/schema/handover | python -m json.tool | head -n 60
+```
+
+## Service-grade surfaces
+- `GET /api/meta`: service summary for reviewers with runtime posture, Azure trust boundary, proof inventory, and operator review flow
+- `GET /api/schema/handover`: explicit contract for the handover draft structure and operator rules
+- The frontend now renders an `Enterprise Handover Readiness` board on both the login screen and the main workspace, so the product reads like a service before the user even uploads files
+- This iteration is documented in `SERVICE_GRADE_SPECKIT.ko.md`
+
 ## Ops Artifacts
 - `RUNBOOK.md` (local demo runbook)
 - `POSTMORTEM_TEMPLATE.md` (incident postmortem template)

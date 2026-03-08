@@ -22,7 +22,10 @@ class TestSmoke(unittest.TestCase):
         payload = response.json()
         self.assertEqual(payload["service"], "honeypot")
         self.assertEqual(payload["links"]["ops_runtime"], "/api/ops/runtime")
+        self.assertEqual(payload["links"]["meta"], "/api/meta")
+        self.assertEqual(payload["links"]["handover_schema"], "/api/schema/handover")
         self.assertIn("security-guardrails", payload["capabilities"])
+        self.assertIn("service-metadata-surface", payload["capabilities"])
         self.assertEqual(payload["ops_contract"]["schema"], "ops-envelope-v1")
         self.assertIn("next_action", payload["diagnostics"])
 
