@@ -290,6 +290,9 @@ const ServiceReadinessBoard: React.FC<Props> = ({
                 <code className="mt-1 block rounded-xl bg-gray-100 px-2 py-1 text-[10px] text-gray-600">
                   {asset.path}
                 </code>
+                {asset.why ? (
+                  <p className="mt-1 text-[11px] text-gray-500">{asset.why}</p>
+                ) : null}
               </li>
             ))}
           </ul>

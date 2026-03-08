@@ -119,10 +119,10 @@ function buildStaticServiceMeta(): ServiceMeta {
       "Open /api/ops/runtime before claiming live Azure-backed readiness.",
     ],
     proof_assets: [
-      { label: "Health Route", path: "app/main.py", kind: "endpoint" },
-      { label: "Runtime Brief Builder", path: "app/service_meta.py", kind: "endpoint" },
-      { label: "Ops Runtime Route", path: "app/routers/ops.py", kind: "endpoint" },
-      { label: "Readiness Board", path: "frontend/components/ServiceReadinessBoard.tsx", kind: "surface" },
+      { label: "Health Route", path: "app/main.py", kind: "endpoint", why: "Confirms the top-level runtime envelope and next operator action." },
+      { label: "Runtime Brief Builder", path: "app/service_meta.py", kind: "endpoint", why: "Builds the reviewer-first runtime contract and trust boundary." },
+      { label: "Ops Runtime Route", path: "app/routers/ops.py", kind: "endpoint", why: "Provides route-by-route diagnostics before production-readiness claims." },
+      { label: "Readiness Board", path: "frontend/components/ServiceReadinessBoard.tsx", kind: "surface", why: "Shows the same posture at login and inside the main workspace." },
     ],
     stages: [
       {
@@ -268,10 +268,10 @@ function buildStaticServiceBrief(): ServiceBrief {
       "Cloud configuration is incomplete, so the full Azure-backed path is not active in static mode.",
     ],
     proof_assets: [
-      { label: "Health", path: "/api/health", kind: "endpoint" },
-      { label: "Runtime Brief", path: "/api/runtime-brief", kind: "endpoint" },
-      { label: "Handover Schema", path: "/api/schema/handover", kind: "endpoint" },
-      { label: "Ops Runtime", path: "/api/ops/runtime", kind: "endpoint" },
+      { label: "Health", path: "/api/health", kind: "endpoint", why: "Confirms whether the service is demo or live-configured before a review." },
+      { label: "Runtime Brief", path: "/api/runtime-brief", kind: "endpoint", why: "Pins trust boundary, delivery modes, and runtime watchouts in one payload." },
+      { label: "Handover Schema", path: "/api/schema/handover", kind: "endpoint", why: "Locks the editor and export contract before trusting draft structure claims." },
+      { label: "Ops Runtime", path: "/api/ops/runtime", kind: "endpoint", why: "Shows route-by-route diagnostics before any production-readiness claim." },
     ],
     links: {
       health: "/api/health",

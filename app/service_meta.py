@@ -368,10 +368,10 @@ def build_honeypot_runtime_brief(
         ],
         "watchouts": watchouts,
         "proof_assets": [
-            {"label": "Health", "path": "/api/health", "kind": "endpoint"},
-            {"label": "Runtime Brief", "path": "/api/runtime-brief", "kind": "endpoint"},
-            {"label": "Handover Schema", "path": "/api/schema/handover", "kind": "endpoint"},
-            {"label": "Ops Runtime", "path": "/api/ops/runtime", "kind": "endpoint"},
+            {"label": "Health", "path": "/api/health", "kind": "endpoint", "why": "Confirms whether the service is demo or live-configured before a review."},
+            {"label": "Runtime Brief", "path": "/api/runtime-brief", "kind": "endpoint", "why": "Pins trust boundary, delivery modes, and runtime watchouts in one payload."},
+            {"label": "Handover Schema", "path": "/api/schema/handover", "kind": "endpoint", "why": "Locks the editor and export contract before trusting draft structure claims."},
+            {"label": "Ops Runtime", "path": "/api/ops/runtime", "kind": "endpoint", "why": "Shows route-by-route diagnostics before any production-readiness claim."},
         ],
         "links": {
             "health": "/api/health",

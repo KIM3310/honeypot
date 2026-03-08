@@ -233,16 +233,16 @@ Read endpoints that expose indexed/document metadata also require:
 The frontend renders the same reviewer pack on the login screen and main workspace, so the product posture is visible before any upload or chat action.
 
 ### 2-Minute Review Path
-- `/api/health`
-- `/api/runtime-brief`
-- `/api/schema/handover`
-- `/api/ops/runtime`
+- Open `/api/health` to confirm whether the service is demo or live-configured.
+- Read `/api/runtime-brief` for trust boundary, delivery modes, and watchouts.
+- Inspect `/api/schema/handover` before trusting the editor contract.
+- Open `/api/ops/runtime` before making production-readiness claims.
 
 ### Proof Assets
-- `app/main.py`
-- `app/service_meta.py`
-- `app/routers/ops.py`
-- `frontend/components/ServiceReadinessBoard.tsx`
+- `app/main.py` for the top-level runtime envelope and next-action posture
+- `app/service_meta.py` for runtime brief and review-pack builders
+- `app/routers/ops.py` for route-by-route diagnostics and runtime evidence
+- `frontend/components/ServiceReadinessBoard.tsx` for the shared reviewer surface on login and workspace
 
 - `GET /api/upload/documents` (optional query: `index_name`)
 - `GET /api/upload/indexes`

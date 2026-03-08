@@ -87,6 +87,7 @@ export interface ServiceArtifact {
   label: string;
   path: string;
   kind: "doc" | "test" | "endpoint" | "surface";
+  why?: string;
 }
 
 export interface ServiceStage {

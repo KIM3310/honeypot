@@ -40,6 +40,7 @@ class TestServiceMeta(unittest.TestCase):
         self.assertTrue(any("api/upload" in step for step in payload["review_flow"]))
         self.assertEqual(len(payload["two_minute_review"]), 4)
         self.assertEqual(payload["proof_assets"][0]["path"], "/api/health")
+        self.assertIn("demo or live-configured", payload["proof_assets"][0]["why"])
         self.assertEqual(payload["links"]["ops_runtime"], "/api/ops/runtime")
 
     def test_handover_schema_surface_exposes_operator_contract(self) -> None:
