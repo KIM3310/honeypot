@@ -131,6 +131,36 @@ export interface ServiceMeta {
   links: Record<string, string>;
 }
 
+export interface ServiceBrief {
+  service: string;
+  status: string;
+  generated_at: string;
+  readiness_contract: string;
+  headline: string;
+  runtime_mode: string;
+  auth_mode: string;
+  retrieval_mode: string;
+  request_volume: {
+    requests_total: number;
+    errors_total: number;
+    error_rate: number;
+  };
+  review_pack: {
+    required_sections: number;
+    delivery_modes: number;
+    allowed_origins_count: number;
+  };
+  report_contract: {
+    schema: string;
+    required_sections: string[];
+    delivery_modes: string[];
+  };
+  trust_boundary: string[];
+  review_flow: string[];
+  watchouts: string[];
+  links: Record<string, string>;
+}
+
 export interface HandoverSchema {
   schema: string;
   required_sections: string[];

@@ -19,6 +19,7 @@ import {
   ChatSession,
   HandoverSchema,
   HealthSummary,
+  ServiceBrief,
   ServiceMeta,
 } from "./types";
 import {
@@ -45,7 +46,7 @@ function buildStaticHealthSummary(): HealthSummary {
     request_id: null,
     diagnostics: {
       runtime_mode: "demo",
-      next_action: "Start the backend to inspect live runtime diagnostics.",
+      next_action: "Start the backend, then open /api/runtime-brief and /api/ops/runtime to inspect live diagnostics.",
     },
     capabilities: [
       "document-ingest",
@@ -53,9 +54,11 @@ function buildStaticHealthSummary(): HealthSummary {
       "ops-runtime-observability",
       "security-guardrails",
       "service-metadata-surface",
+      "runtime-brief-surface",
     ],
     links: {
       meta: "/api/meta",
+      runtime_brief: "/api/runtime-brief",
       handover_schema: "/api/schema/handover",
       ops_runtime: "/api/ops/runtime",
     },
@@ -181,12 +184,78 @@ function buildStaticServiceMeta(): ServiceMeta {
     links: {
       health: "/api/health",
       meta: "/api/meta",
+      runtime_brief: "/api/runtime-brief",
       handover_schema: "/api/schema/handover",
       ops_metrics: "/api/ops/metrics",
       ops_runtime: "/api/ops/runtime",
       runbook: "RUNBOOK.md",
       deployment_guide: "DEPLOYMENT_GUIDE.md",
       railway_deployment: "RAILWAY_DEPLOYMENT.md",
+    },
+  };
+}
+
+function buildStaticServiceBrief(): ServiceBrief {
+  return {
+    service: "honeypot",
+    status: "ok",
+    generated_at: new Date().toISOString(),
+    readiness_contract: "honeypot-runtime-brief-v1",
+    headline: "Azure-native handover workflow with reviewer-visible controls from login to editable draft.",
+    runtime_mode: "demo",
+    auth_mode: "jwt-access-token + refresh-token + csrf-header",
+    retrieval_mode: "demo retrieval with local BYO LLM override support",
+    request_volume: {
+      requests_total: 0,
+      errors_total: 0,
+      error_rate: 0,
+    },
+    review_pack: {
+      required_sections: 9,
+      delivery_modes: 3,
+      allowed_origins_count: 5,
+    },
+    report_contract: {
+      schema: "honeypot-handover-v1",
+      required_sections: [
+        "overview",
+        "jobStatus",
+        "priorities",
+        "stakeholders",
+        "teamMembers",
+        "ongoingProjects",
+        "risks",
+        "resources",
+        "checklist",
+      ],
+      delivery_modes: ["interactive-editor", "print-template", "retrieval-backed-chat"],
+    },
+    trust_boundary: [
+      "ingest: demo parser + docx local support",
+      "retrieve: azure-ai-search indexes enterprise handover evidence",
+      "generation: demo draft path stays local-first with optional BYO LLM override",
+      "override: per-request BYO LLM path stays optional and operator-controlled",
+      "review: auth, csrf, ops runtime, and printable handover surface stay explicit",
+    ],
+    review_flow: [
+      "Issue a CSRF-protected session through /api/auth/login.",
+      "Upload source materials through /api/upload.",
+      "Generate the editable handover draft through /api/analyze.",
+      "Use /api/chat for retrieval-backed follow-up questions.",
+      "Open /api/ops/runtime for route-by-route diagnostics before production claims.",
+    ],
+    watchouts: [
+      "Prototype mode still uses in-memory refresh-token and CSRF stores.",
+      "Fine-grained document RBAC at retrieval time is not implemented in this prototype.",
+      "Cloud configuration is incomplete, so the full Azure-backed path is not active in static mode.",
+    ],
+    links: {
+      health: "/api/health",
+      meta: "/api/meta",
+      runtime_brief: "/api/runtime-brief",
+      handover_schema: "/api/schema/handover",
+      ops_runtime: "/api/ops/runtime",
+      ops_metrics: "/api/ops/metrics",
     },
   };
 }
@@ -220,6 +289,7 @@ function buildStaticHandoverSchema(): HandoverSchema {
     links: {
       meta: "/api/meta",
       health: "/api/health",
+      runtime_brief: "/api/runtime-brief",
     },
   };
 }
@@ -243,6 +313,9 @@ const App: React.FC = () => {
   );
   const [serviceMeta, setServiceMeta] = useState<ServiceMeta>(() =>
     buildStaticServiceMeta()
+  );
+  const [serviceBrief, setServiceBrief] = useState<ServiceBrief>(() =>
+    buildStaticServiceBrief()
   );
   const [handoverSchema, setHandoverSchema] = useState<HandoverSchema>(() =>
     buildStaticHandoverSchema()
@@ -325,41 +398,49 @@ const App: React.FC = () => {
     let cancelled = false;
 
     async function loadServiceSurfaces() {
-      try {
-        const healthResponse = await fetchWithTimeout(API_ENDPOINTS.HEALTH, {}, 8000);
-        const healthData = await healthResponse.json().catch(() => null);
-        if (healthResponse.ok && healthData && !cancelled) {
-          setHealthSummary(healthData as HealthSummary);
+      async function loadSurface<T>(
+        url: string,
+        fallback: () => T,
+        assign: (value: T) => void
+      ) {
+        try {
+          const response = await fetchWithTimeout(url, {}, 8000);
+          const data = await response.json().catch(() => null);
+          if (response.ok && data && !cancelled) {
+            assign(data as T);
+            return;
+          }
+        } catch (_error) {
+          // Fall back to static reviewer surfaces when the backend is unavailable.
         }
-      } catch (_error) {
+
         if (!cancelled) {
-          setHealthSummary(buildStaticHealthSummary());
+          assign(fallback());
         }
       }
 
-      try {
-        const metaResponse = await fetchWithTimeout(API_ENDPOINTS.META, {}, 8000);
-        const metaData = await metaResponse.json().catch(() => null);
-        if (metaResponse.ok && metaData && !cancelled) {
-          setServiceMeta(metaData as ServiceMeta);
-        }
-      } catch (_error) {
-        if (!cancelled) {
-          setServiceMeta(buildStaticServiceMeta());
-        }
-      }
-
-      try {
-        const schemaResponse = await fetchWithTimeout(API_ENDPOINTS.HANDOVER_SCHEMA, {}, 8000);
-        const schemaData = await schemaResponse.json().catch(() => null);
-        if (schemaResponse.ok && schemaData && !cancelled) {
-          setHandoverSchema(schemaData as HandoverSchema);
-        }
-      } catch (_error) {
-        if (!cancelled) {
-          setHandoverSchema(buildStaticHandoverSchema());
-        }
-      }
+      await Promise.all([
+        loadSurface<HealthSummary>(
+          API_ENDPOINTS.HEALTH,
+          buildStaticHealthSummary,
+          setHealthSummary
+        ),
+        loadSurface<ServiceMeta>(
+          API_ENDPOINTS.META,
+          buildStaticServiceMeta,
+          setServiceMeta
+        ),
+        loadSurface<ServiceBrief>(
+          API_ENDPOINTS.RUNTIME_BRIEF,
+          buildStaticServiceBrief,
+          setServiceBrief
+        ),
+        loadSurface<HandoverSchema>(
+          API_ENDPOINTS.HANDOVER_SCHEMA,
+          buildStaticHandoverSchema,
+          setHandoverSchema
+        ),
+      ]);
     }
 
     void loadServiceSurfaces();
@@ -549,6 +630,7 @@ const App: React.FC = () => {
         handoverSchema={handoverSchema}
         healthSummary={healthSummary}
         onLogin={() => setIsLoggedIn(true)}
+        serviceBrief={serviceBrief}
         serviceMeta={serviceMeta}
       />
     );
@@ -604,6 +686,7 @@ const App: React.FC = () => {
               <ServiceReadinessBoard
                 handoverSchema={handoverSchema}
                 healthSummary={healthSummary}
+                serviceBrief={serviceBrief}
                 serviceMeta={serviceMeta}
                 variant="compact"
               />

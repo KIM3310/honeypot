@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
@@ -28,6 +29,22 @@ def _count_files(path: Path, pattern: str) -> int:
     if not path.exists():
         return 0
     return len(list(path.glob(pattern)))
+
+
+def _build_watchouts(*, config_valid: bool, mode: str) -> List[str]:
+    watchouts = [
+        "Prototype mode still uses in-memory refresh-token and CSRF stores.",
+        "Fine-grained document RBAC at retrieval time is not implemented in this prototype.",
+    ]
+    if mode == "demo":
+        watchouts.append(
+            "The backend is in demo mode. Live Azure Blob/Search/OpenAI and Gemini paths are not active."
+        )
+    if not config_valid:
+        watchouts.append(
+            "Cloud configuration is incomplete, so the service cannot demonstrate the full Azure-backed pipeline yet."
+        )
+    return watchouts
 
 
 def build_honeypot_service_meta(
@@ -140,18 +157,7 @@ def build_honeypot_service_meta(
         },
     ]
 
-    watchouts = [
-        "Prototype mode still uses in-memory refresh-token and CSRF stores.",
-        "Fine-grained document RBAC at retrieval time is not implemented in this prototype.",
-    ]
-    if mode == "demo":
-        watchouts.append(
-            "The backend is in demo mode. Live Azure Blob/Search/OpenAI and Gemini paths are not active."
-        )
-    if not config_valid:
-        watchouts.append(
-            "Cloud configuration is incomplete, so the service cannot demonstrate the full Azure-backed pipeline yet."
-        )
+    watchouts = _build_watchouts(config_valid=config_valid, mode=mode)
 
     return {
         "service": "honeypot",
@@ -231,6 +237,7 @@ def build_honeypot_service_meta(
         "links": {
             "health": "/api/health",
             "meta": "/api/meta",
+            "runtime_brief": "/api/runtime-brief",
             "handover_schema": "/api/schema/handover",
             "ops_metrics": "/api/ops/metrics",
             "ops_runtime": "/api/ops/runtime",
@@ -274,5 +281,78 @@ def build_handover_schema() -> Dict[str, object]:
         "links": {
             "meta": "/api/meta",
             "health": "/api/health",
+            "runtime_brief": "/api/runtime-brief",
+        },
+    }
+
+
+def build_honeypot_runtime_brief(
+    *,
+    allowed_origins_count: int,
+    config_valid: bool,
+    error_rate: float,
+    errors_total: int,
+    mode: str,
+    requests_total: int,
+) -> Dict[str, object]:
+    schema = build_handover_schema()
+    watchouts = _build_watchouts(config_valid=config_valid, mode=mode)
+    retrieval_mode = (
+        "azure-ai-search + azure-openai + gemini-preprocess"
+        if config_valid and mode != "demo"
+        else "demo retrieval with local BYO LLM override support"
+    )
+    generation_boundary = (
+        "generation: azure-openai drives draft and chat responses"
+        if config_valid and mode != "demo"
+        else "generation: demo draft path stays local-first with optional BYO LLM override"
+    )
+
+    return {
+        "service": "honeypot",
+        "status": "ok",
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "readiness_contract": "honeypot-runtime-brief-v1",
+        "headline": "Azure-native handover workflow with reviewer-visible controls from login to editable draft.",
+        "runtime_mode": mode,
+        "auth_mode": "jwt-access-token + refresh-token + csrf-header",
+        "retrieval_mode": retrieval_mode,
+        "request_volume": {
+            "requests_total": requests_total,
+            "errors_total": errors_total,
+            "error_rate": error_rate,
+        },
+        "review_pack": {
+            "required_sections": len(schema["required_sections"]),
+            "delivery_modes": len(schema["delivery_modes"]),
+            "allowed_origins_count": allowed_origins_count,
+        },
+        "report_contract": {
+            "schema": schema["schema"],
+            "required_sections": schema["required_sections"],
+            "delivery_modes": schema["delivery_modes"],
+        },
+        "trust_boundary": [
+            f"ingest: {'azure-document-intelligence' if config_valid and mode != 'demo' else 'demo parser + docx local support'}",
+            "retrieve: azure-ai-search indexes enterprise handover evidence",
+            generation_boundary,
+            "override: per-request BYO LLM path stays optional and operator-controlled",
+            "review: auth, csrf, ops runtime, and printable handover surface stay explicit",
+        ],
+        "review_flow": [
+            "Issue a CSRF-protected session through /api/auth/login.",
+            "Upload source materials through /api/upload.",
+            "Generate the editable handover draft through /api/analyze.",
+            "Use /api/chat for retrieval-backed follow-up questions.",
+            "Open /api/ops/runtime for route-by-route diagnostics before production claims.",
+        ],
+        "watchouts": watchouts,
+        "links": {
+            "health": "/api/health",
+            "meta": "/api/meta",
+            "runtime_brief": "/api/runtime-brief",
+            "handover_schema": "/api/schema/handover",
+            "ops_runtime": "/api/ops/runtime",
+            "ops_metrics": "/api/ops/metrics",
         },
     }

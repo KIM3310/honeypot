@@ -152,6 +152,7 @@ python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 Backend endpoints:
 - Health: `GET http://localhost:8000/api/health`
+- Runtime brief: `GET http://localhost:8000/api/runtime-brief`
 - Swagger: `http://localhost:8000/docs`
 
 ### 2) Frontend
@@ -218,6 +219,18 @@ Read endpoints that expose indexed/document metadata also require:
     - size limit: `MAX_UPLOAD_BYTES` (default 20MB)
     - `index_name` format: lowercase letters/numbers/`-`/`_`, 2-63 chars
 - `GET /api/upload/status/{task_id}` (owner/admin only)
+
+### Review Surfaces
+- `GET /api/health`
+  - runtime status, ops contract, review links
+- `GET /api/meta`
+  - trust boundary, staged evidence, runtime posture
+- `GET /api/runtime-brief`
+  - reviewer-first contract for auth mode, retrieval mode, review pack, and watchouts
+- `GET /api/schema/handover`
+  - handover export contract (`honeypot-handover-v1`)
+
+The frontend renders the same reviewer pack on the login screen and main workspace, so the product posture is visible before any upload or chat action.
 - `GET /api/upload/documents` (optional query: `index_name`)
 - `GET /api/upload/indexes`
 - `GET /api/upload/stats` (optional query: `index_name`)

@@ -4,13 +4,14 @@ import React, { useState } from "react";
 import { LogIn, Sparkles, ShieldCheck, ArrowRight } from "lucide-react";
 import { loginUser } from "../services/authService.ts";
 import { setToken, setUserInfo } from "../utils/auth.ts";
-import { HandoverSchema, HealthSummary, ServiceMeta } from "../types.ts";
+import { HandoverSchema, HealthSummary, ServiceBrief, ServiceMeta } from "../types.ts";
 import ServiceReadinessBoard from "./ServiceReadinessBoard.tsx";
 
 interface Props {
   handoverSchema: HandoverSchema | null;
   healthSummary: HealthSummary | null;
   onLogin: (userInfo: any) => void;
+  serviceBrief: ServiceBrief | null;
   serviceMeta: ServiceMeta | null;
 }
 
@@ -18,6 +19,7 @@ const LoginScreen: React.FC<Props> = ({
   handoverSchema,
   healthSummary,
   onLogin,
+  serviceBrief,
   serviceMeta,
 }) => {
   const [id, setId] = useState("");
@@ -82,6 +84,7 @@ const LoginScreen: React.FC<Props> = ({
           <ServiceReadinessBoard
             handoverSchema={handoverSchema}
             healthSummary={healthSummary}
+            serviceBrief={serviceBrief}
             serviceMeta={serviceMeta}
             variant="compact"
           />

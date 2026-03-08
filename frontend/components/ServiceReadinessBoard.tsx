@@ -1,9 +1,10 @@
 import React from "react";
-import { HandoverSchema, HealthSummary, ServiceMeta } from "../types";
+import { HandoverSchema, HealthSummary, ServiceBrief, ServiceMeta } from "../types";
 
 interface Props {
   handoverSchema: HandoverSchema | null;
   healthSummary: HealthSummary | null;
+  serviceBrief?: ServiceBrief | null;
   serviceMeta: ServiceMeta | null;
   variant?: "full" | "compact";
 }
@@ -33,6 +34,7 @@ function healthTone(status: string): string {
 const ServiceReadinessBoard: React.FC<Props> = ({
   handoverSchema,
   healthSummary,
+  serviceBrief,
   serviceMeta,
   variant = "full",
 }) => {
@@ -42,7 +44,12 @@ const ServiceReadinessBoard: React.FC<Props> = ({
 
   const compact = variant === "compact";
   const visibleStages = compact ? serviceMeta.stages.slice(0, 3) : serviceMeta.stages;
-  const visibleWatchouts = compact ? serviceMeta.watchouts.slice(0, 2) : serviceMeta.watchouts;
+  const visibleWatchouts = compact
+    ? (serviceBrief?.watchouts ?? serviceMeta.watchouts).slice(0, 2)
+    : serviceBrief?.watchouts ?? serviceMeta.watchouts;
+  const reviewSteps = compact
+    ? (serviceBrief?.review_flow ?? serviceMeta.review_flow.map((step) => step.title)).slice(0, 3)
+    : serviceBrief?.review_flow ?? serviceMeta.review_flow.map((step) => step.title);
 
   return (
     <section className="rounded-[2rem] border border-yellow-200 bg-white/95 shadow-[0_20px_40px_-20px_rgba(15,23,42,0.28)] p-5">
@@ -52,10 +59,10 @@ const ServiceReadinessBoard: React.FC<Props> = ({
             Service Brief
           </p>
           <h3 className="mt-1 text-lg font-black text-gray-900 tracking-tight">
-            Enterprise Handover Readiness
+            {serviceBrief ? "Runtime Contract and Review Pack" : "Enterprise Handover Readiness"}
           </h3>
           <p className="mt-1 text-xs text-gray-600 leading-relaxed">
-            {serviceMeta.tagline}
+            {serviceBrief?.headline ?? serviceMeta.tagline}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -70,6 +77,81 @@ const ServiceReadinessBoard: React.FC<Props> = ({
           </span>
         </div>
       </div>
+
+      {serviceBrief ? (
+        <div className="mt-4 grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
+              Runtime Contract
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide text-gray-600 border border-gray-200">
+                {serviceBrief.readiness_contract}
+              </span>
+              <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide text-gray-600 border border-gray-200">
+                {serviceBrief.report_contract.schema}
+              </span>
+              <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide text-gray-600 border border-gray-200">
+                {serviceBrief.runtime_mode}
+              </span>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+              <article className="rounded-2xl bg-white p-3 border border-gray-200">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Auth</p>
+                <strong className="mt-1 block text-sm font-black text-gray-900">
+                  CSRF + JWT
+                </strong>
+                <p className="mt-1 text-[11px] text-gray-600">{serviceBrief.auth_mode}</p>
+              </article>
+              <article className="rounded-2xl bg-white p-3 border border-gray-200">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Retrieve</p>
+                <strong className="mt-1 block text-sm font-black text-gray-900">
+                  Handover RAG
+                </strong>
+                <p className="mt-1 text-[11px] text-gray-600">{serviceBrief.retrieval_mode}</p>
+              </article>
+              <article className="rounded-2xl bg-white p-3 border border-gray-200">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Review Pack</p>
+                <strong className="mt-1 block text-sm font-black text-gray-900">
+                  {serviceBrief.review_pack.required_sections} sections
+                </strong>
+                <p className="mt-1 text-[11px] text-gray-600">
+                  {serviceBrief.review_pack.delivery_modes} delivery modes
+                </p>
+              </article>
+              <article className="rounded-2xl bg-white p-3 border border-gray-200">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Origins</p>
+                <strong className="mt-1 block text-sm font-black text-gray-900">
+                  {serviceBrief.review_pack.allowed_origins_count}
+                </strong>
+                <p className="mt-1 text-[11px] text-gray-600">frontend allowlist entries</p>
+              </article>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Review Pack</p>
+            <ul className="mt-2 space-y-2 text-xs text-gray-700">
+              {reviewSteps.map((step) => (
+                <li key={step}>• {step}</li>
+              ))}
+            </ul>
+            <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
+              Trust Boundary
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {serviceBrief.trust_boundary.slice(0, compact ? 3 : 5).map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide text-gray-600 border border-gray-200"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         <article className="rounded-2xl bg-yellow-50 p-3 border border-yellow-100">
@@ -158,15 +240,22 @@ const ServiceReadinessBoard: React.FC<Props> = ({
         <div className="rounded-2xl border border-gray-200 bg-white p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Review Flow</p>
           <ol className="mt-2 space-y-2 text-xs text-gray-700">
-            {serviceMeta.review_flow.slice(0, compact ? 3 : 5).map((step) => (
-              <li key={`${step.order}-${step.endpoint}`}>
-                <span className="font-black text-gray-900">{String(step.order).padStart(2, "0")}</span>
-                {" "} {step.title}
-                <code className="mt-1 block rounded-xl bg-gray-100 px-2 py-1 text-[10px] text-gray-600">
-                  {step.endpoint}
-                </code>
-              </li>
-            ))}
+            {serviceBrief
+              ? reviewSteps.map((step, index) => (
+                  <li key={step}>
+                    <span className="font-black text-gray-900">{String(index + 1).padStart(2, "0")}</span>
+                    {" "} {step}
+                  </li>
+                ))
+              : serviceMeta.review_flow.slice(0, compact ? 3 : 5).map((step) => (
+                  <li key={`${step.order}-${step.endpoint}`}>
+                    <span className="font-black text-gray-900">{String(step.order).padStart(2, "0")}</span>
+                    {" "} {step.title}
+                    <code className="mt-1 block rounded-xl bg-gray-100 px-2 py-1 text-[10px] text-gray-600">
+                      {step.endpoint}
+                    </code>
+                  </li>
+                ))}
           </ol>
         </div>
 

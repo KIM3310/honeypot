@@ -22,10 +22,12 @@ Last updated: 2026-03-08
 - 백엔드
   - `app/service_meta.py` 추가
   - `GET /api/meta`
+  - `GET /api/runtime-brief`
   - `GET /api/schema/handover`
   - `/api/health` capabilities/links 확장
 - 프론트엔드
   - `ServiceReadinessBoard` 컴포넌트 추가
+  - runtime brief를 login/workspace에 함께 노출
   - 로그인 화면에 compact readiness board 삽입
   - 메인 workspace 우측 상단에 compact readiness board 삽입
   - 백엔드 미연결 시 static fallback meta/schema 사용
@@ -37,7 +39,7 @@ Last updated: 2026-03-08
 - `python -m unittest discover -s tests -p 'test_*.py'` green
 - `cd frontend && npm run build` green
 - README에 새 service-grade surface가 설명된다
-- 로그인 전에도 서비스 문맥과 운영 posture가 UI에서 읽힌다
+- 로그인 전에도 서비스 문맥, runtime contract, review pack이 UI에서 읽힌다
 
 ## K - Keep
 - enterprise architecture 중심 접근

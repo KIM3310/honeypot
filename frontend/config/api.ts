@@ -64,6 +64,7 @@ export const API_ENDPOINTS = {
   // 헬스체크
   HEALTH: apiPath('/api/health'),
   META: apiPath('/api/meta'),
+  RUNTIME_BRIEF: apiPath('/api/runtime-brief'),
   HANDOVER_SCHEMA: apiPath('/api/schema/handover'),
 };
 

@@ -11,7 +11,11 @@ from app.routers import upload, chat, auth, ops  # ← 추가: auth import
 from app.config import APP_MODE, CONFIG_VALID
 from app.metrics import get_metrics_snapshot, record_request
 from app.security import validate_security_runtime
-from app.service_meta import build_handover_schema, build_honeypot_service_meta
+from app.service_meta import (
+    build_handover_schema,
+    build_honeypot_runtime_brief,
+    build_honeypot_service_meta,
+)
 
 
 if not CONFIG_VALID:
@@ -180,12 +184,17 @@ def health_check(request: Request):
         "request_id": getattr(request.state, "request_id", None),
         "diagnostics": {
             "runtime_mode": APP_MODE,
-            "next_action": "Open /api/ops/runtime to inspect live route diagnostics.",
+            "next_action": "Open /api/runtime-brief first, then /api/ops/runtime to inspect live route diagnostics.",
         },
         "ops_contract": {
             "schema": "ops-envelope-v1",
             "version": 1,
             "required_fields": ["service", "status", "diagnostics.next_action"],
+        },
+        "service_grade": {
+            "readiness": "honeypot-runtime-brief-v1",
+            "runtime_brief": "/api/runtime-brief",
+            "report_schema": "/api/schema/handover",
         },
         "capabilities": [
             "document-ingest",
@@ -193,9 +202,11 @@ def health_check(request: Request):
             "ops-runtime-observability",
             "security-guardrails",
             "service-metadata-surface",
+            "runtime-brief-surface",
         ],
         "links": {
             "meta": "/api/meta",
+            "runtime_brief": "/api/runtime-brief",
             "handover_schema": "/api/schema/handover",
             "ops_metrics": "/api/ops/metrics",
             "ops_runtime": "/api/ops/runtime",
@@ -210,6 +221,20 @@ def service_meta():
     metrics = get_metrics_snapshot(include_routes=False)
     totals = metrics.get("totals", {})
     return build_honeypot_service_meta(
+        allowed_origins_count=len(get_allowed_origins()),
+        config_valid=CONFIG_VALID,
+        error_rate=totals.get("error_rate", 0.0),
+        errors_total=totals.get("errors", 0),
+        mode=APP_MODE,
+        requests_total=totals.get("requests", 0),
+    )
+
+
+@app.get("/api/runtime-brief")
+def runtime_brief():
+    metrics = get_metrics_snapshot(include_routes=False)
+    totals = metrics.get("totals", {})
+    return build_honeypot_runtime_brief(
         allowed_origins_count=len(get_allowed_origins()),
         config_valid=CONFIG_VALID,
         error_rate=totals.get("error_rate", 0.0),
