@@ -36,6 +36,24 @@ has_rg() {
   command -v rg >/dev/null 2>&1
 }
 
+normalize_search_args() {
+  local normalized=()
+  local skip_next=0
+  local arg
+  for arg in "$@"; do
+    if [[ $skip_next -eq 1 ]]; then
+      skip_next=0
+      continue
+    fi
+    if [[ "$arg" == "--glob" ]]; then
+      skip_next=1
+      continue
+    fi
+    normalized+=("$arg")
+  done
+  printf '%s\0' "${normalized[@]}"
+}
+
 list_matching_files() {
   local pattern="$1"
   shift
@@ -44,6 +62,11 @@ list_matching_files() {
     rg -l "$pattern" "$@"
     return
   fi
+
+  local normalized=()
+  while IFS= read -r -d '' item; do
+    normalized+=("$item")
+  done < <(normalize_search_args "$@")
 
   grep -RIlE \
     --binary-files=without-match \
@@ -61,7 +84,7 @@ list_matching_files() {
     --exclude='*.md' \
     --exclude='README*' \
     "$pattern" \
-    "$@"
+    "${normalized[@]}"
 }
 
 search_text() {
@@ -72,6 +95,11 @@ search_text() {
     rg -n "$pattern" "$@"
     return
   fi
+
+  local normalized=()
+  while IFS= read -r -d '' item; do
+    normalized+=("$item")
+  done < <(normalize_search_args "$@")
 
   grep -RInE \
     --binary-files=without-match \
@@ -87,7 +115,7 @@ search_text() {
     --exclude='*.gif' \
     --exclude='*.pdf' \
     "$pattern" \
-    "$@"
+    "${normalized[@]}"
 }
 
 search_text_i() {
@@ -98,6 +126,11 @@ search_text_i() {
     rg -n -i "$pattern" "$@"
     return
   fi
+
+  local normalized=()
+  while IFS= read -r -d '' item; do
+    normalized+=("$item")
+  done < <(normalize_search_args "$@")
 
   grep -RInEi \
     --binary-files=without-match \
@@ -113,7 +146,7 @@ search_text_i() {
     --exclude='*.gif' \
     --exclude='*.pdf' \
     "$pattern" \
-    "$@"
+    "${normalized[@]}"
 }
 
 search_web_text_i() {
