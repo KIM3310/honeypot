@@ -115,6 +115,11 @@ const ServiceReadinessBoard: React.FC<Props> = ({
     "Honeypot 2-minute review",
     ...twoMinuteReview.map((step) => `- ${step}`),
   ].join("\n");
+  const proofBundleText = [
+    "Honeypot proof bundle",
+    ...reviewLinks.map(([label, path]) => `- ${label}: ${path}`),
+    ...(proofAssets.length ? ["", "Proof assets", ...proofAssets.map((asset) => `- ${asset}`)] : []),
+  ].join("\n");
 
   const handleCopyRoutes = async () => {
     const ok = await copyTextToClipboard(reviewRouteText);
@@ -124,6 +129,11 @@ const ServiceReadinessBoard: React.FC<Props> = ({
   const handleCopyTwoMinuteReview = async () => {
     const ok = await copyTextToClipboard(twoMinuteReviewText);
     setCopyStatus(ok ? "Copied 2-minute review." : "Failed to copy 2-minute review.");
+  };
+
+  const handleCopyProofBundle = async () => {
+    const ok = await copyTextToClipboard(proofBundleText);
+    setCopyStatus(ok ? "Copied proof bundle." : "Failed to copy proof bundle.");
   };
 
   return (
@@ -279,6 +289,13 @@ const ServiceReadinessBoard: React.FC<Props> = ({
             className="rounded-full border border-gray-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-700"
           >
             Copy 2-Minute Review
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleCopyProofBundle()}
+            className="rounded-full border border-gray-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-700"
+          >
+            Copy Proof Bundle
           </button>
           {copyStatus ? <span className="text-[11px] text-gray-500">{copyStatus}</span> : null}
         </div>
