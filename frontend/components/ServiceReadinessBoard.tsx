@@ -31,6 +31,35 @@ function healthTone(status: string): string {
   }
 }
 
+async function copyTextToClipboard(text: string): Promise<boolean> {
+  const payload = String(text || "").trim();
+  if (!payload) return false;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(payload);
+      return true;
+    }
+  } catch {
+    // Fallback below.
+  }
+
+  try {
+    const helper = document.createElement("textarea");
+    helper.value = payload;
+    helper.setAttribute("readonly", "true");
+    helper.style.position = "absolute";
+    helper.style.left = "-9999px";
+    document.body.appendChild(helper);
+    helper.select();
+    const ok = document.execCommand("copy");
+    helper.remove();
+    return Boolean(ok);
+  } catch {
+    return false;
+  }
+}
+
 const ServiceReadinessBoard: React.FC<Props> = ({
   handoverSchema,
   healthSummary,
@@ -38,6 +67,8 @@ const ServiceReadinessBoard: React.FC<Props> = ({
   serviceMeta,
   variant = "full",
 }) => {
+  const [copyStatus, setCopyStatus] = React.useState("");
+
   if (!serviceMeta || !handoverSchema || !healthSummary) {
     return null;
   }
@@ -75,6 +106,24 @@ const ServiceReadinessBoard: React.FC<Props> = ({
     runbook: "Tie runtime evidence back to operator playbooks.",
     deployment_guide: "Show the deployment path that follows the demo surface.",
     railway_deployment: "Keep hosted demo setup legible without leaving the repo context.",
+  };
+  const reviewRouteText = [
+    "Honeypot reviewer routes",
+    ...reviewLinks.map(([label, path]) => `- ${label}: ${path}`),
+  ].join("\n");
+  const twoMinuteReviewText = [
+    "Honeypot 2-minute review",
+    ...twoMinuteReview.map((step) => `- ${step}`),
+  ].join("\n");
+
+  const handleCopyRoutes = async () => {
+    const ok = await copyTextToClipboard(reviewRouteText);
+    setCopyStatus(ok ? "Copied reviewer routes." : "Failed to copy reviewer routes.");
+  };
+
+  const handleCopyTwoMinuteReview = async () => {
+    const ok = await copyTextToClipboard(twoMinuteReviewText);
+    setCopyStatus(ok ? "Copied 2-minute review." : "Failed to copy 2-minute review.");
   };
 
   return (
@@ -216,6 +265,23 @@ const ServiceReadinessBoard: React.FC<Props> = ({
 
       <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
         <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Reviewer Fast Path</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void handleCopyRoutes()}
+            className="rounded-full border border-gray-200 bg-gray-900 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-white"
+          >
+            Copy Review Routes
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleCopyTwoMinuteReview()}
+            className="rounded-full border border-gray-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-700"
+          >
+            Copy 2-Minute Review
+          </button>
+          {copyStatus ? <span className="text-[11px] text-gray-500">{copyStatus}</span> : null}
+        </div>
         <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {reviewLinks.map(([label, path]) => (
             <article key={`${label}-${path}`} className="rounded-2xl border border-gray-200 bg-gray-50/70 p-3">
