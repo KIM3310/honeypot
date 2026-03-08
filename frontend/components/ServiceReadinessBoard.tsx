@@ -56,6 +56,26 @@ const ServiceReadinessBoard: React.FC<Props> = ({
   const proofAssets = compact
     ? (serviceBrief?.proof_assets ?? serviceMeta.proof_assets).slice(0, 3)
     : serviceBrief?.proof_assets ?? serviceMeta.proof_assets;
+  const reviewLinks = Array.from(
+    new Map(
+      [
+        ...(serviceBrief ? Object.entries(serviceBrief.links || {}) : []),
+        ...Object.entries(serviceMeta.links || {}),
+        ...Object.entries(handoverSchema.links || {}),
+      ].filter(([, path]) => typeof path === "string" && path)
+    ).entries()
+  ).slice(0, compact ? 4 : 6);
+  const reviewLinkHints: Record<string, string> = {
+    health: "Confirm runtime mode and the next operator action before the walkthrough.",
+    meta: "Open the service contract and evidence posture in one payload.",
+    runtime_brief: "Read trust boundary, delivery modes, and watchouts before claiming readiness.",
+    handover_schema: "Lock the editor and export contract before trusting generated drafts.",
+    ops_metrics: "Check runtime volume and error posture from the reviewer path.",
+    ops_runtime: "Inspect route-by-route diagnostics before any production-readiness claim.",
+    runbook: "Tie runtime evidence back to operator playbooks.",
+    deployment_guide: "Show the deployment path that follows the demo surface.",
+    railway_deployment: "Keep hosted demo setup legible without leaving the repo context.",
+  };
 
   return (
     <section className="rounded-[2rem] border border-yellow-200 bg-white/95 shadow-[0_20px_40px_-20px_rgba(15,23,42,0.28)] p-5">
@@ -192,6 +212,23 @@ const ServiceReadinessBoard: React.FC<Props> = ({
             {serviceMeta.runtime.allowed_origins_count}
           </strong>
         </article>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
+        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Reviewer Fast Path</p>
+        <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {reviewLinks.map(([label, path]) => (
+            <article key={`${label}-${path}`} className="rounded-2xl border border-gray-200 bg-gray-50/70 p-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-gray-500">{label.replaceAll("_", " ")}</p>
+              <code className="mt-2 block rounded-xl bg-white px-2 py-1 text-[10px] text-gray-600 border border-gray-200">
+                {path}
+              </code>
+              <p className="mt-2 text-[11px] text-gray-600">
+                {reviewLinkHints[label] ?? "Reviewer-visible route or document for the handover walkthrough."}
+              </p>
+            </article>
+          ))}
+        </div>
       </div>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
