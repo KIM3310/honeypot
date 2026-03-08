@@ -121,6 +121,8 @@ export interface ServiceMeta {
   platforms: string[];
   strengths: string[];
   watchouts: string[];
+  two_minute_review: string[];
+  proof_assets: ServiceArtifact[];
   stages: ServiceStage[];
   review_flow: {
     order: number;
@@ -157,7 +159,9 @@ export interface ServiceBrief {
   };
   trust_boundary: string[];
   review_flow: string[];
+  two_minute_review: string[];
   watchouts: string[];
+  proof_assets: ServiceArtifact[];
   links: Record<string, string>;
 }
 

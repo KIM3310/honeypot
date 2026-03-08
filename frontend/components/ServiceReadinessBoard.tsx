@@ -50,6 +50,12 @@ const ServiceReadinessBoard: React.FC<Props> = ({
   const reviewSteps = compact
     ? (serviceBrief?.review_flow ?? serviceMeta.review_flow.map((step) => step.title)).slice(0, 3)
     : serviceBrief?.review_flow ?? serviceMeta.review_flow.map((step) => step.title);
+  const twoMinuteReview = compact
+    ? (serviceBrief?.two_minute_review ?? serviceMeta.two_minute_review).slice(0, 3)
+    : serviceBrief?.two_minute_review ?? serviceMeta.two_minute_review;
+  const proofAssets = compact
+    ? (serviceBrief?.proof_assets ?? serviceMeta.proof_assets).slice(0, 3)
+    : serviceBrief?.proof_assets ?? serviceMeta.proof_assets;
 
   return (
     <section className="rounded-[2rem] border border-yellow-200 bg-white/95 shadow-[0_20px_40px_-20px_rgba(15,23,42,0.28)] p-5">
@@ -133,6 +139,14 @@ const ServiceReadinessBoard: React.FC<Props> = ({
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Review Pack</p>
             <ul className="mt-2 space-y-2 text-xs text-gray-700">
               {reviewSteps.map((step) => (
+                <li key={step}>• {step}</li>
+              ))}
+            </ul>
+            <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
+              2-Minute Review
+            </p>
+            <ul className="mt-2 space-y-2 text-xs text-gray-700">
+              {twoMinuteReview.map((step) => (
                 <li key={step}>• {step}</li>
               ))}
             </ul>
@@ -264,6 +278,19 @@ const ServiceReadinessBoard: React.FC<Props> = ({
           <ul className="mt-2 space-y-2 text-xs text-gray-700">
             {visibleWatchouts.map((item) => (
               <li key={item}>• {item}</li>
+            ))}
+          </ul>
+          <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
+            Proof Assets
+          </p>
+          <ul className="mt-2 space-y-2 text-xs text-gray-700">
+            {proofAssets.map((asset) => (
+              <li key={`${asset.kind}-${asset.path}`}>
+                <span className="font-semibold">{asset.label}</span>
+                <code className="mt-1 block rounded-xl bg-gray-100 px-2 py-1 text-[10px] text-gray-600">
+                  {asset.path}
+                </code>
+              </li>
             ))}
           </ul>
           <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">

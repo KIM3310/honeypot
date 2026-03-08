@@ -112,6 +112,18 @@ function buildStaticServiceMeta(): ServiceMeta {
       "Fine-grained document RBAC at retrieval time is not implemented in this prototype.",
       "Cloud configuration is incomplete, so the full Azure-backed path is not active in static mode.",
     ],
+    two_minute_review: [
+      "Open /api/health to confirm runtime mode and next diagnostics step.",
+      "Read /api/runtime-brief for trust boundary, review flow, and watchouts.",
+      "Inspect /api/schema/handover before trusting draft structure claims.",
+      "Open /api/ops/runtime before claiming live Azure-backed readiness.",
+    ],
+    proof_assets: [
+      { label: "Health Route", path: "app/main.py", kind: "endpoint" },
+      { label: "Runtime Brief Builder", path: "app/service_meta.py", kind: "endpoint" },
+      { label: "Ops Runtime Route", path: "app/routers/ops.py", kind: "endpoint" },
+      { label: "Readiness Board", path: "frontend/components/ServiceReadinessBoard.tsx", kind: "surface" },
+    ],
     stages: [
       {
         key: "ingest",
@@ -244,10 +256,22 @@ function buildStaticServiceBrief(): ServiceBrief {
       "Use /api/chat for retrieval-backed follow-up questions.",
       "Open /api/ops/runtime for route-by-route diagnostics before production claims.",
     ],
+    two_minute_review: [
+      "Open /api/health to confirm whether the service is demo or live-configured.",
+      "Read /api/runtime-brief for trust boundary, delivery modes, and watchouts.",
+      "Inspect /api/schema/handover before trusting the editor contract.",
+      "Open /api/ops/runtime before making production-readiness claims.",
+    ],
     watchouts: [
       "Prototype mode still uses in-memory refresh-token and CSRF stores.",
       "Fine-grained document RBAC at retrieval time is not implemented in this prototype.",
       "Cloud configuration is incomplete, so the full Azure-backed path is not active in static mode.",
+    ],
+    proof_assets: [
+      { label: "Health", path: "/api/health", kind: "endpoint" },
+      { label: "Runtime Brief", path: "/api/runtime-brief", kind: "endpoint" },
+      { label: "Handover Schema", path: "/api/schema/handover", kind: "endpoint" },
+      { label: "Ops Runtime", path: "/api/ops/runtime", kind: "endpoint" },
     ],
     links: {
       health: "/api/health",

@@ -21,6 +21,8 @@ class TestServiceMeta(unittest.TestCase):
         self.assertTrue(
             any(stage["key"] == "review" for stage in payload["stages"])
         )
+        self.assertEqual(len(payload["two_minute_review"]), 4)
+        self.assertEqual(payload["proof_assets"][0]["label"], "Health Route")
         self.assertEqual(payload["links"]["runtime_brief"], "/api/runtime-brief")
         self.assertEqual(payload["links"]["handover_schema"], "/api/schema/handover")
 
@@ -36,6 +38,8 @@ class TestServiceMeta(unittest.TestCase):
         self.assertEqual(payload["report_contract"]["schema"], "honeypot-handover-v1")
         self.assertIn("jwt-access-token", payload["auth_mode"])
         self.assertTrue(any("api/upload" in step for step in payload["review_flow"]))
+        self.assertEqual(len(payload["two_minute_review"]), 4)
+        self.assertEqual(payload["proof_assets"][0]["path"], "/api/health")
         self.assertEqual(payload["links"]["ops_runtime"], "/api/ops/runtime")
 
     def test_handover_schema_surface_exposes_operator_contract(self) -> None:

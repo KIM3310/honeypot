@@ -231,6 +231,19 @@ Read endpoints that expose indexed/document metadata also require:
   - handover export contract (`honeypot-handover-v1`)
 
 The frontend renders the same reviewer pack on the login screen and main workspace, so the product posture is visible before any upload or chat action.
+
+### 2-Minute Review Path
+- `/api/health`
+- `/api/runtime-brief`
+- `/api/schema/handover`
+- `/api/ops/runtime`
+
+### Proof Assets
+- `app/main.py`
+- `app/service_meta.py`
+- `app/routers/ops.py`
+- `frontend/components/ServiceReadinessBoard.tsx`
+
 - `GET /api/upload/documents` (optional query: `index_name`)
 - `GET /api/upload/indexes`
 - `GET /api/upload/stats` (optional query: `index_name`)

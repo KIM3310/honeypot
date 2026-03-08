@@ -201,6 +201,20 @@ def build_honeypot_service_meta(
             "The interactive editor, print template, and follow-up chat keep the handover flow grounded in practical output.",
         ],
         "watchouts": watchouts,
+        "two_minute_review": [
+            "Open /api/health to confirm runtime mode and the next diagnostics step.",
+            "Read /api/runtime-brief for trust boundary, review flow, and watchouts.",
+            "Inspect /api/schema/handover before trusting draft structure claims.",
+            "Open /api/ops/runtime before claiming live Azure-backed readiness.",
+        ],
+        "proof_assets": _artifacts(
+            [
+                ("Health Route", "app/main.py", "endpoint"),
+                ("Runtime Brief Builder", "app/service_meta.py", "endpoint"),
+                ("Ops Runtime Route", "app/routers/ops.py", "endpoint"),
+                ("Readiness Board", "frontend/components/ServiceReadinessBoard.tsx", "surface"),
+            ]
+        ),
         "stages": stages,
         "review_flow": [
             {
@@ -346,7 +360,19 @@ def build_honeypot_runtime_brief(
             "Use /api/chat for retrieval-backed follow-up questions.",
             "Open /api/ops/runtime for route-by-route diagnostics before production claims.",
         ],
+        "two_minute_review": [
+            "Open /api/health to confirm whether the service is demo or live-configured.",
+            "Read /api/runtime-brief for trust boundary, delivery modes, and watchouts.",
+            "Inspect /api/schema/handover before trusting the editor contract.",
+            "Open /api/ops/runtime before making production-readiness claims.",
+        ],
         "watchouts": watchouts,
+        "proof_assets": [
+            {"label": "Health", "path": "/api/health", "kind": "endpoint"},
+            {"label": "Runtime Brief", "path": "/api/runtime-brief", "kind": "endpoint"},
+            {"label": "Handover Schema", "path": "/api/schema/handover", "kind": "endpoint"},
+            {"label": "Ops Runtime", "path": "/api/ops/runtime", "kind": "endpoint"},
+        ],
         "links": {
             "health": "/api/health",
             "meta": "/api/meta",
