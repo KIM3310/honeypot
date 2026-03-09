@@ -266,7 +266,7 @@ const ServiceReadinessBoard: React.FC<Props> = ({
               ))}
             </ul>
             <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
-              2-Minute Review
+              Quick Review
             </p>
             <ul className="mt-2 space-y-2 text-xs text-gray-700">
               {twoMinuteReview.map((step) => (
@@ -332,7 +332,7 @@ const ServiceReadinessBoard: React.FC<Props> = ({
             onClick={() => void handleCopyTwoMinuteReview()}
             className="rounded-full border border-gray-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-700"
           >
-            Copy 2-Minute Review
+            Copy Quick Review
           </button>
           <button
             type="button"

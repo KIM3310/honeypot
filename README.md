@@ -236,7 +236,7 @@ Read endpoints that expose indexed/document metadata also require:
 
 The frontend renders the same reviewer pack on the login screen and main workspace, so the product posture is visible before any upload or chat action.
 
-### 2-Minute Review Path
+### Quick Review Path
 - Open `/api/health` to confirm whether the service is demo or live-configured.
 - Read `/api/runtime-scorecard` for route pressure, alert count, and security posture.
 - Read `/api/runtime-brief` for trust boundary, delivery modes, and watchouts.
@@ -378,7 +378,6 @@ If you run into CORS/environment issues, see:
 - CSRF: Cross-Site Request Forgery
 - CORS: Cross-Origin Resource Sharing
 
-<!-- codex:local-verification:start -->
 ## Local Verification
 ```bash
 /Library/Developer/CommandLineTools/usr/bin/python3 -m venv .venv
@@ -391,6 +390,3 @@ python -m unittest discover -s tests -p 'test_*.py'
 ## Repository Hygiene
 - Keep runtime artifacts out of commits (`.codex_runs/`, cache folders, temporary venvs).
 - Prefer running verification commands above before opening a PR.
-
-_Last updated: 2026-03-04_
-<!-- codex:local-verification:end -->

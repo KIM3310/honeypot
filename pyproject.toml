@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "honeypot"
 version = "0.1.0"
-description = "Azure-oriented document and handover copilot with service-grade runtime and reviewer surfaces."
+description = "Azure-oriented document and handover copilot with runtime review and delivery surfaces."
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Kim", email = "kim@example.com" }]
