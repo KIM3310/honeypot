@@ -146,7 +146,8 @@ Install and run:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -U pip
+python -m pip install -e ".[dev]"
 python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -378,9 +379,8 @@ If you run into CORS/environment issues, see:
 /Library/Developer/CommandLineTools/usr/bin/python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -U pip
-python -m pip install -r requirements.txt
-python -m pip install pytest
-python -m pytest -q
+python -m pip install -e ".[dev]"
+python -m unittest discover -s tests -p 'test_*.py'
 ```
 
 ## Repository Hygiene
