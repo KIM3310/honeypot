@@ -25,6 +25,7 @@ class TestServiceMeta(unittest.TestCase):
         self.assertEqual(payload["proof_assets"][0]["label"], "Health Route")
         self.assertEqual(payload["links"]["runtime_brief"], "/api/runtime-brief")
         self.assertEqual(payload["links"]["handover_schema"], "/api/schema/handover")
+        self.assertEqual(payload["links"]["review_summary"], "/api/review-summary")
 
     def test_runtime_brief_surface_exposes_review_contract(self) -> None:
         client = TestClient(app)
@@ -42,6 +43,33 @@ class TestServiceMeta(unittest.TestCase):
         self.assertEqual(payload["proof_assets"][0]["path"], "/api/health")
         self.assertIn("demo or live-configured", payload["proof_assets"][0]["why"])
         self.assertEqual(payload["links"]["ops_runtime"], "/api/ops/runtime")
+        self.assertEqual(payload["links"]["review_summary"], "/api/review-summary")
+
+    def test_review_summary_surface_exposes_compact_operator_snapshot(self) -> None:
+        client = TestClient(app)
+
+        response = client.get("/api/review-summary")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["service"], "honeypot")
+        self.assertEqual(payload["contract_version"], "honeypot-review-summary-v1")
+        self.assertEqual(payload["runtime_summary"]["report_schema"], "honeypot-handover-v1")
+        self.assertIn("/api/review-summary", payload["runtime_summary"]["review_endpoints"])
+        self.assertEqual(payload["fastest_review_path"][1], "/api/review-summary")
+        self.assertGreaterEqual(payload["snapshot"]["ready_stage_count"], 1)
+        self.assertEqual(payload["links"]["review_summary_schema"], "/api/review-summary/schema")
+
+    def test_review_summary_schema_exposes_required_contract_fields(self) -> None:
+        client = TestClient(app)
+
+        response = client.get("/api/review-summary/schema")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["schema"], "honeypot-review-summary-v1")
+        self.assertIn("snapshot.mode", payload["required_fields"])
+        self.assertEqual(payload["links"]["review_summary"], "/api/review-summary")
 
     def test_handover_schema_surface_exposes_operator_contract(self) -> None:
         client = TestClient(app)
@@ -58,6 +86,7 @@ class TestServiceMeta(unittest.TestCase):
             any("human review" in rule.lower() for rule in payload["operator_rules"])
         )
         self.assertEqual(payload["links"]["runtime_brief"], "/api/runtime-brief")
+        self.assertEqual(payload["links"]["review_summary"], "/api/review-summary")
 
 
 if __name__ == "__main__":

@@ -13,6 +13,8 @@ from app.metrics import get_metrics_snapshot, record_request
 from app.security import validate_security_runtime
 from app.service_meta import (
     build_handover_schema,
+    build_honeypot_review_summary,
+    build_honeypot_review_summary_schema,
     build_honeypot_runtime_brief,
     build_honeypot_service_meta,
 )
@@ -195,6 +197,7 @@ def health_check(request: Request):
             "readiness": "honeypot-runtime-brief-v1",
             "runtime_brief": "/api/runtime-brief",
             "report_schema": "/api/schema/handover",
+            "review_summary": "/api/review-summary",
         },
         "capabilities": [
             "document-ingest",
@@ -203,10 +206,12 @@ def health_check(request: Request):
             "security-guardrails",
             "service-metadata-surface",
             "runtime-brief-surface",
+            "review-summary-surface",
         ],
         "links": {
             "meta": "/api/meta",
             "runtime_brief": "/api/runtime-brief",
+            "review_summary": "/api/review-summary",
             "handover_schema": "/api/schema/handover",
             "ops_metrics": "/api/ops/metrics",
             "ops_runtime": "/api/ops/runtime",
@@ -242,6 +247,25 @@ def runtime_brief():
         mode=APP_MODE,
         requests_total=totals.get("requests", 0),
     )
+
+
+@app.get("/api/review-summary")
+def review_summary():
+    metrics = get_metrics_snapshot(include_routes=False)
+    totals = metrics.get("totals", {})
+    return build_honeypot_review_summary(
+        allowed_origins_count=len(get_allowed_origins()),
+        config_valid=CONFIG_VALID,
+        error_rate=totals.get("error_rate", 0.0),
+        errors_total=totals.get("errors", 0),
+        mode=APP_MODE,
+        requests_total=totals.get("requests", 0),
+    )
+
+
+@app.get("/api/review-summary/schema")
+def review_summary_schema():
+    return build_honeypot_review_summary_schema()
 
 
 @app.get("/api/schema/handover")

@@ -252,6 +252,7 @@ def build_honeypot_service_meta(
             "health": "/api/health",
             "meta": "/api/meta",
             "runtime_brief": "/api/runtime-brief",
+            "review_summary": "/api/review-summary",
             "handover_schema": "/api/schema/handover",
             "ops_metrics": "/api/ops/metrics",
             "ops_runtime": "/api/ops/runtime",
@@ -296,6 +297,7 @@ def build_handover_schema() -> Dict[str, object]:
             "meta": "/api/meta",
             "health": "/api/health",
             "runtime_brief": "/api/runtime-brief",
+            "review_summary": "/api/review-summary",
         },
     }
 
@@ -378,7 +380,118 @@ def build_honeypot_runtime_brief(
             "meta": "/api/meta",
             "runtime_brief": "/api/runtime-brief",
             "handover_schema": "/api/schema/handover",
+            "review_summary": "/api/review-summary",
             "ops_runtime": "/api/ops/runtime",
             "ops_metrics": "/api/ops/metrics",
+        },
+    }
+
+
+def build_honeypot_review_summary(
+    *,
+    allowed_origins_count: int,
+    config_valid: bool,
+    error_rate: float,
+    errors_total: int,
+    mode: str,
+    requests_total: int,
+) -> Dict[str, object]:
+    service_meta = build_honeypot_service_meta(
+        allowed_origins_count=allowed_origins_count,
+        config_valid=config_valid,
+        error_rate=error_rate,
+        errors_total=errors_total,
+        mode=mode,
+        requests_total=requests_total,
+    )
+    runtime_brief = build_honeypot_runtime_brief(
+        allowed_origins_count=allowed_origins_count,
+        config_valid=config_valid,
+        error_rate=error_rate,
+        errors_total=errors_total,
+        mode=mode,
+        requests_total=requests_total,
+    )
+
+    stages = list(service_meta.get("stages", []))
+    ready_stage_count = sum(1 for stage in stages if stage.get("readiness") == "ready")
+    attention_stage_count = len(stages) - ready_stage_count
+    proof_assets = list(runtime_brief.get("proof_assets", []))
+    watchouts = list(runtime_brief.get("watchouts", []))
+    auth_controls = list(service_meta.get("runtime", {}).get("auth_controls", []))
+
+    return {
+        "service": "honeypot",
+        "contract_version": "honeypot-review-summary-v1",
+        "headline": "Compact reviewer snapshot for the Azure handover workflow, from session issuance to ops diagnostics.",
+        "snapshot": {
+            "mode": mode,
+            "config_valid": config_valid,
+            "allowed_origins_count": allowed_origins_count,
+            "requests_total": requests_total,
+            "errors_total": errors_total,
+            "error_rate": error_rate,
+            "ready_stage_count": ready_stage_count,
+            "attention_stage_count": attention_stage_count,
+            "proof_asset_count": len(proof_assets),
+        },
+        "runtime_summary": {
+            "auth_controls": auth_controls,
+            "retrieval_mode": runtime_brief.get("retrieval_mode"),
+            "report_schema": runtime_brief.get("report_contract", {}).get("schema"),
+            "review_endpoints": [
+                "/api/health",
+                "/api/runtime-brief",
+                "/api/review-summary",
+                "/api/schema/handover",
+                "/api/ops/runtime",
+            ],
+        },
+        "top_assets": proof_assets[:3],
+        "fastest_review_path": [
+            "/api/health",
+            "/api/review-summary",
+            "/api/runtime-brief",
+            "/api/schema/handover",
+        ],
+        "stage_highlights": [
+            {
+                "key": stage.get("key"),
+                "label": stage.get("label"),
+                "readiness": stage.get("readiness"),
+                "artifact_count": stage.get("artifact_count"),
+            }
+            for stage in stages[:3]
+        ],
+        "top_watchouts": watchouts[:2],
+        "links": {
+            "health": "/api/health",
+            "meta": "/api/meta",
+            "runtime_brief": "/api/runtime-brief",
+            "review_summary": "/api/review-summary",
+            "review_summary_schema": "/api/review-summary/schema",
+            "handover_schema": "/api/schema/handover",
+            "ops_runtime": "/api/ops/runtime",
+        },
+    }
+
+
+def build_honeypot_review_summary_schema() -> Dict[str, object]:
+    return {
+        "schema": "honeypot-review-summary-v1",
+        "required_fields": [
+            "service",
+            "contract_version",
+            "snapshot.mode",
+            "snapshot.ready_stage_count",
+            "runtime_summary.report_schema",
+            "fastest_review_path",
+            "links.review_summary",
+        ],
+        "links": {
+            "health": "/api/health",
+            "meta": "/api/meta",
+            "runtime_brief": "/api/runtime-brief",
+            "review_summary": "/api/review-summary",
         },
     }
