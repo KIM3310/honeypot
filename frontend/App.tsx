@@ -120,7 +120,7 @@ function buildStaticServiceMeta(): ServiceMeta {
     ],
     proof_assets: [
       { label: "Health Route", path: "app/main.py", kind: "endpoint", why: "Confirms the top-level runtime envelope and next operator action." },
-      { label: "Runtime Brief Builder", path: "app/service_meta.py", kind: "endpoint", why: "Builds the reviewer-first runtime contract and trust boundary." },
+      { label: "Runtime Brief Builder", path: "app/service_meta.py", kind: "endpoint", why: "Builds the runtime contract and trust boundary." },
       { label: "Ops Runtime Route", path: "app/routers/ops.py", kind: "endpoint", why: "Provides route-by-route diagnostics before production-readiness claims." },
       { label: "Readiness Board", path: "frontend/components/ServiceReadinessBoard.tsx", kind: "surface", why: "Shows the same posture at login and inside the main workspace." },
     ],

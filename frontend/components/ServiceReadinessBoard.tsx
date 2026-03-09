@@ -108,17 +108,17 @@ const ServiceReadinessBoard: React.FC<Props> = ({
     railway_deployment: "Keep hosted demo setup legible without leaving the repo context.",
   };
   const reviewRouteText = [
-    "Honeypot reviewer routes",
+    "Honeypot review routes",
     ...reviewLinks.map(([label, path]) => `- ${label}: ${path}`),
   ].join("\n");
   const twoMinuteReviewText = [
-    "Honeypot 2-minute review",
+    "Honeypot review flow",
     ...twoMinuteReview.map((step) => `- ${step}`),
   ].join("\n");
-  const proofBundleText = [
-    "Honeypot proof bundle",
+  const evidenceText = [
+    "Honeypot evidence snapshot",
     ...reviewLinks.map(([label, path]) => `- ${label}: ${path}`),
-    ...(proofAssets.length ? ["", "Proof assets", ...proofAssets.map((asset) => `- ${asset}`)] : []),
+    ...(proofAssets.length ? ["", "Supporting assets", ...proofAssets.map((asset) => `- ${asset}`)] : []),
   ].join("\n");
   const deliveryBoundaryText = [
     "Honeypot delivery boundary",
@@ -157,17 +157,17 @@ const ServiceReadinessBoard: React.FC<Props> = ({
 
   const handleCopyRoutes = async () => {
     const ok = await copyTextToClipboard(reviewRouteText);
-    setCopyStatus(ok ? "Copied reviewer routes." : "Failed to copy reviewer routes.");
+    setCopyStatus(ok ? "Copied review routes." : "Failed to copy review routes.");
   };
 
   const handleCopyTwoMinuteReview = async () => {
     const ok = await copyTextToClipboard(twoMinuteReviewText);
-    setCopyStatus(ok ? "Copied 2-minute review." : "Failed to copy 2-minute review.");
+    setCopyStatus(ok ? "Copied review flow." : "Failed to copy review flow.");
   };
 
-  const handleCopyProofBundle = async () => {
-    const ok = await copyTextToClipboard(proofBundleText);
-    setCopyStatus(ok ? "Copied proof bundle." : "Failed to copy proof bundle.");
+  const handleCopyEvidence = async () => {
+    const ok = await copyTextToClipboard(evidenceText);
+    setCopyStatus(ok ? "Copied evidence snapshot." : "Failed to copy evidence snapshot.");
   };
 
   const handleCopyDeliveryBoundary = async () => {
@@ -336,10 +336,10 @@ const ServiceReadinessBoard: React.FC<Props> = ({
           </button>
           <button
             type="button"
-            onClick={() => void handleCopyProofBundle()}
+            onClick={() => void handleCopyEvidence()}
             className="rounded-full border border-gray-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-700"
           >
-            Copy Proof Bundle
+            Copy Evidence Snapshot
           </button>
           <button
             type="button"
