@@ -137,6 +137,23 @@ const ServiceReadinessBoard: React.FC<Props> = ({
     "Boundary routes",
     ...reviewLinks.slice(0, 4).map(([label, path]) => `- ${label}: ${path}`),
   ].join("\n");
+  const azureClaimText = [
+    "Honeypot Azure claim snapshot",
+    `Headline: ${serviceBrief?.headline ?? serviceMeta.tagline}`,
+    `Health: ${healthSummary.status}`,
+    `Runtime mode: ${serviceMeta.runtime.mode}`,
+    `Runtime config: ${serviceMeta.runtime.config_valid ? "valid" : "check-required"}`,
+    `Allowed origins: ${serviceMeta.runtime.allowed_origins_count}`,
+    ...(serviceBrief
+      ? [
+          `Delivery modes: ${serviceBrief.review_pack.delivery_modes}`,
+          `Review sections: ${serviceBrief.review_pack.required_sections}`,
+        ]
+      : []),
+    "",
+    "Fast routes",
+    ...reviewLinks.slice(0, 4).map(([label, path]) => `- ${label}: ${path}`),
+  ].join("\n");
 
   const handleCopyRoutes = async () => {
     const ok = await copyTextToClipboard(reviewRouteText);
@@ -156,6 +173,11 @@ const ServiceReadinessBoard: React.FC<Props> = ({
   const handleCopyDeliveryBoundary = async () => {
     const ok = await copyTextToClipboard(deliveryBoundaryText);
     setCopyStatus(ok ? "Copied delivery boundary." : "Failed to copy delivery boundary.");
+  };
+
+  const handleCopyAzureClaim = async () => {
+    const ok = await copyTextToClipboard(azureClaimText);
+    setCopyStatus(ok ? "Copied Azure claim snapshot." : "Failed to copy Azure claim snapshot.");
   };
 
   return (
@@ -325,6 +347,13 @@ const ServiceReadinessBoard: React.FC<Props> = ({
             className="rounded-full border border-gray-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-700"
           >
             Copy Delivery Boundary
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleCopyAzureClaim()}
+            className="rounded-full border border-gray-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-700"
+          >
+            Copy Azure Claim
           </button>
           {copyStatus ? <span className="text-[11px] text-gray-500">{copyStatus}</span> : null}
         </div>
