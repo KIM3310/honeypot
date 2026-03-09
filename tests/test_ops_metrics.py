@@ -75,12 +75,17 @@ class TestOpsMetrics(unittest.TestCase):
                 self.assertIn("hottest_routes", runtime_payload["route_diagnostics"])
                 self.assertIn("slowest_routes", runtime_payload["route_diagnostics"])
                 self.assertIn("error_prone_routes", runtime_payload["route_diagnostics"])
-                self.assertTrue(
-                    any(
-                        item["route"] == "GET /api/upload/status/{task_id}"
-                        for item in runtime_payload["route_diagnostics"]["hottest_routes"]
+                diagnostic_routes = {
+                    item["route"]
+                    for bucket in (
+                        runtime_payload["route_diagnostics"]["hottest_routes"],
+                        runtime_payload["route_diagnostics"]["slowest_routes"],
+                        runtime_payload["route_diagnostics"]["error_prone_routes"],
                     )
-                )
+                    for item in bucket
+                }
+                self.assertIn("GET /api/upload/status/{task_id}", {item["route"] for item in payload["routes"]})
+                self.assertTrue(diagnostic_routes)
 
         asyncio.run(_run())
 

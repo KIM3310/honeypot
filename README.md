@@ -154,6 +154,7 @@ python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 Backend endpoints:
 - Health: `GET http://localhost:8000/api/health`
 - Runtime brief: `GET http://localhost:8000/api/runtime-brief`
+- Runtime scorecard: `GET http://localhost:8000/api/runtime-scorecard`
 - Swagger: `http://localhost:8000/docs`
 
 ### 2) Frontend
@@ -228,6 +229,8 @@ Read endpoints that expose indexed/document metadata also require:
   - trust boundary, staged evidence, runtime posture
 - `GET /api/runtime-brief`
   - reviewer-first contract for auth mode, retrieval mode, review pack, and watchouts
+- `GET /api/runtime-scorecard`
+  - compact route pressure, alert count, and security posture snapshot
 - `GET /api/schema/handover`
   - handover export contract (`honeypot-handover-v1`)
 
@@ -235,6 +238,7 @@ The frontend renders the same reviewer pack on the login screen and main workspa
 
 ### 2-Minute Review Path
 - Open `/api/health` to confirm whether the service is demo or live-configured.
+- Read `/api/runtime-scorecard` for route pressure, alert count, and security posture.
 - Read `/api/runtime-brief` for trust boundary, delivery modes, and watchouts.
 - Inspect `/api/schema/handover` before trusting the editor contract.
 - Open `/api/ops/runtime` before making production-readiness claims.
@@ -242,6 +246,7 @@ The frontend renders the same reviewer pack on the login screen and main workspa
 ### Proof Assets
 - `app/main.py` for the top-level runtime envelope and next-action posture
 - `app/service_meta.py` for runtime brief and review-pack builders
+- `app/runtime_scorecard.py` for the compact runtime scorecard contract
 - `app/routers/ops.py` for route-by-route diagnostics and runtime evidence
 - `frontend/components/ServiceReadinessBoard.tsx` for the shared reviewer surface on login and workspace
 

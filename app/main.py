@@ -9,8 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from app.routers import upload, chat, auth, ops  # ← 추가: auth import
 from app.config import APP_MODE, CONFIG_VALID
-from app.metrics import get_metrics_snapshot, record_request
-from app.security import validate_security_runtime
+from app.metrics import get_metrics_snapshot, get_route_diagnostics, record_request
+from app.security import get_security_runtime_snapshot, validate_security_runtime
 from app.service_meta import (
     build_handover_schema,
     build_honeypot_review_summary,
@@ -18,6 +18,7 @@ from app.service_meta import (
     build_honeypot_runtime_brief,
     build_honeypot_service_meta,
 )
+from app.runtime_scorecard import build_runtime_scorecard
 
 
 if not CONFIG_VALID:
@@ -196,6 +197,7 @@ def health_check(request: Request):
         "service_grade": {
             "readiness": "honeypot-runtime-brief-v1",
             "runtime_brief": "/api/runtime-brief",
+            "runtime_scorecard": "/api/runtime-scorecard",
             "report_schema": "/api/schema/handover",
             "review_summary": "/api/review-summary",
         },
@@ -206,11 +208,13 @@ def health_check(request: Request):
             "security-guardrails",
             "service-metadata-surface",
             "runtime-brief-surface",
+            "runtime-scorecard-surface",
             "review-summary-surface",
         ],
         "links": {
             "meta": "/api/meta",
             "runtime_brief": "/api/runtime-brief",
+            "runtime_scorecard": "/api/runtime-scorecard",
             "review_summary": "/api/review-summary",
             "handover_schema": "/api/schema/handover",
             "ops_metrics": "/api/ops/metrics",
@@ -246,6 +250,19 @@ def runtime_brief():
         errors_total=totals.get("errors", 0),
         mode=APP_MODE,
         requests_total=totals.get("requests", 0),
+    )
+
+
+@app.get("/api/runtime-scorecard")
+def runtime_scorecard():
+    metrics = get_metrics_snapshot(include_routes=True)
+    return build_runtime_scorecard(
+        allowed_origins_count=len(get_allowed_origins()),
+        config_valid=CONFIG_VALID,
+        mode=APP_MODE,
+        metrics=metrics,
+        route_diagnostics=get_route_diagnostics(),
+        security=get_security_runtime_snapshot(),
     )
 
 
