@@ -103,7 +103,7 @@ const LoginScreen: React.FC<Props> = ({
               type="email" 
               value={id}
               onChange={(e) => setId(e.target.value)}
-              placeholder="user1@company.com"
+              placeholder="name@company.local"
               disabled={isLoading}
               className="w-full px-6 py-4 bg-yellow-50/50 border border-yellow-100 rounded-2xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all font-bold placeholder:text-yellow-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
@@ -141,14 +141,11 @@ const LoginScreen: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* 테스트 계정 표시 */}
         <div className="mt-8 p-4 bg-yellow-50/70 rounded-2xl border border-yellow-200 text-center">
-          <p className="text-xs font-black text-yellow-700 uppercase tracking-wider">🧪 테스트 계정</p>
-          <ul className="text-[11px] text-yellow-600 mt-2 space-y-1 font-mono font-bold">
-            <li>user1@company.com / password123</li>
-            <li>user2@company.com / password123</li>
-            <li>admin@company.com / admin123</li>
-          </ul>
+          <p className="text-xs font-black text-yellow-700 uppercase tracking-wider">개발용 로그인</p>
+          <p className="mt-2 text-[11px] text-yellow-700 font-bold">
+            로컬 demo 계정은 backend 설정과 환경 변수에서 관리합니다.
+          </p>
         </div>
       </div>
 

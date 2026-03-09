@@ -13,7 +13,7 @@ class TestInputValidation(unittest.TestCase):
             async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
                 login = await client.post(
                     "/api/auth/login",
-                    json={"email": "user1@company.com", "password": "password123"},
+                    json={"email": "employee@company.local", "password": "EmployeeDemo!2026"},
                 )
                 self.assertEqual(login.status_code, 200)
                 login_data = login.json()
@@ -65,7 +65,7 @@ class TestInputValidation(unittest.TestCase):
             async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
                 login = await client.post(
                     "/api/auth/login",
-                    json={"email": "user1@company.com", "password": "password123"},
+                    json={"email": "employee@company.local", "password": "EmployeeDemo!2026"},
                 )
                 self.assertEqual(login.status_code, 200)
                 login_data = login.json()

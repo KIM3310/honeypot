@@ -18,7 +18,7 @@ class TestOpsMetrics(unittest.TestCase):
                 # non-admin
                 login_user = await client.post(
                     "/api/auth/login",
-                    json={"email": "user1@company.com", "password": "password123"},
+                    json={"email": "employee@company.local", "password": "EmployeeDemo!2026"},
                 )
                 self.assertEqual(login_user.status_code, 200)
                 user_token = login_user.json()["access_token"]
@@ -39,7 +39,7 @@ class TestOpsMetrics(unittest.TestCase):
                 # admin
                 login_admin = await client.post(
                     "/api/auth/login",
-                    json={"email": "admin@company.com", "password": "admin123"},
+                    json={"email": "admin@company.local", "password": "AdminDemo!2026"},
                 )
                 self.assertEqual(login_admin.status_code, 200)
                 admin_token = login_admin.json()["access_token"]

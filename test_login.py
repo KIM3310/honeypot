@@ -13,7 +13,7 @@ import requests
 def run_manual_login_check(base_url: str = "http://localhost:8000") -> dict:
     response = requests.post(
         f"{base_url}/api/auth/login",
-        json={"email": "user1@company.com", "password": "password123"},
+        json={"email": "employee@company.local", "password": "EmployeeDemo!2026"},
         timeout=10,
     )
     response.raise_for_status()

@@ -47,20 +47,20 @@ _LAST_SECURITY_CLEANUP_TS = 0.0
 
 # ===== Demo users =====
 MOCK_USERS = {
-    "user1@company.com": {
-        "password": "password123",
+    "employee@company.local": {
+        "password": os.getenv("HONEYPOT_DEMO_EMPLOYEE_PASSWORD", "EmployeeDemo!2026"),
         "name": "김신입",
         "role": "employee",
         "department": "Engineering",
     },
-    "user2@company.com": {
-        "password": "password123",
+    "manager@company.local": {
+        "password": os.getenv("HONEYPOT_DEMO_MANAGER_PASSWORD", "ManagerDemo!2026"),
         "name": "이팀장",
         "role": "manager",
         "department": "HR",
     },
-    "admin@company.com": {
-        "password": "admin123",
+    "admin@company.local": {
+        "password": os.getenv("HONEYPOT_DEMO_ADMIN_PASSWORD", "AdminDemo!2026"),
         "name": "관리자",
         "role": "admin",
         "department": "Management",

@@ -70,10 +70,8 @@ async def login(request: Request, login_request: LoginRequest):
     """
     Demo login (JWT + refresh token + CSRF token + basic rate limiting).
 
-    Test accounts:
-    - user1@company.com / password123
-    - user2@company.com / password123
-    - admin@company.com / admin123
+    Local demo accounts are configured in app.security and can be overridden with
+    HONEYPOT_DEMO_* environment variables.
     """
     client_ip = get_client_ip(request)
     if not check_rate_limit(client_ip):

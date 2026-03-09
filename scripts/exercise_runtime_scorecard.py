@@ -19,7 +19,7 @@ async def _run() -> None:
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         login = await client.post(
             "/api/auth/login",
-            json={"email": "admin@company.com", "password": "admin123"},
+            json={"email": "admin@company.local", "password": "AdminDemo!2026"},
         )
         login.raise_for_status()
         access_token = login.json()["access_token"]

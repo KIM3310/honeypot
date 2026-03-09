@@ -21,7 +21,7 @@ class TestUploadAuthz(unittest.TestCase):
 
                 login = await client.post(
                     "/api/auth/login",
-                    json={"email": "user1@company.com", "password": "password123"},
+                    json={"email": "employee@company.local", "password": "EmployeeDemo!2026"},
                 )
                 self.assertEqual(login.status_code, 200)
                 token = login.json()["access_token"]
@@ -38,7 +38,7 @@ class TestUploadAuthz(unittest.TestCase):
             async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
                 login_user1 = await client.post(
                     "/api/auth/login",
-                    json={"email": "user1@company.com", "password": "password123"},
+                    json={"email": "employee@company.local", "password": "EmployeeDemo!2026"},
                 )
                 self.assertEqual(login_user1.status_code, 200)
                 user1_data = login_user1.json()
@@ -56,7 +56,7 @@ class TestUploadAuthz(unittest.TestCase):
 
                 login_user2 = await client.post(
                     "/api/auth/login",
-                    json={"email": "user2@company.com", "password": "password123"},
+                    json={"email": "manager@company.local", "password": "ManagerDemo!2026"},
                 )
                 self.assertEqual(login_user2.status_code, 200)
                 user2_token = login_user2.json()["access_token"]

@@ -29,9 +29,7 @@
 URL: https://your-frontend.vercel.app
 1. 페이지 열기
 2. 로그인 화면 표시 확인
-3. 테스트 계정으로 로그인:
-   - Email: user1@company.com
-   - Password: password123
+3. 로컬에서 생성한 개발용 계정으로 로그인
 4. 로그인 성공 확인
 ```
 

@@ -309,7 +309,7 @@ https://your-project.vercel.app
 ### 통합 테스트
 
 1. **로그인 테스트**
-   - 테스트 계정: `user1@company.com` / `password123`
+   - 로컬에서 생성한 demo user 또는 개발 환경 전용 계정을 사용
 
 2. **파일 업로드 테스트**
    - PDF, DOCX 파일 업로드

@@ -2,7 +2,7 @@
 
 Kkuldanji converts internal documents into a structured 6-section handover document and supports follow-up Q&A via retrieval (vector + semantic search).
 
-This repo was built as a portfolio prototype to practice:
+This repo explores a document-to-handover workflow with a security-conscious web stack:
 - Document ingestion (PDF/DOCX/TXT/images/code)
 - LLM-based preprocessing into structured JSON chunks
 - Retrieval on Azure AI Search (embeddings + semantic ranking)
@@ -11,7 +11,7 @@ This repo was built as a portfolio prototype to practice:
 
 Status: prototype. Some security features use in-memory stores (suitable for demo/dev, not production).
 
-## My Role (Team Project)
+## Scope
 - System architecture design (end-to-end flow + component boundaries)
 - Backend implementation (FastAPI ingestion/status, extraction routing, blob/search integration)
 - RAG quality improvement support (schema-first chunking + retrieval tuning)
@@ -192,10 +192,8 @@ Default local endpoint:
 - `http://127.0.0.1:11434/v1`
 
 ### Demo Accounts
-For the local prototype login:
-- `user1@company.com / password123`
-- `user2@company.com / password123`
-- `admin@company.com / admin123`
+For local development, seed demo users through the auth bootstrap or test fixtures in the backend.
+Do not publish shared credentials in deployed environments.
 
 ## API
 All state-changing requests must include:
