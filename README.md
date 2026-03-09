@@ -228,7 +228,7 @@ Read endpoints that expose indexed/document metadata also require:
 - `GET /api/meta`
   - trust boundary, staged evidence, runtime posture
 - `GET /api/runtime-brief`
-  - reviewer-first contract for auth mode, retrieval mode, review pack, and watchouts
+  - runtime contract for auth mode, retrieval mode, review pack, and watchouts
 - `GET /api/runtime-scorecard`
   - compact route pressure, alert count, and security posture snapshot
 - `GET /api/schema/handover`
@@ -236,7 +236,7 @@ Read endpoints that expose indexed/document metadata also require:
 
 The frontend renders the same reviewer pack on the login screen and main workspace, so the product posture is visible before any upload or chat action.
 
-### Quick Review Path
+### Review Flow
 - Open `/api/health` to confirm whether the service is demo or live-configured.
 - Read `/api/runtime-scorecard` for route pressure, alert count, and security posture.
 - Read `/api/runtime-brief` for trust boundary, delivery modes, and watchouts.
