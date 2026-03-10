@@ -39,7 +39,7 @@ npm run electron:dev
 
 ```bash
 # 프로젝트 루트에서
-./build_backend.sh
+./tools/desktop/build_backend.sh
 ```
 
 이 스크립트는:
@@ -79,8 +79,8 @@ honeypot-main/
 │   ├── dist/                    # 빌드된 React 앱
 │   ├── electron-builder.json   # Electron 빌드 설정
 │   └── package.json
-├── backend.spec                 # PyInstaller 빌드 설정
-└── build_backend.sh            # 백엔드 빌드 스크립트
+├── tools/desktop/backend.spec                 # PyInstaller 빌드 설정
+└── tools/desktop/build_backend.sh            # 백엔드 빌드 스크립트
 ```
 
 ## 🔧 주요 설정 파일

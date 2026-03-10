@@ -15,7 +15,8 @@ fi
 rm -rf build dist
 
 # PyInstaller로 백엔드 빌드
-pyinstaller backend.spec
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+pyinstaller "$SCRIPT_DIR/backend.spec"
 
 # 빌드 결과 확인
 if [ -f "dist/backend" ] || [ -f "dist/backend.exe" ]; then
