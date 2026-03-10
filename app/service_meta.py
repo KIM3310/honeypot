@@ -61,11 +61,11 @@ def build_honeypot_service_meta(
         [
             path
             for path in (
-                REPO_ROOT / "DEPLOYMENT_GUIDE.md",
-                REPO_ROOT / "RAILWAY_DEPLOYMENT.md",
-                REPO_ROOT / "CONNECTION_GUIDE.md",
-                REPO_ROOT / "CLOUDFLARE_PAGES.md",
-                REPO_ROOT / "ELECTRON_GUIDE.md",
+                REPO_ROOT / "docs/deployment/DEPLOYMENT_GUIDE.md",
+                REPO_ROOT / "docs/deployment/RAILWAY_DEPLOYMENT.md",
+                REPO_ROOT / "docs/integration/CONNECTION_GUIDE.md",
+                REPO_ROOT / "docs/deployment/CLOUDFLARE_PAGES.md",
+                REPO_ROOT / "docs/deployment/ELECTRON_GUIDE.md",
             )
             if path.exists()
         ]
@@ -74,8 +74,8 @@ def build_honeypot_service_meta(
         [
             path
             for path in (
-                REPO_ROOT / "RUNBOOK.md",
-                REPO_ROOT / "POSTMORTEM_TEMPLATE.md",
+                REPO_ROOT / "docs/ops/RUNBOOK.md",
+                REPO_ROOT / "docs/ops/POSTMORTEM_TEMPLATE.md",
                 REPO_ROOT / "tests" / "test_ops_metrics.py",
                 REPO_ROOT / "tests" / "test_security_runtime.py",
             )
@@ -108,7 +108,7 @@ def build_honeypot_service_meta(
                 [
                     ("Document service", "app/services/document_service.py", "endpoint"),
                     ("Prompt templates", "app/services/prompts.py", "endpoint"),
-                    ("Runbook", "RUNBOOK.md", "doc"),
+                    ("Runbook", "docs/ops/RUNBOOK.md", "doc"),
                     ("Handover form", "frontend/components/HandoverForm.tsx", "surface"),
                 ]
             ),
@@ -123,7 +123,7 @@ def build_honeypot_service_meta(
                     ("Search service", "app/services/search_service.py", "endpoint"),
                     ("BYO LLM override test", "tests/test_llm_override.py", "test"),
                     ("Assistant service", "frontend/services/assistantService.ts", "surface"),
-                    ("Connection guide", "CONNECTION_GUIDE.md", "doc"),
+                    ("Connection guide", "docs/integration/CONNECTION_GUIDE.md", "doc"),
                 ]
             ),
         },
@@ -151,7 +151,7 @@ def build_honeypot_service_meta(
                     ("Ops runtime route", "app/routers/ops.py", "endpoint"),
                     ("Security runtime tests", "tests/test_security_runtime.py", "test"),
                     ("Ops metrics tests", "tests/test_ops_metrics.py", "test"),
-                    ("Postmortem template", "POSTMORTEM_TEMPLATE.md", "doc"),
+                    ("Postmortem template", "docs/ops/POSTMORTEM_TEMPLATE.md", "doc"),
                 ]
             ),
         },
@@ -259,9 +259,9 @@ def build_honeypot_service_meta(
             "handover_schema": "/api/schema/handover",
             "ops_metrics": "/api/ops/metrics",
             "ops_runtime": "/api/ops/runtime",
-            "runbook": "RUNBOOK.md",
-            "deployment_guide": "DEPLOYMENT_GUIDE.md",
-            "railway_deployment": "RAILWAY_DEPLOYMENT.md",
+            "runbook": "docs/ops/RUNBOOK.md",
+            "deployment_guide": "docs/deployment/DEPLOYMENT_GUIDE.md",
+            "railway_deployment": "docs/deployment/RAILWAY_DEPLOYMENT.md",
         },
     }
 

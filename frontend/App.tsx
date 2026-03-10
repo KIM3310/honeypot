@@ -155,7 +155,7 @@ function buildStaticServiceMeta(): ServiceMeta {
         highlights: [
           { label: "Document service", path: "app/services/document_service.py", kind: "endpoint" },
           { label: "Prompt templates", path: "app/services/prompts.py", kind: "endpoint" },
-          { label: "Runbook", path: "RUNBOOK.md", kind: "doc" },
+          { label: "Runbook", path: "docs/ops/RUNBOOK.md", kind: "doc" },
           { label: "Handover form", path: "frontend/components/HandoverForm.tsx", kind: "surface" },
         ],
       },
@@ -168,7 +168,7 @@ function buildStaticServiceMeta(): ServiceMeta {
           { label: "Search service", path: "app/services/search_service.py", kind: "endpoint" },
           { label: "BYO LLM override test", path: "tests/test_llm_override.py", kind: "test" },
           { label: "Assistant service", path: "frontend/services/assistantService.ts", kind: "surface" },
-          { label: "Connection guide", path: "CONNECTION_GUIDE.md", kind: "doc" },
+          { label: "Connection guide", path: "docs/integration/CONNECTION_GUIDE.md", kind: "doc" },
         ],
       },
       {
@@ -192,7 +192,7 @@ function buildStaticServiceMeta(): ServiceMeta {
           { label: "Ops runtime route", path: "app/routers/ops.py", kind: "endpoint" },
           { label: "Security runtime tests", path: "tests/test_security_runtime.py", kind: "test" },
           { label: "Ops metrics tests", path: "tests/test_ops_metrics.py", kind: "test" },
-          { label: "Postmortem template", path: "POSTMORTEM_TEMPLATE.md", kind: "doc" },
+          { label: "Postmortem template", path: "docs/ops/POSTMORTEM_TEMPLATE.md", kind: "doc" },
         ],
       },
     ],
@@ -210,9 +210,9 @@ function buildStaticServiceMeta(): ServiceMeta {
       handover_schema: "/api/schema/handover",
       ops_metrics: "/api/ops/metrics",
       ops_runtime: "/api/ops/runtime",
-      runbook: "RUNBOOK.md",
-      deployment_guide: "DEPLOYMENT_GUIDE.md",
-      railway_deployment: "RAILWAY_DEPLOYMENT.md",
+      runbook: "docs/ops/RUNBOOK.md",
+      deployment_guide: "docs/deployment/DEPLOYMENT_GUIDE.md",
+      railway_deployment: "docs/deployment/RAILWAY_DEPLOYMENT.md",
     },
   };
 }

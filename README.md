@@ -134,7 +134,7 @@ Configuration is controlled by `proto.env`:
 │   ├── components/             # UI
 │   └── electron/               # optional desktop packaging
 ├── proto.env.example           # local env template (copy to proto.env)
-├── RUNBOOK.md
+├── docs/ops/RUNBOOK.md
 └── .github/workflows/ci.yml
 ```
 
@@ -356,18 +356,18 @@ curl -fsS http://localhost:8000/api/schema/handover | python -m json.tool | head
 - The frontend now renders an `Enterprise Handover Readiness` board on both the login screen and the main workspace, so the product reads like a service before the user even uploads files
 
 ## Ops Artifacts
-- `RUNBOOK.md` (local demo runbook)
-- `POSTMORTEM_TEMPLATE.md` (incident postmortem template)
+- `docs/ops/RUNBOOK.md` (local demo runbook)
+- `docs/ops/POSTMORTEM_TEMPLATE.md` (incident postmortem template)
 - `.github/workflows/ci.yml` (CI pipeline)
 
 ## Deployment Notes
 This repo includes deployment references for a few common setups:
-- Backend: `Dockerfile`, `Procfile`, `railway.json`, `RAILWAY_DEPLOYMENT.md`
+- Backend: `Dockerfile`, `Procfile`, `railway.json`, `docs/deployment/RAILWAY_DEPLOYMENT.md`
 - Frontend: Vite build in `frontend/` (recommended to set `VITE_API_BASE_URL` in production)
 
 If you run into CORS/environment issues, see:
-- `DEPLOYMENT_GUIDE.md`
-- `CONNECTION_GUIDE.md`
+- `docs/deployment/DEPLOYMENT_GUIDE.md`
+- `docs/integration/CONNECTION_GUIDE.md`
 
 ## Troubleshooting
 - CORS errors:

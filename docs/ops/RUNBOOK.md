@@ -52,6 +52,6 @@ npm run dev
 
 ## Troubleshooting
 - CORS issues:
-  - See `DEPLOYMENT_GUIDE.md` and ensure frontend `VITE_API_BASE_URL` matches backend URL.
+  - See `docs/deployment/DEPLOYMENT_GUIDE.md` and ensure frontend `VITE_API_BASE_URL` matches backend URL.
 - Azure env vars missing:
   - Backend reads from `proto.env`. Confirm values are present and no trailing spaces.
