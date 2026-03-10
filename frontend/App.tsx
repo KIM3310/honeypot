@@ -591,6 +591,123 @@ const App: React.FC = () => {
     }
   };
 
+  const handleCopyReviewerBundle = async () => {
+    const shareUrl = buildWorkspaceShareUrl(
+      buildWorkspaceUrlSearch({
+        viewMode,
+        sessionId: currentSessionId ?? undefined,
+        selectedRagIndex,
+      })
+    );
+    const reviewRoutes = Object.values(healthSummary?.links || {}).filter(Boolean);
+    const lines = [
+      "honeypot reviewer bundle",
+      `View: ${viewMode === ViewMode.CHAT ? "chat" : "history"}`,
+      `Index: ${selectedRagIndex || "documents-index"}`,
+      `Session: ${currentSessionId || "none"}`,
+      `Share link: ${shareUrl}`,
+      "",
+      "Two-minute review",
+      ...((serviceMeta?.two_minute_review || []).map((item) => `- ${item}`)),
+      "",
+      "Fast routes",
+      ...(reviewRoutes.length > 0 ? reviewRoutes.map((item) => `- ${item}`) : ["- Runtime links unavailable."]),
+    ];
+
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setWorkspaceNotice("리뷰어 번들을 복사했습니다.");
+    } catch (error) {
+      console.error("❌ reviewer bundle 복사 실패:", error);
+      setWorkspaceNotice("리뷰어 번들 복사에 실패했습니다.");
+    }
+  };
+
+  const handleCopyFocusedSession = async () => {
+    const lines = [
+      "honeypot focused session snapshot",
+      `View: ${viewMode === ViewMode.CHAT ? "chat" : "history"}`,
+      `Index: ${selectedRagIndex || "documents-index"}`,
+      `Session: ${currentSessionId || "none"}`,
+      `Messages: ${messages.length}`,
+      `Files: ${files.length}`,
+      `Runtime: ${healthSummary?.status || "unknown"}`,
+    ];
+
+    try {
+      await navigator.clipboard.writeText(lines.join("\\n"));
+      setWorkspaceNotice("현재 세션 스냅샷을 복사했습니다.");
+    } catch (error) {
+      console.error("❌ focused session 복사 실패:", error);
+      setWorkspaceNotice("세션 스냅샷 복사에 실패했습니다.");
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyboardShortcuts = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tagName = String(target?.tagName || "").toLowerCase();
+      const isTypingTarget =
+        Boolean(target?.isContentEditable) ||
+        tagName === "input" ||
+        tagName === "textarea" ||
+        tagName === "select";
+      if (isTypingTarget || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+      if (event.shiftKey && key === "l") {
+        event.preventDefault();
+        void handleCopyWorkspaceLink();
+        return;
+      }
+      if (event.shiftKey && key === "b") {
+        event.preventDefault();
+        void handleCopyReviewerBundle();
+        return;
+      }
+      if (event.shiftKey && key === "s") {
+        event.preventDefault();
+        void handleCopyFocusedSession();
+        return;
+      }
+      if (event.shiftKey && key === "n") {
+        event.preventDefault();
+        handleNewChat();
+        return;
+      }
+      if (key === "?") {
+        event.preventDefault();
+        setWorkspaceNotice("Shortcuts: 1 chat · 2 history · ⇧L link · ⇧B bundle · ⇧S session snapshot · ⇧N new chat");
+        return;
+      }
+      if (event.shiftKey) {
+        return;
+      }
+      if (key === "1") {
+        event.preventDefault();
+        setViewMode(ViewMode.CHAT);
+      } else if (key === "2") {
+        event.preventDefault();
+        setViewMode(ViewMode.CHAT_HISTORY);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyboardShortcuts);
+    return () => window.removeEventListener("keydown", handleKeyboardShortcuts);
+  }, [
+    currentSessionId,
+    files.length,
+    healthSummary?.links,
+    healthSummary?.status,
+    messages.length,
+    selectedRagIndex,
+    handleCopyFocusedSession,
+    serviceMeta?.two_minute_review,
+    viewMode,
+  ]);
+
   const updateCurrentSessionMessages = (newMessages: ChatMessage[]) => {
     if (!currentSessionId) return;
     setChatSessions((prev) =>
@@ -821,6 +938,18 @@ const App: React.FC = () => {
                   >
                     현재 링크 복사
                   </button>
+                  <button
+                    onClick={handleCopyReviewerBundle}
+                    className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-[11px] font-black text-gray-900 shadow-sm hover:bg-gray-50"
+                  >
+                    리뷰어 번들 복사
+                  </button>
+                  <button
+                    onClick={handleCopyFocusedSession}
+                    className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-[11px] font-black text-gray-900 shadow-sm hover:bg-gray-50"
+                  >
+                    세션 스냅샷 복사
+                  </button>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <span className="rounded-full border border-gray-200 bg-yellow-50 px-2 py-1 text-[10px] font-black text-yellow-700">
@@ -838,6 +967,9 @@ const App: React.FC = () => {
                 {workspaceNotice && (
                   <p className="mt-3 text-[11px] font-bold text-yellow-700">{workspaceNotice}</p>
                 )}
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
+                  Shortcuts: 1 chat · 2 history · ⇧L link · ⇧B bundle · ⇧S session snapshot · ⇧N new chat
+                </p>
               </section>
               <section className="rounded-2xl border border-gray-300 bg-white/95 p-4 shadow-sm">
                 <p className="text-[10px] font-black tracking-[0.16em] text-gray-500 uppercase">
