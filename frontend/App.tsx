@@ -26,7 +26,11 @@ import {
   analyzeFilesForHandover,
   chatWithAssistant,
 } from "./services/assistantService";
-import { API_ENDPOINTS, fetchWithTimeout } from "./config/api";
+import {
+  API_ENDPOINTS,
+  API_RUNTIME_CONFIG,
+  fetchWithTimeout,
+} from "./config/api";
 import { HandoverPrintTemplate } from "./components/HandoverPrintTemplate";
 import { fetchWithSession } from "./services/sessionFetch";
 
@@ -344,6 +348,15 @@ const App: React.FC = () => {
   const [handoverSchema, setHandoverSchema] = useState<HandoverSchema>(() =>
     buildStaticHandoverSchema()
   );
+  const [backendReachable, setBackendReachable] = useState(false);
+  const [apiMisconfigured, setApiMisconfigured] = useState(
+    API_RUNTIME_CONFIG.isProductionMisconfigured
+  );
+  const [runtimeStatusMessage, setRuntimeStatusMessage] = useState(() =>
+    API_RUNTIME_CONFIG.isProductionMisconfigured
+      ? "VITE_API_BASE_URL이 설정되지 않아 리뷰 전용 화면으로 시작했습니다."
+      : "백엔드 연결 상태를 확인 중입니다."
+  );
 
   // localStorage에서 세션 로드
   useEffect(() => {
@@ -432,7 +445,7 @@ const App: React.FC = () => {
           const data = await response.json().catch(() => null);
           if (response.ok && data && !cancelled) {
             assign(data as T);
-            return;
+            return true;
           }
         } catch (_error) {
           // Fall back to static reviewer surfaces when the backend is unavailable.
@@ -441,9 +454,25 @@ const App: React.FC = () => {
         if (!cancelled) {
           assign(fallback());
         }
+        return false;
       }
 
-      await Promise.all([
+      if (API_RUNTIME_CONFIG.isProductionMisconfigured) {
+        if (!cancelled) {
+          setHealthSummary(buildStaticHealthSummary());
+          setServiceMeta(buildStaticServiceMeta());
+          setServiceBrief(buildStaticServiceBrief());
+          setHandoverSchema(buildStaticHandoverSchema());
+          setBackendReachable(false);
+          setApiMisconfigured(true);
+          setRuntimeStatusMessage(
+            "VITE_API_BASE_URL이 없어 live backend에 연결할 수 없습니다. 현재는 리뷰 전용 화면입니다."
+          );
+        }
+        return;
+      }
+
+      const [healthLive] = await Promise.all([
         loadSurface<HealthSummary>(
           API_ENDPOINTS.HEALTH,
           buildStaticHealthSummary,
@@ -465,6 +494,16 @@ const App: React.FC = () => {
           setHandoverSchema
         ),
       ]);
+
+      if (!cancelled) {
+        setApiMisconfigured(false);
+        setBackendReachable(Boolean(healthLive));
+        setRuntimeStatusMessage(
+          healthLive
+            ? "백엔드가 연결되어 live service surface를 표시 중입니다."
+            : "백엔드에 연결할 수 없어 리뷰 전용 정적 surface를 표시 중입니다."
+        );
+      }
     }
 
     void loadServiceSurfaces();
@@ -651,9 +690,12 @@ const App: React.FC = () => {
   if (!isLoggedIn) {
     return (
       <LoginScreen
+        apiMisconfigured={apiMisconfigured}
+        backendReachable={backendReachable}
         handoverSchema={handoverSchema}
         healthSummary={healthSummary}
         onLogin={() => setIsLoggedIn(true)}
+        runtimeStatusMessage={runtimeStatusMessage}
         serviceBrief={serviceBrief}
         serviceMeta={serviceMeta}
       />

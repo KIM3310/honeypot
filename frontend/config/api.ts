@@ -2,6 +2,7 @@
 // Electron 환경 감지
 const hasWindow = typeof window !== 'undefined';
 const isElectron = hasWindow && !!(window as any).electronAPI;
+const MISCONFIGURED_API_BASE_URL = "https://backend-not-configured.invalid";
 
 // 개발/프로덕션 환경 감지
 const isDev = import.meta.env.DEV;
@@ -10,36 +11,25 @@ function normalizeBaseUrl(value: string): string {
   return String(value || '').trim().replace(/\/+$/, '');
 }
 
-// API 베이스 URL 결정
-function getApiBaseUrl(): string {
-  // 1. 환경 변수에서 URL 가져오기 (최우선)
-  // Vercel 프로덕션: VITE_API_BASE_URL을 Azure Container Apps URL로 설정
-  const envBaseUrl = normalizeBaseUrl(String(import.meta.env.VITE_API_BASE_URL || ''));
-  if (envBaseUrl) {
-    return envBaseUrl;
-  }
+const explicitApiBaseUrl = normalizeBaseUrl(
+  String(import.meta.env.VITE_API_BASE_URL || '')
+);
 
-  // 2. 개발 환경 (Web & Electron Dev) -> Proxy 사용
-  if (isDev) {
-    return '';
-  }
+export const API_RUNTIME_CONFIG = {
+  baseUrl: explicitApiBaseUrl || (isDev ? '' : isElectron ? 'http://localhost:8000' : MISCONFIGURED_API_BASE_URL),
+  hasExplicitBaseUrl: explicitApiBaseUrl.length > 0,
+  isDev,
+  isElectron,
+  isProductionMisconfigured: !isDev && !isElectron && explicitApiBaseUrl.length === 0,
+};
 
-  // 3. Electron 프로덕션 환경 -> localhost:8000
-  if (isElectron) {
-    return 'http://localhost:8000';
-  }
+export const API_BASE_URL = API_RUNTIME_CONFIG.baseUrl;
 
-  // 4. 프로덕션 환경 (배포된 경우)
-  // ⚠️ Vercel 배포 시에는 반드시 VITE_API_BASE_URL 환경 변수 설정 필요
-  // 예: https://your-backend.azurecontainerapps.io
-  if (hasWindow) {
-    console.warn("VITE_API_BASE_URL is not set in production. API calls may fail.");
-    return normalizeBaseUrl(window.location.origin);
-  }
-  return '';
+if (API_RUNTIME_CONFIG.isProductionMisconfigured) {
+  console.warn(
+    "VITE_API_BASE_URL is not set in production. Backend calls are disabled until the API base URL is configured."
+  );
 }
-
-export const API_BASE_URL = getApiBaseUrl();
 
 function apiPath(path: string): string {
   return API_BASE_URL ? `${API_BASE_URL}${path}` : path;
