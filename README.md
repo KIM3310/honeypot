@@ -1,4 +1,4 @@
-# Kkuldanji (Honeypot) - AI-Assisted Handover Document Generator (Prototype)
+# Honeypot (Kkuldanji) — AI-Assisted Handover Document Generator
 
 Kkuldanji converts internal documents into a structured 6-section handover document and supports follow-up Q&A via retrieval (vector + semantic search).
 
@@ -15,11 +15,16 @@ Status: prototype. Some security features use in-memory stores (suitable for dem
 - Treat this repo as a handover-workflow prototype with explicit live vs review-only posture.
 - Runtime brief, service meta, and schema routes are the canonical proof surfaces before Azure-readiness claims.
 
-
 ## Role signals
 - **AI engineer:** retrieval-backed handover generation and follow-up Q&A show a real document workflow, not a one-shot prompt.
 - **Solution architect:** ingest, extraction, retrieval, and review posture are clear enough to discuss enterprise adoption trade-offs.
 - **Field / solutions engineer:** the before/after walkthrough is concrete: messy documents in, structured handover out.
+
+## Repository surfaces
+- **Primary runtime:** the document-to-handover workflow lives in `app/`, `frontend/`, and the FastAPI services.
+- **Packaging experiments:** Railway, Vercel, Electron, and desktop build files are optional delivery paths for the same prototype.
+- **Ops/support docs:** deployment and runbook material at the root exists to make the prototype reviewable, not to suggest separate products.
+- **Start here if you're new:** run the local app/API flow first, then inspect packaging notes only if you care about delivery tradeoffs.
 
 ## Scope
 - System architecture design (end-to-end flow + component boundaries)
@@ -204,6 +209,12 @@ Default local endpoint:
 ### Demo Accounts
 For local development, seed demo users through the auth bootstrap or test fixtures in the backend.
 Do not publish shared credentials in deployed environments.
+
+## Canonical runtime + artifact map
+- Canonical runtime: FastAPI backend in `app/` plus the React/Vite web client in `frontend/`.
+- `frontend/dist/` is the static build export used for deployment/review handoff; editable UI source lives under `frontend/src/`.
+- `frontend/electron/` remains optional desktop packaging and is not the primary review path.
+- Review surfaces under `/api/*` are the main proof path; generated handover JSON and uploaded documents are runtime data rather than curated repo content.
 
 ## API
 All state-changing requests must include:
