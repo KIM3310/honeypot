@@ -31,6 +31,12 @@ import {
   API_RUNTIME_CONFIG,
   fetchWithTimeout,
 } from "./config/api";
+import {
+  buildWorkspaceShareUrl,
+  buildWorkspaceUrlSearch,
+  parseWorkspaceUrlState,
+  replaceWorkspaceUrlSearch,
+} from "./utils/urlState";
 import { HandoverPrintTemplate } from "./components/HandoverPrintTemplate";
 import { fetchWithSession } from "./services/sessionFetch";
 
@@ -323,18 +329,26 @@ function buildStaticHandoverSchema(): HandoverSchema {
 }
 
 const App: React.FC = () => {
+  const initialWorkspaceState =
+    typeof window === "undefined"
+      ? {}
+      : parseWorkspaceUrlState(window.location.search);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [files, setFiles] = useState<SourceFile[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [handoverData, setHandoverData] = useState<HandoverData | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.CHAT);
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    () => initialWorkspaceState.viewMode ?? ViewMode.CHAT
+  );
   const [isProcessing, setIsProcessing] = useState(false);
 
   // 채팅 세션 관리
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(
+    () => initialWorkspaceState.sessionId ?? null
+  );
   const [selectedRagIndex, setSelectedRagIndex] =
-    useState<string>("documents-index");
+    useState<string>(() => initialWorkspaceState.selectedRagIndex ?? "documents-index");
   const [showEngagementHub, setShowEngagementHub] = useState(false);
   const [healthSummary, setHealthSummary] = useState<HealthSummary>(() =>
     buildStaticHealthSummary()
@@ -357,6 +371,7 @@ const App: React.FC = () => {
       ? "VITE_API_BASE_URL이 설정되지 않아 리뷰 전용 화면으로 시작했습니다."
       : "백엔드 연결 상태를 확인 중입니다."
   );
+  const [workspaceNotice, setWorkspaceNotice] = useState("");
 
   // localStorage에서 세션 로드
   useEffect(() => {
@@ -375,10 +390,10 @@ const App: React.FC = () => {
       }
     }
 
-    if (savedCurrentSession) {
+    if (!initialWorkspaceState.sessionId && savedCurrentSession) {
       setCurrentSessionId(savedCurrentSession);
     }
-  }, []);
+  }, [initialWorkspaceState.sessionId]);
 
   // 세션 변경 시 localStorage에 저장
   useEffect(() => {
@@ -392,6 +407,16 @@ const App: React.FC = () => {
       localStorage.setItem(STORAGE_KEY_CURRENT_SESSION, currentSessionId);
     }
   }, [currentSessionId]);
+
+  useEffect(() => {
+    replaceWorkspaceUrlSearch(
+      buildWorkspaceUrlSearch({
+        viewMode,
+        sessionId: currentSessionId ?? undefined,
+        selectedRagIndex,
+      })
+    );
+  }, [currentSessionId, selectedRagIndex, viewMode]);
 
   // 세션 선택 시 메시지 로드
   useEffect(() => {
@@ -409,6 +434,12 @@ const App: React.FC = () => {
       );
     }
   }, [currentSessionId, chatSessions]);
+
+  useEffect(() => {
+    if (!workspaceNotice) return;
+    const timer = window.setTimeout(() => setWorkspaceNotice(""), 2400);
+    return () => window.clearTimeout(timer);
+  }, [workspaceNotice]);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -540,6 +571,24 @@ const App: React.FC = () => {
   const handleIndexChange = (indexName: string) => {
     setSelectedRagIndex(indexName);
     console.log("✅ App: RAG 인덱스 변경됨:", indexName);
+  };
+
+  const handleCopyWorkspaceLink = async () => {
+    const shareUrl = buildWorkspaceShareUrl(
+      buildWorkspaceUrlSearch({
+        viewMode,
+        sessionId: currentSessionId ?? undefined,
+        selectedRagIndex,
+      })
+    );
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setWorkspaceNotice("현재 검토 화면 링크를 복사했습니다.");
+    } catch (error) {
+      console.error("❌ workspace link 복사 실패:", error);
+      setWorkspaceNotice("링크 복사에 실패했습니다.");
+    }
   };
 
   const updateCurrentSessionMessages = (newMessages: ChatMessage[]) => {
@@ -756,6 +805,40 @@ const App: React.FC = () => {
                 serviceMeta={serviceMeta}
                 variant="compact"
               />
+              <section className="rounded-2xl border border-gray-300 bg-white/95 p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black tracking-[0.16em] text-gray-500 uppercase">
+                      Share Current Review
+                    </p>
+                    <p className="mt-1 text-[11px] text-gray-700 leading-relaxed">
+                      현재 view, knowledge index, selected chat session을 링크로 바로 재현할 수 있습니다.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleCopyWorkspaceLink}
+                    className="rounded-xl border border-gray-300 bg-gray-900 px-3 py-2 text-[11px] font-black text-white shadow-sm hover:bg-black"
+                  >
+                    현재 링크 복사
+                  </button>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-gray-200 bg-yellow-50 px-2 py-1 text-[10px] font-black text-yellow-700">
+                    {viewMode === ViewMode.CHAT ? "Chat view" : "History view"}
+                  </span>
+                  <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[10px] font-black text-gray-700">
+                    Index: {selectedRagIndex || "documents-index"}
+                  </span>
+                  {currentSessionId && (
+                    <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[10px] font-black text-gray-700">
+                      Session: {currentSessionId.slice(-8)}
+                    </span>
+                  )}
+                </div>
+                {workspaceNotice && (
+                  <p className="mt-3 text-[11px] font-bold text-yellow-700">{workspaceNotice}</p>
+                )}
+              </section>
               <section className="rounded-2xl border border-gray-300 bg-white/95 p-4 shadow-sm">
                 <p className="text-[10px] font-black tracking-[0.16em] text-gray-500 uppercase">
                   Sponsored
