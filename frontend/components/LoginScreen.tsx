@@ -8,17 +8,23 @@ import { HandoverSchema, HealthSummary, ServiceBrief, ServiceMeta } from "../typ
 import ServiceReadinessBoard from "./ServiceReadinessBoard.tsx";
 
 interface Props {
+  apiMisconfigured: boolean;
+  backendReachable: boolean;
   handoverSchema: HandoverSchema | null;
   healthSummary: HealthSummary | null;
   onLogin: (userInfo: any) => void;
+  runtimeStatusMessage: string;
   serviceBrief: ServiceBrief | null;
   serviceMeta: ServiceMeta | null;
 }
 
 const LoginScreen: React.FC<Props> = ({
+  apiMisconfigured,
+  backendReachable,
   handoverSchema,
   healthSummary,
   onLogin,
+  runtimeStatusMessage,
   serviceBrief,
   serviceMeta,
 }) => {
@@ -26,9 +32,18 @@ const LoginScreen: React.FC<Props> = ({
   const [pw, setPw] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const loginDisabled = isLoading || apiMisconfigured || !backendReachable;
+  const connectionTone = apiMisconfigured
+    ? "border-amber-300 bg-amber-50 text-amber-900"
+    : backendReachable
+      ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+      : "border-slate-300 bg-slate-100 text-slate-700";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loginDisabled) {
+      return;
+    }
     setError("");
     setIsLoading(true);
 
@@ -81,6 +96,12 @@ const LoginScreen: React.FC<Props> = ({
         </div>
 
         <div className="mb-6">
+          <div
+            className={`mb-4 rounded-2xl border px-4 py-3 text-left text-xs font-bold leading-relaxed ${connectionTone}`}
+            role="status"
+          >
+            {runtimeStatusMessage}
+          </div>
           <ServiceReadinessBoard
             handoverSchema={handoverSchema}
             healthSummary={healthSummary}
@@ -100,11 +121,11 @@ const LoginScreen: React.FC<Props> = ({
           <div className="space-y-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">사번 또는 ID</label>
             <input 
-              type="email" 
+              type="text" 
               value={id}
               onChange={(e) => setId(e.target.value)}
-              placeholder="name@company.local"
-              disabled={isLoading}
+              placeholder="operator-id"
+              disabled={loginDisabled}
               className="w-full px-6 py-4 bg-yellow-50/50 border border-yellow-100 rounded-2xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all font-bold placeholder:text-yellow-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
           </div>
@@ -115,17 +136,23 @@ const LoginScreen: React.FC<Props> = ({
               value={pw}
               onChange={(e) => setPw(e.target.value)}
               placeholder="••••••••"
-              disabled={isLoading}
+              disabled={loginDisabled}
               className="w-full px-6 py-4 bg-yellow-50/50 border border-yellow-100 rounded-2xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all font-bold placeholder:text-yellow-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
           </div>
 
           <button 
             type="submit"
-            disabled={isLoading}
+            disabled={loginDisabled}
             className="w-full py-5 bg-gray-900 text-white rounded-2xl font-black text-lg shadow-2xl hover:bg-black hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            {isLoading ? "로그인 중..." : "로그인"}
+            {isLoading
+              ? "로그인 중..."
+              : apiMisconfigured
+                ? "백엔드 설정 필요"
+                : backendReachable
+                  ? "로그인"
+                  : "백엔드 연결 필요"}
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
         </form>

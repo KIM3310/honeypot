@@ -26,7 +26,17 @@ import {
   analyzeFilesForHandover,
   chatWithAssistant,
 } from "./services/assistantService";
-import { API_ENDPOINTS, fetchWithTimeout } from "./config/api";
+import {
+  API_ENDPOINTS,
+  API_RUNTIME_CONFIG,
+  fetchWithTimeout,
+} from "./config/api";
+import {
+  buildWorkspaceShareUrl,
+  buildWorkspaceUrlSearch,
+  parseWorkspaceUrlState,
+  replaceWorkspaceUrlSearch,
+} from "./utils/urlState";
 import { HandoverPrintTemplate } from "./components/HandoverPrintTemplate";
 import { fetchWithSession } from "./services/sessionFetch";
 
@@ -319,18 +329,26 @@ function buildStaticHandoverSchema(): HandoverSchema {
 }
 
 const App: React.FC = () => {
+  const initialWorkspaceState =
+    typeof window === "undefined"
+      ? {}
+      : parseWorkspaceUrlState(window.location.search);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [files, setFiles] = useState<SourceFile[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [handoverData, setHandoverData] = useState<HandoverData | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.CHAT);
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    () => initialWorkspaceState.viewMode ?? ViewMode.CHAT
+  );
   const [isProcessing, setIsProcessing] = useState(false);
 
   // 채팅 세션 관리
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(
+    () => initialWorkspaceState.sessionId ?? null
+  );
   const [selectedRagIndex, setSelectedRagIndex] =
-    useState<string>("documents-index");
+    useState<string>(() => initialWorkspaceState.selectedRagIndex ?? "documents-index");
   const [showEngagementHub, setShowEngagementHub] = useState(false);
   const [healthSummary, setHealthSummary] = useState<HealthSummary>(() =>
     buildStaticHealthSummary()
@@ -344,6 +362,16 @@ const App: React.FC = () => {
   const [handoverSchema, setHandoverSchema] = useState<HandoverSchema>(() =>
     buildStaticHandoverSchema()
   );
+  const [backendReachable, setBackendReachable] = useState(false);
+  const [apiMisconfigured, setApiMisconfigured] = useState(
+    API_RUNTIME_CONFIG.isProductionMisconfigured
+  );
+  const [runtimeStatusMessage, setRuntimeStatusMessage] = useState(() =>
+    API_RUNTIME_CONFIG.isProductionMisconfigured
+      ? "VITE_API_BASE_URL이 설정되지 않아 리뷰 전용 화면으로 시작했습니다."
+      : "백엔드 연결 상태를 확인 중입니다."
+  );
+  const [workspaceNotice, setWorkspaceNotice] = useState("");
 
   // localStorage에서 세션 로드
   useEffect(() => {
@@ -362,10 +390,10 @@ const App: React.FC = () => {
       }
     }
 
-    if (savedCurrentSession) {
+    if (!initialWorkspaceState.sessionId && savedCurrentSession) {
       setCurrentSessionId(savedCurrentSession);
     }
-  }, []);
+  }, [initialWorkspaceState.sessionId]);
 
   // 세션 변경 시 localStorage에 저장
   useEffect(() => {
@@ -379,6 +407,16 @@ const App: React.FC = () => {
       localStorage.setItem(STORAGE_KEY_CURRENT_SESSION, currentSessionId);
     }
   }, [currentSessionId]);
+
+  useEffect(() => {
+    replaceWorkspaceUrlSearch(
+      buildWorkspaceUrlSearch({
+        viewMode,
+        sessionId: currentSessionId ?? undefined,
+        selectedRagIndex,
+      })
+    );
+  }, [currentSessionId, selectedRagIndex, viewMode]);
 
   // 세션 선택 시 메시지 로드
   useEffect(() => {
@@ -396,6 +434,12 @@ const App: React.FC = () => {
       );
     }
   }, [currentSessionId, chatSessions]);
+
+  useEffect(() => {
+    if (!workspaceNotice) return;
+    const timer = window.setTimeout(() => setWorkspaceNotice(""), 2400);
+    return () => window.clearTimeout(timer);
+  }, [workspaceNotice]);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -432,7 +476,7 @@ const App: React.FC = () => {
           const data = await response.json().catch(() => null);
           if (response.ok && data && !cancelled) {
             assign(data as T);
-            return;
+            return true;
           }
         } catch (_error) {
           // Fall back to static reviewer surfaces when the backend is unavailable.
@@ -441,9 +485,25 @@ const App: React.FC = () => {
         if (!cancelled) {
           assign(fallback());
         }
+        return false;
       }
 
-      await Promise.all([
+      if (API_RUNTIME_CONFIG.isProductionMisconfigured) {
+        if (!cancelled) {
+          setHealthSummary(buildStaticHealthSummary());
+          setServiceMeta(buildStaticServiceMeta());
+          setServiceBrief(buildStaticServiceBrief());
+          setHandoverSchema(buildStaticHandoverSchema());
+          setBackendReachable(false);
+          setApiMisconfigured(true);
+          setRuntimeStatusMessage(
+            "VITE_API_BASE_URL이 없어 live backend에 연결할 수 없습니다. 현재는 리뷰 전용 화면입니다."
+          );
+        }
+        return;
+      }
+
+      const [healthLive] = await Promise.all([
         loadSurface<HealthSummary>(
           API_ENDPOINTS.HEALTH,
           buildStaticHealthSummary,
@@ -465,6 +525,16 @@ const App: React.FC = () => {
           setHandoverSchema
         ),
       ]);
+
+      if (!cancelled) {
+        setApiMisconfigured(false);
+        setBackendReachable(Boolean(healthLive));
+        setRuntimeStatusMessage(
+          healthLive
+            ? "백엔드가 연결되어 live service surface를 표시 중입니다."
+            : "백엔드에 연결할 수 없어 리뷰 전용 정적 surface를 표시 중입니다."
+        );
+      }
     }
 
     void loadServiceSurfaces();
@@ -502,6 +572,141 @@ const App: React.FC = () => {
     setSelectedRagIndex(indexName);
     console.log("✅ App: RAG 인덱스 변경됨:", indexName);
   };
+
+  const handleCopyWorkspaceLink = async () => {
+    const shareUrl = buildWorkspaceShareUrl(
+      buildWorkspaceUrlSearch({
+        viewMode,
+        sessionId: currentSessionId ?? undefined,
+        selectedRagIndex,
+      })
+    );
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setWorkspaceNotice("현재 검토 화면 링크를 복사했습니다.");
+    } catch (error) {
+      console.error("❌ workspace link 복사 실패:", error);
+      setWorkspaceNotice("링크 복사에 실패했습니다.");
+    }
+  };
+
+  const handleCopyReviewerBundle = async () => {
+    const shareUrl = buildWorkspaceShareUrl(
+      buildWorkspaceUrlSearch({
+        viewMode,
+        sessionId: currentSessionId ?? undefined,
+        selectedRagIndex,
+      })
+    );
+    const reviewRoutes = Object.values(healthSummary?.links || {}).filter(Boolean);
+    const lines = [
+      "honeypot reviewer bundle",
+      `View: ${viewMode === ViewMode.CHAT ? "chat" : "history"}`,
+      `Index: ${selectedRagIndex || "documents-index"}`,
+      `Session: ${currentSessionId || "none"}`,
+      `Share link: ${shareUrl}`,
+      "",
+      "Two-minute review",
+      ...((serviceMeta?.two_minute_review || []).map((item) => `- ${item}`)),
+      "",
+      "Fast routes",
+      ...(reviewRoutes.length > 0 ? reviewRoutes.map((item) => `- ${item}`) : ["- Runtime links unavailable."]),
+    ];
+
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setWorkspaceNotice("리뷰어 번들을 복사했습니다.");
+    } catch (error) {
+      console.error("❌ reviewer bundle 복사 실패:", error);
+      setWorkspaceNotice("리뷰어 번들 복사에 실패했습니다.");
+    }
+  };
+
+  const handleCopyFocusedSession = async () => {
+    const lines = [
+      "honeypot focused session snapshot",
+      `View: ${viewMode === ViewMode.CHAT ? "chat" : "history"}`,
+      `Index: ${selectedRagIndex || "documents-index"}`,
+      `Session: ${currentSessionId || "none"}`,
+      `Messages: ${messages.length}`,
+      `Files: ${files.length}`,
+      `Runtime: ${healthSummary?.status || "unknown"}`,
+    ];
+
+    try {
+      await navigator.clipboard.writeText(lines.join("\\n"));
+      setWorkspaceNotice("현재 세션 스냅샷을 복사했습니다.");
+    } catch (error) {
+      console.error("❌ focused session 복사 실패:", error);
+      setWorkspaceNotice("세션 스냅샷 복사에 실패했습니다.");
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyboardShortcuts = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tagName = String(target?.tagName || "").toLowerCase();
+      const isTypingTarget =
+        Boolean(target?.isContentEditable) ||
+        tagName === "input" ||
+        tagName === "textarea" ||
+        tagName === "select";
+      if (isTypingTarget || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+      if (event.shiftKey && key === "l") {
+        event.preventDefault();
+        void handleCopyWorkspaceLink();
+        return;
+      }
+      if (event.shiftKey && key === "b") {
+        event.preventDefault();
+        void handleCopyReviewerBundle();
+        return;
+      }
+      if (event.shiftKey && key === "s") {
+        event.preventDefault();
+        void handleCopyFocusedSession();
+        return;
+      }
+      if (event.shiftKey && key === "n") {
+        event.preventDefault();
+        handleNewChat();
+        return;
+      }
+      if (key === "?") {
+        event.preventDefault();
+        setWorkspaceNotice("Shortcuts: 1 chat · 2 history · ⇧L link · ⇧B bundle · ⇧S session snapshot · ⇧N new chat");
+        return;
+      }
+      if (event.shiftKey) {
+        return;
+      }
+      if (key === "1") {
+        event.preventDefault();
+        setViewMode(ViewMode.CHAT);
+      } else if (key === "2") {
+        event.preventDefault();
+        setViewMode(ViewMode.CHAT_HISTORY);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyboardShortcuts);
+    return () => window.removeEventListener("keydown", handleKeyboardShortcuts);
+  }, [
+    currentSessionId,
+    files.length,
+    healthSummary?.links,
+    healthSummary?.status,
+    messages.length,
+    selectedRagIndex,
+    handleCopyFocusedSession,
+    serviceMeta?.two_minute_review,
+    viewMode,
+  ]);
 
   const updateCurrentSessionMessages = (newMessages: ChatMessage[]) => {
     if (!currentSessionId) return;
@@ -651,9 +856,12 @@ const App: React.FC = () => {
   if (!isLoggedIn) {
     return (
       <LoginScreen
+        apiMisconfigured={apiMisconfigured}
+        backendReachable={backendReachable}
         handoverSchema={handoverSchema}
         healthSummary={healthSummary}
         onLogin={() => setIsLoggedIn(true)}
+        runtimeStatusMessage={runtimeStatusMessage}
         serviceBrief={serviceBrief}
         serviceMeta={serviceMeta}
       />
@@ -714,6 +922,55 @@ const App: React.FC = () => {
                 serviceMeta={serviceMeta}
                 variant="compact"
               />
+              <section className="rounded-2xl border border-gray-300 bg-white/95 p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black tracking-[0.16em] text-gray-500 uppercase">
+                      Share Current Review
+                    </p>
+                    <p className="mt-1 text-[11px] text-gray-700 leading-relaxed">
+                      현재 view, knowledge index, selected chat session을 링크로 바로 재현할 수 있습니다.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleCopyWorkspaceLink}
+                    className="rounded-xl border border-gray-300 bg-gray-900 px-3 py-2 text-[11px] font-black text-white shadow-sm hover:bg-black"
+                  >
+                    현재 링크 복사
+                  </button>
+                  <button
+                    onClick={handleCopyReviewerBundle}
+                    className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-[11px] font-black text-gray-900 shadow-sm hover:bg-gray-50"
+                  >
+                    리뷰어 번들 복사
+                  </button>
+                  <button
+                    onClick={handleCopyFocusedSession}
+                    className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-[11px] font-black text-gray-900 shadow-sm hover:bg-gray-50"
+                  >
+                    세션 스냅샷 복사
+                  </button>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-gray-200 bg-yellow-50 px-2 py-1 text-[10px] font-black text-yellow-700">
+                    {viewMode === ViewMode.CHAT ? "Chat view" : "History view"}
+                  </span>
+                  <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[10px] font-black text-gray-700">
+                    Index: {selectedRagIndex || "documents-index"}
+                  </span>
+                  {currentSessionId && (
+                    <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[10px] font-black text-gray-700">
+                      Session: {currentSessionId.slice(-8)}
+                    </span>
+                  )}
+                </div>
+                {workspaceNotice && (
+                  <p className="mt-3 text-[11px] font-bold text-yellow-700">{workspaceNotice}</p>
+                )}
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
+                  Shortcuts: 1 chat · 2 history · ⇧L link · ⇧B bundle · ⇧S session snapshot · ⇧N new chat
+                </p>
+              </section>
               <section className="rounded-2xl border border-gray-300 bg-white/95 p-4 shadow-sm">
                 <p className="text-[10px] font-black tracking-[0.16em] text-gray-500 uppercase">
                   Sponsored
