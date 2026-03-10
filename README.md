@@ -11,6 +11,10 @@ This repo explores a document-to-handover workflow with a security-conscious web
 
 Status: prototype. Some security features use in-memory stores (suitable for demo/dev, not production).
 
+## Portfolio posture
+- Treat this repo as a handover-workflow prototype with explicit live vs review-only posture.
+- Runtime brief, service meta, and schema routes are the canonical proof surfaces before Azure-readiness claims.
+
 ## Scope
 - System architecture design (end-to-end flow + component boundaries)
 - Backend implementation (FastAPI ingestion/status, extraction routing, blob/search integration)
