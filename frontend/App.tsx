@@ -643,6 +643,32 @@ const App: React.FC = () => {
     }
   };
 
+  const handleCopySecuritySnapshot = async () => {
+    const reviewRoutes = Object.values(healthSummary?.links || {}).filter(Boolean);
+    const lines = [
+      "honeypot security posture snapshot",
+      `View: ${viewMode === ViewMode.CHAT ? "chat" : "history"}`,
+      `Index: ${selectedRagIndex || "documents-index"}`,
+      `Session: ${currentSessionId || "none"}`,
+      `Runtime: ${healthSummary?.status || "unknown"}`,
+      `Mode: ${serviceMeta?.runtime?.mode || "unknown"}`,
+      `Config valid: ${serviceMeta?.runtime?.config_valid ? "yes" : "check-required"}`,
+      `Allowed origins: ${serviceMeta?.runtime?.allowed_origins_count ?? "unknown"}`,
+      `Auth controls: ${(serviceMeta?.runtime?.auth_controls || []).join(", ") || "unknown"}`,
+      "",
+      "Fast routes",
+      ...(reviewRoutes.length > 0 ? reviewRoutes.slice(0, 5).map((item) => `- ${item}`) : ["- Runtime links unavailable."]),
+    ];
+
+    try {
+      await navigator.clipboard.writeText(lines.join("\\n"));
+      setWorkspaceNotice("보안 posture 스냅샷을 복사했습니다.");
+    } catch (error) {
+      console.error("❌ security snapshot 복사 실패:", error);
+      setWorkspaceNotice("보안 posture 스냅샷 복사에 실패했습니다.");
+    }
+  };
+
   useEffect(() => {
     const handleKeyboardShortcuts = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -672,6 +698,11 @@ const App: React.FC = () => {
         void handleCopyFocusedSession();
         return;
       }
+      if (event.shiftKey && key === "x") {
+        event.preventDefault();
+        void handleCopySecuritySnapshot();
+        return;
+      }
       if (event.shiftKey && key === "n") {
         event.preventDefault();
         handleNewChat();
@@ -679,7 +710,7 @@ const App: React.FC = () => {
       }
       if (key === "?") {
         event.preventDefault();
-        setWorkspaceNotice("Shortcuts: 1 chat · 2 history · ⇧L link · ⇧B bundle · ⇧S session snapshot · ⇧N new chat");
+        setWorkspaceNotice("Shortcuts: 1 chat · 2 history · ⇧L link · ⇧B bundle · ⇧S session snapshot · ⇧X security snapshot · ⇧N new chat");
         return;
       }
       if (event.shiftKey) {
@@ -704,6 +735,7 @@ const App: React.FC = () => {
     messages.length,
     selectedRagIndex,
     handleCopyFocusedSession,
+    handleCopySecuritySnapshot,
     serviceMeta?.two_minute_review,
     viewMode,
   ]);
@@ -950,6 +982,12 @@ const App: React.FC = () => {
                   >
                     세션 스냅샷 복사
                   </button>
+                  <button
+                    onClick={handleCopySecuritySnapshot}
+                    className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-[11px] font-black text-gray-900 shadow-sm hover:bg-gray-50"
+                  >
+                    보안 posture 복사
+                  </button>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <span className="rounded-full border border-gray-200 bg-yellow-50 px-2 py-1 text-[10px] font-black text-yellow-700">
@@ -968,7 +1006,7 @@ const App: React.FC = () => {
                   <p className="mt-3 text-[11px] font-bold text-yellow-700">{workspaceNotice}</p>
                 )}
                 <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
-                  Shortcuts: 1 chat · 2 history · ⇧L link · ⇧B bundle · ⇧S session snapshot · ⇧N new chat
+                  Shortcuts: 1 chat · 2 history · ⇧L link · ⇧B bundle · ⇧S session snapshot · ⇧X security snapshot · ⇧N new chat
                 </p>
               </section>
               <section className="rounded-2xl border border-gray-300 bg-white/95 p-4 shadow-sm">

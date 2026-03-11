@@ -154,6 +154,27 @@ const ServiceReadinessBoard: React.FC<Props> = ({
     "Fast routes",
     ...reviewLinks.slice(0, 4).map(([label, path]) => `- ${label}: ${path}`),
   ].join("\n");
+  const securitySnapshotText = [
+    "Honeypot security posture snapshot",
+    `Health: ${healthSummary.status}`,
+    `Runtime mode: ${serviceMeta.runtime.mode}`,
+    `Runtime config: ${serviceMeta.runtime.config_valid ? "valid" : "check-required"}`,
+    `Allowed origins: ${serviceMeta.runtime.allowed_origins_count}`,
+    `Auth controls: ${(serviceMeta.runtime.auth_controls || []).join(", ")}`,
+    `Security headers: ${serviceMeta.runtime.security_headers_enabled ? "enabled" : "check-required"}`,
+    ...(serviceBrief
+      ? [
+          `Delivery modes: ${serviceBrief.review_pack.delivery_modes}`,
+          `Review sections: ${serviceBrief.review_pack.required_sections}`,
+        ]
+      : []),
+    "",
+    "Security review flow",
+    ...(reviewSteps.length > 0 ? reviewSteps.slice(0, 3).map((step) => `- ${step}`) : ["- Review flow unavailable."]),
+    "",
+    "Fast routes",
+    ...reviewLinks.slice(0, 5).map(([label, path]) => `- ${label}: ${path}`),
+  ].join("\n");
 
   const handleCopyRoutes = async () => {
     const ok = await copyTextToClipboard(reviewRouteText);
@@ -178,6 +199,11 @@ const ServiceReadinessBoard: React.FC<Props> = ({
   const handleCopyAzureClaim = async () => {
     const ok = await copyTextToClipboard(azureClaimText);
     setCopyStatus(ok ? "Copied Azure claim snapshot." : "Failed to copy Azure claim snapshot.");
+  };
+
+  const handleCopySecuritySnapshot = async () => {
+    const ok = await copyTextToClipboard(securitySnapshotText);
+    setCopyStatus(ok ? "Copied security posture snapshot." : "Failed to copy security posture snapshot.");
   };
 
   return (
@@ -354,6 +380,13 @@ const ServiceReadinessBoard: React.FC<Props> = ({
             className="rounded-full border border-gray-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-700"
           >
             Copy Azure Claim
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleCopySecuritySnapshot()}
+            className="rounded-full border border-gray-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-700"
+          >
+            Copy Security Snapshot
           </button>
           {copyStatus ? <span className="text-[11px] text-gray-500">{copyStatus}</span> : null}
         </div>
