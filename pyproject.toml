@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Azure-oriented document and handover copilot with runtime review and delivery surfaces."
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "Kim", email = "kim@example.com" }]
+authors = [{ name = "Kim" }]
 license = { text = "MIT" }
 dependencies = [
   "fastapi==0.121.3",

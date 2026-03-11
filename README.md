@@ -14,21 +14,21 @@ Core capabilities:
 - Generation/Q&A on Azure OpenAI
 - Practical web security basics (JWT, refresh tokens, CSRF, security headers)
 
-Status: prototype. Some security features use in-memory stores (suitable for demo/dev, not production).
+Status: reviewable workflow prototype. Some security features still use in-memory stores (acceptable for demo/dev, not production).
 
 ## Portfolio posture
-- Treat this repo as a handover-workflow prototype with explicit live vs review-only posture.
+- Treat this repo as a handover workflow with explicit live vs review-only posture.
 - Runtime brief, service meta, and schema routes are the canonical proof surfaces before Azure-readiness claims.
 
 ## Role signals
 - **AI engineer:** retrieval-backed handover generation and follow-up Q&A show a real document workflow, not a one-shot prompt.
-- **Solution architect:** ingest, extraction, retrieval, and review posture are clear enough to discuss enterprise adoption trade-offs.
+- **Solution / cloud architect:** ingest, extraction, retrieval, and review posture are clear enough to discuss enterprise adoption trade-offs.
 - **Field / solutions engineer:** the before/after walkthrough is concrete: messy documents in, structured handover out.
 
 ## Repository surfaces
 - **Primary runtime:** the document-to-handover workflow lives in `app/`, `frontend/`, and the FastAPI services.
-- **Packaging experiments:** Railway, Vercel, Electron, and desktop build files are optional delivery paths for the same prototype.
-- **Ops/support docs:** deployment and runbook material at the root exists to make the prototype reviewable, not to suggest separate products.
+- **Packaging experiments:** Railway, Vercel, Electron, and desktop build files are optional delivery paths for the same workflow.
+- **Ops/support docs:** deployment and runbook material at the root exists to make the workflow reviewable, not to suggest separate products.
 - **Start here if you're new:** run the local app/API flow first, then inspect packaging notes only if you care about delivery tradeoffs.
 
 ## Scope
