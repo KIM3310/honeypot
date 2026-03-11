@@ -14,7 +14,7 @@ Core capabilities:
 - Generation/Q&A on Azure OpenAI
 - Practical web security basics (JWT, refresh tokens, CSRF, security headers)
 
-Status: reviewable workflow prototype. Some security features still use in-memory stores (acceptable for demo/dev, not production).
+Status: reviewable handover workflow build. Some security controls still use in-memory stores (acceptable for demo/dev, not production).
 
 ## Portfolio posture
 - Treat this repo as a handover workflow with explicit live vs review-only posture.
