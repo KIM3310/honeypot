@@ -2,7 +2,12 @@
 
 Kkuldanji converts internal documents into a structured 6-section handover document and supports follow-up Q&A via retrieval (vector + semantic search).
 
-This repo explores a document-to-handover workflow with a security-conscious web stack:
+This repo explores a document-to-handover workflow with a security-conscious web stack and an explicit split between:
+- review-only fallback/demo mode
+- local BYO LLM mode
+- cloud-connected Azure mode when configuration is complete
+
+Core capabilities:
 - Document ingestion (PDF/DOCX/TXT/images/code)
 - LLM-based preprocessing into structured JSON chunks
 - Retrieval on Azure AI Search (embeddings + semantic ranking)
