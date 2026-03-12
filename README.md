@@ -12,6 +12,7 @@ Core capabilities:
 - LLM-based preprocessing into structured JSON chunks
 - Retrieval on Azure AI Search (embeddings + semantic ranking)
 - Generation/Q&A on Azure OpenAI
+- Handover completeness gate that blocks review-ready export when owner/timeline/risk/reference coverage is incomplete
 - Practical web security basics (JWT, refresh tokens, CSRF, security headers)
 
 Status: reviewable handover workflow build. Some security controls still use in-memory stores (acceptable for demo/dev, not production).
