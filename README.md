@@ -18,7 +18,7 @@ Core capabilities:
 Status: reviewable handover workflow build. Some security controls still use in-memory stores (acceptable for demo/dev, not production).
 
 ## Portfolio posture
-- Treat this repo as a handover quality workflow where review-only and live modes are both intentional, not half-finished.
+- Read this repo like a handover quality workflow where review-only and live modes are both intentional, not half-finished.
 - Runtime brief, service meta, schema routes, and the editor/retrieval loop are the proof surfaces before any Azure-readiness claim.
 
 ## Role signals
