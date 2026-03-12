@@ -122,6 +122,13 @@ export interface ServiceMeta {
   platforms: string[];
   strengths: string[];
   watchouts: string[];
+  completeness_gate?: {
+    schema: string;
+    score_pct: number;
+    review_ready: boolean;
+    missing_fields: string[];
+    required_checks: string[];
+  };
   two_minute_review: string[];
   proof_assets: ServiceArtifact[];
   stages: ServiceStage[];
@@ -162,6 +169,13 @@ export interface ServiceBrief {
   review_flow: string[];
   two_minute_review: string[];
   watchouts: string[];
+  completeness_gate?: {
+    schema: string;
+    score_pct: number;
+    review_ready: boolean;
+    missing_fields: string[];
+    required_checks: string[];
+  };
   proof_assets: ServiceArtifact[];
   links: Record<string, string>;
 }

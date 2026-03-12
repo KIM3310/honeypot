@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
+from app.services.demo_pipeline import generate_demo_handover
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -45,6 +47,41 @@ def _build_watchouts(*, config_valid: bool, mode: str) -> List[str]:
             "Cloud configuration is incomplete, so the service cannot demonstrate the full Azure-backed pipeline yet."
         )
     return watchouts
+
+
+def _build_handover_completeness_gate(sample: Optional[Dict[str, object]] = None) -> Dict[str, object]:
+    handover = sample or generate_demo_handover("")
+    missing_fields: List[str] = []
+
+    projects = list(handover.get("ongoingProjects", []) or [])
+    priorities = list(handover.get("priorities", []) or [])
+    resources = handover.get("resources", {}) or {}
+    risks = handover.get("risks", {}) or {}
+    transferor = (handover.get("overview", {}) or {}).get("transferor", {}) or {}
+    transferee = (handover.get("overview", {}) or {}).get("transferee", {}) or {}
+
+    if not str(transferor.get("name") or "").strip() or not str(transferee.get("name") or "").strip():
+        missing_fields.append("owner coverage")
+    if not any(str(item.get("deadline") or "").strip() for item in priorities + projects):
+        missing_fields.append("timeline coverage")
+    if not str(risks.get("issues") or "").strip() and not str(risks.get("risks") or "").strip():
+        missing_fields.append("risk coverage")
+    if not list(resources.get("docs", []) or []) and not list(resources.get("systems", []) or []) and not list(resources.get("contacts", []) or []):
+        missing_fields.append("reference coverage")
+
+    score_pct = max(0, 100 - len(missing_fields) * 25)
+    return {
+        "schema": "honeypot-handover-completeness-v1",
+        "score_pct": score_pct,
+        "review_ready": len(missing_fields) == 0,
+        "missing_fields": missing_fields,
+        "required_checks": [
+            "owner coverage",
+            "timeline coverage",
+            "risk coverage",
+            "reference coverage",
+        ],
+    }
 
 
 def build_honeypot_service_meta(
@@ -156,6 +193,7 @@ def build_honeypot_service_meta(
             ),
         },
     ]
+    completeness_gate = _build_handover_completeness_gate()
 
     watchouts = _build_watchouts(config_valid=config_valid, mode=mode)
 
@@ -201,6 +239,7 @@ def build_honeypot_service_meta(
             "The interactive editor, print template, and follow-up chat keep the handover flow grounded in practical output.",
         ],
         "watchouts": watchouts,
+        "completeness_gate": completeness_gate,
         "two_minute_review": [
             "Open /api/health to confirm runtime mode and the next diagnostics step.",
             "Read /api/runtime-brief for trust boundary, review flow, and watchouts.",
@@ -326,6 +365,7 @@ def build_honeypot_runtime_brief(
         if config_valid and mode != "demo"
         else "generation: demo draft path stays local-first with optional BYO LLM override"
     )
+    completeness_gate = _build_handover_completeness_gate()
 
     return {
         "service": "honeypot",
@@ -374,6 +414,7 @@ def build_honeypot_runtime_brief(
             "Open /api/ops/runtime before making production-readiness claims.",
         ],
         "watchouts": watchouts,
+        "completeness_gate": completeness_gate,
         "proof_assets": [
             {"label": "Health", "path": "/api/health", "kind": "endpoint", "why": "Confirms whether the service is demo or live-configured before a review."},
             {"label": "Runtime Scorecard", "path": "/api/runtime-scorecard", "kind": "endpoint", "why": "Summarizes route pressure, top alerts, and security posture in one compact payload."},
@@ -426,6 +467,7 @@ def build_honeypot_review_summary(
     proof_assets = list(runtime_brief.get("proof_assets", []))
     watchouts = list(runtime_brief.get("watchouts", []))
     auth_controls = list(service_meta.get("runtime", {}).get("auth_controls", []))
+    completeness_gate = _build_handover_completeness_gate()
 
     return {
         "service": "honeypot",
@@ -441,11 +483,13 @@ def build_honeypot_review_summary(
             "ready_stage_count": ready_stage_count,
             "attention_stage_count": attention_stage_count,
             "proof_asset_count": len(proof_assets),
+            "completeness_score": completeness_gate["score_pct"],
         },
         "runtime_summary": {
             "auth_controls": auth_controls,
             "retrieval_mode": runtime_brief.get("retrieval_mode"),
             "report_schema": runtime_brief.get("report_contract", {}).get("schema"),
+            "review_ready": completeness_gate["review_ready"],
             "review_endpoints": [
                 "/api/health",
                 "/api/runtime-scorecard",

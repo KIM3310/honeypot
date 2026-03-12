@@ -27,6 +27,9 @@ class TestServiceMeta(unittest.TestCase):
         self.assertEqual(payload["links"]["runtime_scorecard"], "/api/runtime-scorecard")
         self.assertEqual(payload["links"]["handover_schema"], "/api/schema/handover")
         self.assertEqual(payload["links"]["review_summary"], "/api/review-summary")
+        self.assertEqual(payload["completeness_gate"]["schema"], "honeypot-handover-completeness-v1")
+        self.assertFalse(payload["completeness_gate"]["review_ready"])
+        self.assertGreaterEqual(len(payload["completeness_gate"]["missing_fields"]), 1)
 
     def test_runtime_brief_surface_exposes_review_contract(self) -> None:
         client = TestClient(app)
@@ -47,6 +50,8 @@ class TestServiceMeta(unittest.TestCase):
         self.assertEqual(payload["links"]["ops_runtime"], "/api/ops/runtime")
         self.assertEqual(payload["links"]["runtime_scorecard"], "/api/runtime-scorecard")
         self.assertEqual(payload["links"]["review_summary"], "/api/review-summary")
+        self.assertEqual(payload["completeness_gate"]["schema"], "honeypot-handover-completeness-v1")
+        self.assertIn("owner coverage", payload["completeness_gate"]["required_checks"])
 
     def test_runtime_scorecard_surface_exposes_route_and_security_snapshot(self) -> None:
         client = TestClient(app)
@@ -76,6 +81,8 @@ class TestServiceMeta(unittest.TestCase):
         self.assertIn("/api/review-summary", payload["runtime_summary"]["review_endpoints"])
         self.assertEqual(payload["fastest_review_path"][1], "/api/review-summary")
         self.assertGreaterEqual(payload["snapshot"]["ready_stage_count"], 1)
+        self.assertIn("completeness_score", payload["snapshot"])
+        self.assertFalse(payload["runtime_summary"]["review_ready"])
         self.assertEqual(payload["links"]["runtime_scorecard"], "/api/runtime-scorecard")
         self.assertEqual(payload["links"]["review_summary_schema"], "/api/review-summary/schema")
 
