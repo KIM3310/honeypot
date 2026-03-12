@@ -122,6 +122,13 @@ function buildStaticServiceMeta(): ServiceMeta {
       "Fine-grained document RBAC at retrieval time is not implemented in this prototype.",
       "Cloud configuration is incomplete, so the full Azure-backed path is not active in static mode.",
     ],
+    completeness_gate: {
+      schema: "honeypot-handover-completeness-v1",
+      score_pct: 0,
+      review_ready: false,
+      missing_fields: ["owner coverage", "timeline coverage", "risk coverage", "reference coverage"],
+      required_checks: ["owner coverage", "timeline coverage", "risk coverage", "reference coverage"],
+    },
     two_minute_review: [
       "Open /api/health to confirm runtime mode and next diagnostics step.",
       "Read /api/runtime-brief for trust boundary, review flow, and watchouts.",
@@ -277,6 +284,13 @@ function buildStaticServiceBrief(): ServiceBrief {
       "Fine-grained document RBAC at retrieval time is not implemented in this prototype.",
       "Cloud configuration is incomplete, so the full Azure-backed path is not active in static mode.",
     ],
+    completeness_gate: {
+      schema: "honeypot-handover-completeness-v1",
+      score_pct: 0,
+      review_ready: false,
+      missing_fields: ["owner coverage", "timeline coverage", "risk coverage", "reference coverage"],
+      required_checks: ["owner coverage", "timeline coverage", "risk coverage", "reference coverage"],
+    },
     proof_assets: [
       { label: "Health", path: "/api/health", kind: "endpoint", why: "Confirms whether the service is demo or live-configured before a review." },
       { label: "Runtime Brief", path: "/api/runtime-brief", kind: "endpoint", why: "Pins trust boundary, delivery modes, and runtime watchouts in one payload." },

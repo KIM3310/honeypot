@@ -127,8 +127,45 @@ const ListEditor = ({ items, onUpdate, onRemove, renderItem, emptyText }: any) =
   );
 };
 
+function buildCompletenessGate(data: HandoverData | null) {
+  if (!data) {
+    return {
+      score: 0,
+      reviewReady: false,
+      missing: ["owner coverage", "timeline coverage", "risk coverage", "reference coverage"],
+    };
+  }
+
+  const missing: string[] = [];
+  const hasOwner =
+    Boolean(data.overview?.transferor?.name?.trim()) &&
+    Boolean(data.overview?.transferee?.name?.trim()) &&
+    data.ongoingProjects.some((item) => String(item.owner || "").trim().length > 0);
+  const hasTimeline =
+    data.priorities.some((item) => String(item.deadline || "").trim().length > 0) ||
+    data.ongoingProjects.some((item) => String(item.deadline || "").trim().length > 0);
+  const hasRisk =
+    Boolean(String(data.risks?.issues || "").trim()) ||
+    Boolean(String(data.risks?.risks || "").trim());
+  const hasReference =
+    (data.resources?.docs?.length || 0) > 0 ||
+    (data.resources?.systems?.length || 0) > 0;
+
+  if (!hasOwner) missing.push("owner coverage");
+  if (!hasTimeline) missing.push("timeline coverage");
+  if (!hasRisk) missing.push("risk coverage");
+  if (!hasReference) missing.push("reference coverage");
+
+  return {
+    score: Math.max(0, 100 - missing.length * 25),
+    reviewReady: missing.length === 0,
+    missing,
+  };
+}
+
 const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
   const [activeTab, setActiveTab] = useState(0);
+  const completeness = buildCompletenessGate(data);
 
   if (!data) {
     return (
@@ -189,6 +226,10 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
 
 
   const handleExportJSON = async () => {
+    if (!completeness.reviewReady) {
+      alert(`리뷰 준비 전입니다. 보완 필요: ${completeness.missing.join(", ")}`);
+      return;
+    }
     if ((window as any).electronAPI) {
       try {
         const result = await (window as any).electronAPI.saveJson(
@@ -217,6 +258,10 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
   };
 
   const handleExportPDF = async () => {
+    if (!completeness.reviewReady) {
+      alert(`리뷰 준비 전입니다. 보완 필요: ${completeness.missing.join(", ")}`);
+      return;
+    }
     if ((window as any).electronAPI) {
       try {
         const result = await (window as any).electronAPI.savePdf(
@@ -240,21 +285,37 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
         <h2 className="text-sm font-black text-yellow-600 uppercase tracking-widest flex items-center gap-2">
           <Sparkles className="w-4 h-4" /> 인수인계서 리포트
         </h2>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
+          <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black ${
+            completeness.reviewReady
+              ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+              : "bg-red-50 text-red-700 border border-red-100"
+          }`}>
+            Completeness {completeness.score}% · {completeness.reviewReady ? "review-ready" : "blocked"}
+          </div>
+          <div className="flex gap-2">
           <button
             onClick={handleExportJSON}
+            disabled={!completeness.reviewReady}
             className="flex items-center gap-2 px-3 py-1.5 bg-yellow-50 text-yellow-600 rounded-lg text-xs font-bold hover:bg-yellow-100 transition-colors"
           >
             <Save className="w-3.5 h-3.5" /> JSON 저장
           </button>
           <button
             onClick={handleExportPDF}
+            disabled={!completeness.reviewReady}
             className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500 text-white rounded-lg text-xs font-bold hover:bg-yellow-600 transition-colors shadow-sm"
           >
             <Download className="w-3.5 h-3.5" /> PDF 저장
           </button>
+          </div>
         </div>
       </div>
+      {!completeness.reviewReady && (
+        <div className="px-6 py-3 bg-red-50 border-b border-red-100 text-[11px] font-bold text-red-700">
+          Review-ready blocked: {completeness.missing.join(", ")}를 채워야 합니다.
+        </div>
+      )}
       {/* Tab Navigation */}
       <div className="flex bg-yellow-50/50 border-b border-yellow-100 p-2 gap-1 overflow-x-auto no-scrollbar">
         {tabs.map((tab, idx) => (
