@@ -18,8 +18,8 @@ Core capabilities:
 Status: reviewable handover workflow build. Some security controls still use in-memory stores (acceptable for demo/dev, not production).
 
 ## Portfolio posture
-- Treat this repo as a handover workflow with explicit live vs review-only posture.
-- Runtime brief, service meta, and schema routes are the canonical proof surfaces before Azure-readiness claims.
+- Treat this repo as a handover quality workflow where review-only and live modes are both intentional, not half-finished.
+- Runtime brief, service meta, schema routes, and the editor/retrieval loop are the proof surfaces before any Azure-readiness claim.
 
 ## Role signals
 - **AI engineer:** retrieval-backed handover generation and follow-up Q&A show a real document workflow, not a one-shot prompt.
@@ -30,7 +30,7 @@ Status: reviewable handover workflow build. Some security controls still use in-
 - **Primary runtime:** the document-to-handover workflow lives in `app/`, `frontend/`, and the FastAPI services.
 - **Packaging experiments:** Railway, Vercel, Electron, and desktop build files are optional delivery paths for the same workflow.
 - **Ops/support docs:** deployment and runbook material at the root exists to make the workflow reviewable, not to suggest separate products.
-- **Start here if you're new:** run the local app/API flow first, then inspect packaging notes only if you care about delivery tradeoffs.
+- **If you're new:** run the local app/API flow first, then only step into packaging notes if you care about delivery tradeoffs.
 
 ## Scope
 - System architecture design (end-to-end flow + component boundaries)
