@@ -209,7 +209,7 @@ const ServiceReadinessBoard: React.FC<Props> = ({
 
   const lensContent = {
     operator: {
-      title: "Operator Lens",
+      title: "Handover lead lens",
       summary: "Health → Runtime Brief → Handover Schema → Ops Runtime 순서로 읽으면 handover loop가 가장 빨리 드러납니다.",
       cards: [
         ["01 · Health", "현재 모드와 다음 operator action부터 먼저 확인합니다."],
@@ -218,7 +218,7 @@ const ServiceReadinessBoard: React.FC<Props> = ({
       ],
     },
     reviewer: {
-      title: "Reviewer Lens",
+      title: "Reviewer gate lens",
       summary: "Review Pack과 fast routes를 먼저 보고, 업로드/생성은 그 다음에 보는 렌즈입니다.",
       cards: [
         ["01 · Review routes", "health / meta / runtime brief로 trust boundary를 먼저 읽습니다."],
@@ -227,7 +227,7 @@ const ServiceReadinessBoard: React.FC<Props> = ({
       ],
     },
     security: {
-      title: "Security Lens",
+      title: "Security check lens",
       summary: "CSRF, JWT, allowed origins, security headers가 실제 handover workflow와 붙어 있는지 보는 렌즈입니다.",
       cards: [
         ["01 · Auth controls", "JWT + CSRF가 route claim과 분리되지 않고 같이 보이는지 확인합니다."],
