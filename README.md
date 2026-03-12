@@ -26,6 +26,12 @@ Status: reviewable handover workflow build. Some security controls still use in-
 - **Solution / cloud architect:** ingest, extraction, retrieval, and review posture are clear enough to discuss enterprise adoption trade-offs.
 - **Field / solutions engineer:** the before/after walkthrough is concrete: messy documents in, structured handover out.
 
+
+## Portfolio context
+- **Portfolio family:** applied document and workflow systems
+- **This repo's role:** handover-quality workflow that connects ingest, retrieval, drafting, and review controls.
+- **Related repos:** `Upstage-DocuAgent`, `enterprise-llm-adoption-kit`, `secure-xl2hwp-local`
+
 ## Repository surfaces
 - **Primary runtime:** the document-to-handover workflow lives in `app/`, `frontend/`, and the FastAPI services.
 - **Packaging experiments:** Railway, Vercel, Electron, and desktop build files are optional delivery paths for the same workflow.
