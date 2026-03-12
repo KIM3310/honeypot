@@ -68,6 +68,7 @@ const ServiceReadinessBoard: React.FC<Props> = ({
   variant = "full",
 }) => {
   const [copyStatus, setCopyStatus] = React.useState("");
+  const [lens, setLens] = React.useState<"operator" | "reviewer" | "security">("operator");
 
   if (!serviceMeta || !handoverSchema || !healthSummary) {
     return null;
@@ -206,6 +207,36 @@ const ServiceReadinessBoard: React.FC<Props> = ({
     setCopyStatus(ok ? "Copied security posture snapshot." : "Failed to copy security posture snapshot.");
   };
 
+  const lensContent = {
+    operator: {
+      title: "Operator Lens",
+      summary: "Health → Runtime Brief → Handover Schema → Ops Runtime 순서로 읽으면 handover loop가 가장 빨리 드러납니다.",
+      cards: [
+        ["01 · Health", "현재 모드와 다음 operator action부터 먼저 확인합니다."],
+        ["02 · Draft contract", "handover schema와 runtime brief가 같은 editor contract를 가리키는지 봅니다."],
+        ["03 · Runtime", "ops runtime에서 route별 diagnostics를 마지막으로 확인합니다."],
+      ],
+    },
+    reviewer: {
+      title: "Reviewer Lens",
+      summary: "Review Pack과 fast routes를 먼저 보고, 업로드/생성은 그 다음에 보는 렌즈입니다.",
+      cards: [
+        ["01 · Review routes", "health / meta / runtime brief로 trust boundary를 먼저 읽습니다."],
+        ["02 · Evidence", "proof assets와 two-minute review가 한 흐름인지 확인합니다."],
+        ["03 · Delivery", "print / editor / retrieval-backed chat가 같은 서비스처럼 읽히는지 봅니다."],
+      ],
+    },
+    security: {
+      title: "Security Lens",
+      summary: "CSRF, JWT, allowed origins, security headers가 실제 handover workflow와 붙어 있는지 보는 렌즈입니다.",
+      cards: [
+        ["01 · Auth controls", "JWT + CSRF가 route claim과 분리되지 않고 같이 보이는지 확인합니다."],
+        ["02 · Boundary", "delivery boundary와 Azure claim이 과장 없이 이어지는지 봅니다."],
+        ["03 · Snapshot", "security snapshot을 바로 복사할 수 있어야 reviewer가 빠르게 검토합니다."],
+      ],
+    },
+  }[lens];
+
   return (
     <section className="rounded-[2rem] border border-yellow-200 bg-white/95 shadow-[0_20px_40px_-20px_rgba(15,23,42,0.28)] p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -341,6 +372,47 @@ const ServiceReadinessBoard: React.FC<Props> = ({
             {serviceMeta.runtime.allowed_origins_count}
           </strong>
         </article>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Audience Lens</p>
+            <h4 className="mt-1 text-base font-black text-gray-900">{lensContent.title}</h4>
+            <p className="mt-1 text-xs text-gray-600 leading-relaxed">{lensContent.summary}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setLens("operator")}
+              className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] border ${lens === "operator" ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-700 border-gray-200"}`}
+            >
+              Operator
+            </button>
+            <button
+              type="button"
+              onClick={() => setLens("reviewer")}
+              className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] border ${lens === "reviewer" ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-700 border-gray-200"}`}
+            >
+              Reviewer
+            </button>
+            <button
+              type="button"
+              onClick={() => setLens("security")}
+              className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] border ${lens === "security" ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-700 border-gray-200"}`}
+            >
+              Security
+            </button>
+          </div>
+        </div>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          {lensContent.cards.map(([title, body]) => (
+            <article key={title} className="rounded-2xl border border-gray-200 bg-white p-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-gray-500">{title}</p>
+              <p className="mt-2 text-[11px] text-gray-600 leading-relaxed">{body}</p>
+            </article>
+          ))}
+        </div>
       </div>
 
       <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
