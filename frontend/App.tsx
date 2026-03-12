@@ -382,7 +382,7 @@ const App: React.FC = () => {
   );
   const [runtimeStatusMessage, setRuntimeStatusMessage] = useState(() =>
     API_RUNTIME_CONFIG.isProductionMisconfigured
-      ? "VITE_API_BASE_URL이 설정되지 않아 리뷰 전용 화면으로 시작했습니다."
+      ? "지금은 기록된 리뷰 모드입니다. backend 주소를 붙이면 live handover 흐름까지 바로 이어집니다."
       : "백엔드 연결 상태를 확인 중입니다."
   );
   const [workspaceNotice, setWorkspaceNotice] = useState("");
@@ -511,7 +511,7 @@ const App: React.FC = () => {
           setBackendReachable(false);
           setApiMisconfigured(true);
           setRuntimeStatusMessage(
-            "VITE_API_BASE_URL이 없어 live backend에 연결할 수 없습니다. 현재는 리뷰 전용 화면입니다."
+            "지금은 기록된 리뷰 모드입니다. live handover 흐름이 필요하면 backend 주소만 연결하면 됩니다."
           );
         }
         return;

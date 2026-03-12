@@ -79,7 +79,7 @@ const LoginScreen: React.FC<Props> = ({
       <div className="absolute top-20 left-20 w-32 h-32 bg-yellow-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
       <div className="absolute bottom-20 right-20 w-40 h-40 bg-orange-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
 
-      <div className="w-full max-w-md bg-white/80 backdrop-blur-2xl p-10 rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(252,211,77,0.2)] border border-white relative z-10 animate-in zoom-in-95 duration-700">
+      <div className="w-full max-w-2xl bg-white/80 backdrop-blur-2xl p-10 rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(252,211,77,0.2)] border border-white relative z-10 animate-in zoom-in-95 duration-700">
         <div className="flex flex-col items-center mb-10 text-center">
           <div className="w-40 h-40 mb-4 group hover:scale-110 transition-all duration-500 cursor-pointer">
              <img 
@@ -101,6 +101,13 @@ const LoginScreen: React.FC<Props> = ({
             role="status"
           >
             {runtimeStatusMessage}
+          </div>
+          <div className="mb-4 rounded-2xl border border-yellow-200 bg-yellow-50/70 px-4 py-3 text-left">
+            <p className="text-[10px] font-black text-yellow-700 uppercase tracking-[0.16em]">빠른 검토 경로</p>
+            <p className="mt-2 text-[12px] font-bold text-yellow-900 leading-relaxed">
+              Health → Runtime Brief → Handover Schema → Ops Runtime 순서로 보면
+              이 서비스가 무엇을 증명하는지 가장 빠르게 읽힙니다.
+            </p>
           </div>
           <ServiceReadinessBoard
             handoverSchema={handoverSchema}
