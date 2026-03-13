@@ -40,7 +40,7 @@ def _build_watchouts(*, config_valid: bool, mode: str) -> List[str]:
     ]
     if mode == "demo":
         watchouts.append(
-            "The backend is in demo mode. Live Azure Blob/Search/OpenAI and Gemini paths are not active."
+            "The backend is in demo mode by design for review fallback; treat it as a safe walkthrough path, not partial proof of the live Azure stack."
         )
     if not config_valid:
         watchouts.append(
