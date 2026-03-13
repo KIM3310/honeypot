@@ -194,10 +194,23 @@ function countFilledSections(data: HandoverData | null) {
   return sections.filter(Boolean).length;
 }
 
+const REVIEWER_GAP_LABELS: Record<string, string> = {
+  "owner coverage": "인계자/담당자",
+  "timeline coverage": "기한/타임라인",
+  "risk coverage": "리스크",
+  "reference coverage": "문서/시스템 레퍼런스",
+};
+
 const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
   const [activeTab, setActiveTab] = useState(0);
   const completeness = buildCompletenessGate(data);
   const filledSections = countFilledSections(data);
+  const reviewerGapLabels = completeness.missing.map(
+    (item) => REVIEWER_GAP_LABELS[item] || item
+  );
+  const nextReviewerAction = completeness.reviewReady
+    ? "JSON/PDF export 전에 reviewer가 runtime summary와 핵심 리스크를 한 번 더 읽도록 전달하세요."
+    : `${reviewerGapLabels[0] || "필수 공백"}부터 채워 reviewer가 막히지 않게 handoff를 닫으세요.`;
   const approvalSteps = [
     {
       label: "Draft",
@@ -355,14 +368,14 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
           <button
             onClick={handleExportJSON}
             disabled={!completeness.reviewReady}
-            className="flex items-center gap-2 px-3 py-1.5 bg-yellow-50 text-yellow-600 rounded-lg text-xs font-bold hover:bg-yellow-100 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 bg-yellow-50 text-yellow-600 rounded-lg text-xs font-bold hover:bg-yellow-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Save className="w-3.5 h-3.5" /> JSON 저장
           </button>
           <button
             onClick={handleExportPDF}
             disabled={!completeness.reviewReady}
-            className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500 text-white rounded-lg text-xs font-bold hover:bg-yellow-600 transition-colors shadow-sm"
+            className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500 text-white rounded-lg text-xs font-bold hover:bg-yellow-600 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Download className="w-3.5 h-3.5" /> PDF 저장
           </button>
@@ -403,9 +416,31 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
             </article>
           ))}
         </div>
+        <div className="mt-4 grid gap-3 xl:grid-cols-2">
+          <article className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+              Export unlock checklist
+            </p>
+            <ul className="mt-2 space-y-2 text-[11px] leading-relaxed text-slate-700">
+              <li>1. 인계자/인수자/프로젝트 owner를 reviewer가 한 번에 확인할 수 있어야 합니다.</li>
+              <li>2. timeline, risk, reference 공백 없이 reviewer summary를 닫은 뒤 export를 엽니다.</li>
+            </ul>
+          </article>
+          <article className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">
+              Next reviewer action
+            </p>
+            <p className="mt-2 text-[12px] font-bold leading-relaxed text-amber-900">
+              {nextReviewerAction}
+            </p>
+            <p className="mt-2 text-[11px] leading-relaxed text-amber-800">
+              Remaining blockers: {reviewerGapLabels.length ? reviewerGapLabels.join(", ") : "없음"}
+            </p>
+          </article>
+        </div>
         {!completeness.reviewReady && (
           <div className="mt-4 flex flex-wrap gap-2">
-            {completeness.missing.map((item) => (
+            {reviewerGapLabels.map((item) => (
               <span
                 key={item}
                 className="rounded-full border border-amber-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-700"
