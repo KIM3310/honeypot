@@ -14,3 +14,9 @@ def test_handover_form_exposes_reviewer_gate_copy() -> None:
     assert "Review evidence snapshot" in source
     assert "Reviewer proof route" in source
     assert "/api/runtime-scorecard" in source
+
+
+def test_handover_form_exposes_first_secure_workflow_copy() -> None:
+    source = HANDOVER_FORM.read_text(encoding="utf-8")
+    assert "First secure workflow" in source
+    assert "manual review 완료 후에만 파일 export를 엽니다." in source
