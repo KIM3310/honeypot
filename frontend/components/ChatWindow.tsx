@@ -62,6 +62,43 @@ const ChatWindow: React.FC<Props> = ({
   });
   const scrollRef = useRef<HTMLDivElement>(null);
   const isOffline = stats.status?.toLowerCase?.().includes("offline");
+  const completedUploads = files.filter((file) => file.uploadStatus === "completed").length;
+  const processingUploads = files.filter((file) => file.uploadStatus === "processing").length;
+  const failedUploads = files.filter((file) => file.uploadStatus === "failed").length;
+  const hasUsableSources = completedUploads > 0;
+  const workflowStage = hasUsableSources
+    ? "reviewer-ready"
+    : processingUploads > 0
+      ? "ingesting"
+      : failedUploads > 0
+        ? "retry-upload"
+        : "waiting-for-sources";
+  const workflowHeadline = workflowStage === "reviewer-ready"
+    ? "업로드 → draft → reviewer 질문 흐름이 열렸어요"
+    : workflowStage === "ingesting"
+      ? "자료를 정리 중입니다"
+      : workflowStage === "retry-upload"
+        ? "업로드 복구가 먼저 필요합니다"
+        : "먼저 자료를 넣어 첫 workflow를 시작하세요";
+  const workflowDetails = workflowStage === "reviewer-ready"
+    ? [
+        `${completedUploads}개 자료가 reviewer 질문용 근거로 준비되었습니다.`,
+        "이제 draft를 생성하고 owner / timeline / risk / reference 공백만 메우면 handoff가 훨씬 읽기 쉬워집니다.",
+      ]
+    : workflowStage === "ingesting"
+      ? [
+          `${processingUploads}개 자료가 아직 처리 중입니다. 업로드 완료 후 draft를 생성하세요.`,
+          "처리 중에는 빈 handover를 만드는 대신 reviewer가 확인할 근거를 먼저 확보합니다.",
+        ]
+      : workflowStage === "retry-upload"
+        ? [
+            `${failedUploads}개 업로드가 실패했습니다. 실패 원인을 정리한 뒤 다시 올려야 reviewer handoff가 흔들리지 않습니다.`,
+            "근거 없는 draft 생성 대신 업로드 복구를 먼저 안내합니다.",
+          ]
+        : [
+            "좌측 보관함에 파일을 넣으면 source → draft → reviewer Q&A 순서가 바로 열립니다.",
+            "자료가 없을 때는 빈 결과를 만들지 않고 첫 입력부터 요청합니다.",
+          ];
   const systemDotClass = isOffline
     ? "bg-red-500"
     : stats.mode === "demo"
@@ -216,7 +253,7 @@ const ChatWindow: React.FC<Props> = ({
                     왼쪽 보관함에 자료를 먼저 넣어주세요!
                   </span>
                 </p>
-                <div className="mb-6 w-full rounded-2xl border border-gray-200 bg-white/90 p-4 text-left shadow-sm">
+                <div className="mb-4 w-full rounded-2xl border border-gray-200 bg-white/90 p-4 text-left shadow-sm">
                   <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
                     Reviewer-first path
                   </p>
@@ -226,9 +263,32 @@ const ChatWindow: React.FC<Props> = ({
                     <li>3. 이 채팅으로 reviewer 질문을 받아 draft 근거를 확인합니다.</li>
                   </ol>
                 </div>
+                <div className="mb-6 w-full rounded-2xl border border-yellow-200 bg-yellow-50/90 p-4 text-left shadow-sm">
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-yellow-700">
+                    <Info className="h-3.5 w-3.5" />
+                    First workflow status
+                  </div>
+                  <p className="mt-2 text-sm font-extrabold text-gray-800">{workflowHeadline}</p>
+                  <ul className="mt-3 space-y-2 text-[11px] leading-relaxed text-gray-700">
+                    {workflowDetails.map((detail) => (
+                      <li key={detail}>• {detail}</li>
+                    ))}
+                  </ul>
+                  <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-bold text-gray-600">
+                    <span className="rounded-full bg-white px-2.5 py-1 border border-yellow-200">
+                      sources {completedUploads}/{files.length}
+                    </span>
+                    <span className="rounded-full bg-white px-2.5 py-1 border border-yellow-200">
+                      index {stats.total_documents} docs
+                    </span>
+                    <span className="rounded-full bg-white px-2.5 py-1 border border-yellow-200">
+                      {isOffline ? "offline fallback" : stats.mode === "demo" ? "demo path" : "live path"}
+                    </span>
+                  </div>
+                </div>
                 <button
                   onClick={onGenerate}
-                  disabled={isProcessing}
+                  disabled={isProcessing || !hasUsableSources}
                   className="w-full bg-yellow-400 text-white py-4 rounded-2xl font-black shadow-xl shadow-yellow-100 hover:bg-yellow-500 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 mb-3"
                 >
                   {isProcessing ? (
@@ -236,8 +296,13 @@ const ChatWindow: React.FC<Props> = ({
                   ) : (
                     <Wand2 className="w-6 h-6" />
                   )}
-                  인수인계서 생성하기
+                  {hasUsableSources ? "인수인계서 생성하기" : "업로드 완료 후 생성 가능"}
                 </button>
+                {!hasUsableSources && (
+                  <p className="mb-3 text-[11px] font-medium text-gray-500">
+                    빈 draft는 만들지 않습니다. 먼저 업로드를 완료해 reviewer가 볼 근거를 확보하세요.
+                  </p>
+                )}
                 <button
                   onClick={onNewChat}
                   className="w-full bg-gray-200 text-gray-700 py-3 rounded-2xl font-bold hover:bg-gray-300 transition-all active:scale-95"
