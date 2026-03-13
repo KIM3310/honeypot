@@ -194,6 +194,35 @@ function countFilledSections(data: HandoverData | null) {
   return sections.filter(Boolean).length;
 }
 
+async function copyTextToClipboard(text: string): Promise<boolean> {
+  const payload = String(text || "").trim();
+  if (!payload) return false;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(payload);
+      return true;
+    }
+  } catch {
+    // Fall back below.
+  }
+
+  try {
+    const helper = document.createElement("textarea");
+    helper.value = payload;
+    helper.setAttribute("readonly", "true");
+    helper.style.position = "absolute";
+    helper.style.left = "-9999px";
+    document.body.appendChild(helper);
+    helper.select();
+    const copied = document.execCommand("copy");
+    helper.remove();
+    return Boolean(copied);
+  } catch {
+    return false;
+  }
+}
+
 const REVIEWER_GAP_LABELS: Record<string, string> = {
   "owner coverage": "인계자/담당자",
   "timeline coverage": "기한/타임라인",
@@ -237,6 +266,15 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
       description: "백엔드 승인 상태는 흉내 내지 않고, 수동 리뷰 완료 후 내보내기만 열어 둡니다.",
     },
   ];
+  const reviewerSnapshot = [
+    "Honeypot reviewer snapshot",
+    `Completeness: ${completeness.score}%`,
+    `Filled sections: ${filledSections}/6`,
+    `Review ready: ${completeness.reviewReady ? "yes" : "no"}`,
+    `Missing: ${reviewerGapLabels.length ? reviewerGapLabels.join(", ") : "none"}`,
+    `Next action: ${nextReviewerAction}`,
+    "Routes: /api/runtime-brief -> /api/review-summary -> /api/schema/handover",
+  ].join("\n");
 
   if (!data) {
     return (
@@ -350,6 +388,11 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
     }
   };
 
+  const handleCopyReviewerSnapshot = async () => {
+    const ok = await copyTextToClipboard(reviewerSnapshot);
+    alert(ok ? "Reviewer snapshot을 복사했습니다." : "Reviewer snapshot 복사에 실패했습니다.");
+  };
+
   return (
     <div className="bg-white rounded-[2.5rem] shadow-2xl border border-yellow-100 h-full flex flex-col overflow-hidden relative">
       <div className="flex justify-between items-center p-4 border-b border-yellow-100 bg-white">
@@ -365,6 +408,12 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
             Completeness {completeness.score}% · {completeness.reviewReady ? "review-ready" : "blocked"}
           </div>
           <div className="flex gap-2">
+          <button
+            onClick={handleCopyReviewerSnapshot}
+            className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors"
+          >
+            <CheckSquare className="w-3.5 h-3.5" /> Reviewer snapshot
+          </button>
           <button
             onClick={handleExportJSON}
             disabled={!completeness.reviewReady}
@@ -437,6 +486,14 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
               Remaining blockers: {reviewerGapLabels.length ? reviewerGapLabels.join(", ") : "없음"}
             </p>
           </article>
+        </div>
+        <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-600">
+            Review evidence snapshot
+          </p>
+          <p className="mt-2 text-[11px] leading-relaxed text-slate-700 whitespace-pre-line">
+            {reviewerSnapshot}
+          </p>
         </div>
         {!completeness.reviewReady && (
           <div className="mt-4 flex flex-wrap gap-2">
