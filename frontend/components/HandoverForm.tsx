@@ -273,7 +273,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
     `Review ready: ${completeness.reviewReady ? "yes" : "no"}`,
     `Missing: ${reviewerGapLabels.length ? reviewerGapLabels.join(", ") : "none"}`,
     `Next action: ${nextReviewerAction}`,
-    "Routes: /api/runtime-brief -> /api/review-summary -> /api/schema/handover",
+    "Routes: /api/runtime-brief -> /api/runtime-scorecard -> /api/review-summary -> /api/schema/handover",
   ].join("\n");
 
   if (!data) {
@@ -473,6 +473,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
             <ul className="mt-2 space-y-2 text-[11px] leading-relaxed text-slate-700">
               <li>1. 인계자/인수자/프로젝트 owner를 reviewer가 한 번에 확인할 수 있어야 합니다.</li>
               <li>2. timeline, risk, reference 공백 없이 reviewer summary를 닫은 뒤 export를 엽니다.</li>
+              <li>3. export 전에는 runtime brief → runtime scorecard → schema 순서로 reviewer proof route를 고정합니다.</li>
             </ul>
           </article>
           <article className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
@@ -486,6 +487,17 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
               Remaining blockers: {reviewerGapLabels.length ? reviewerGapLabels.join(", ") : "없음"}
             </p>
           </article>
+        </div>
+        <div className="mt-3 rounded-2xl border border-blue-200 bg-blue-50/80 p-4 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">
+            Reviewer proof route
+          </p>
+          <p className="mt-2 text-[11px] leading-relaxed text-blue-900">
+            /api/runtime-brief → /api/runtime-scorecard → /api/review-summary → /api/schema/handover
+          </p>
+          <p className="mt-2 text-[11px] leading-relaxed text-blue-800">
+            Reviewer가 export gate를 신뢰할 때는 draft보다 먼저 runtime posture와 schema contract를 같은 순서로 읽게 하세요.
+          </p>
         </div>
         <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-600">

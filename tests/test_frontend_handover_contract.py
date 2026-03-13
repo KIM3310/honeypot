@@ -12,3 +12,5 @@ def test_handover_form_exposes_reviewer_gate_copy() -> None:
     assert "Next reviewer action" in source
     assert "Reviewer snapshot" in source
     assert "Review evidence snapshot" in source
+    assert "Reviewer proof route" in source
+    assert "/api/runtime-scorecard" in source
