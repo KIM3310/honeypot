@@ -10,3 +10,5 @@ def test_handover_form_exposes_reviewer_gate_copy() -> None:
     assert "Reviewer handoff" in source
     assert "Export unlock checklist" in source
     assert "Next reviewer action" in source
+    assert "Reviewer snapshot" in source
+    assert "Review evidence snapshot" in source
