@@ -275,6 +275,13 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
     `Next action: ${nextReviewerAction}`,
     "Routes: /api/runtime-brief -> /api/runtime-scorecard -> /api/review-summary -> /api/schema/handover",
   ].join("\n");
+  const firstSecureWorkflow = [
+    "1. /api/runtime-brief — trust boundary와 reviewer promise를 먼저 확인합니다.",
+    "2. /api/runtime-scorecard — live readiness보다 현재 runtime posture를 먼저 고정합니다.",
+    "3. Reviewer snapshot — blocker와 다음 action을 reviewer handoff 문장으로 복사합니다.",
+    "4. /api/schema/handover — export 전 draft contract를 reviewer와 같은 구조로 다시 확인합니다.",
+    "5. JSON/PDF export — manual review 완료 후에만 파일 export를 엽니다.",
+  ];
 
   if (!data) {
     return (
@@ -488,16 +495,28 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
             </p>
           </article>
         </div>
-        <div className="mt-3 rounded-2xl border border-blue-200 bg-blue-50/80 p-4 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">
-            Reviewer proof route
-          </p>
-          <p className="mt-2 text-[11px] leading-relaxed text-blue-900">
-            /api/runtime-brief → /api/runtime-scorecard → /api/review-summary → /api/schema/handover
-          </p>
-          <p className="mt-2 text-[11px] leading-relaxed text-blue-800">
-            Reviewer가 export gate를 신뢰할 때는 draft보다 먼저 runtime posture와 schema contract를 같은 순서로 읽게 하세요.
-          </p>
+        <div className="mt-3 grid gap-3 xl:grid-cols-2">
+          <article className="rounded-2xl border border-blue-200 bg-blue-50/80 p-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">
+              Reviewer proof route
+            </p>
+            <p className="mt-2 text-[11px] leading-relaxed text-blue-900">
+              /api/runtime-brief → /api/runtime-scorecard → /api/review-summary → /api/schema/handover
+            </p>
+            <p className="mt-2 text-[11px] leading-relaxed text-blue-800">
+              Reviewer가 export gate를 신뢰할 때는 draft보다 먼저 runtime posture와 schema contract를 같은 순서로 읽게 하세요.
+            </p>
+          </article>
+          <article className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">
+              First secure workflow
+            </p>
+            <ul className="mt-2 space-y-2 text-[11px] leading-relaxed text-emerald-900">
+              {firstSecureWorkflow.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </article>
         </div>
         <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-600">
