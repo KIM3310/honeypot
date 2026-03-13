@@ -163,9 +163,67 @@ function buildCompletenessGate(data: HandoverData | null) {
   };
 }
 
+function countFilledSections(data: HandoverData | null) {
+  if (!data) return 0;
+
+  const sections = [
+    Boolean(
+      data.overview?.transferor?.name?.trim() ||
+        data.overview?.transferee?.name?.trim() ||
+        data.overview?.reason?.trim()
+    ),
+    Boolean(
+      data.jobStatus?.title?.trim() ||
+        data.jobStatus?.responsibilities?.some((item) => String(item || "").trim())
+    ),
+    data.priorities.some((item) => String(item.title || "").trim()),
+    Boolean(
+      data.stakeholders?.internal?.length ||
+        data.teamMembers?.length ||
+        data.ongoingProjects?.length
+    ),
+    Boolean(
+      data.resources?.docs?.length ||
+        data.resources?.systems?.length ||
+        data.risks?.issues?.trim() ||
+        data.risks?.risks?.trim()
+    ),
+    data.checklist.some((item) => String(item.text || "").trim()),
+  ];
+
+  return sections.filter(Boolean).length;
+}
+
 const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
   const [activeTab, setActiveTab] = useState(0);
   const completeness = buildCompletenessGate(data);
+  const filledSections = countFilledSections(data);
+  const approvalSteps = [
+    {
+      label: "Draft",
+      value: `${filledSections}/6 sections`,
+      tone: "bg-slate-50 border-slate-200 text-slate-700",
+      description: "핵심 인수인계 정보와 실행 문맥을 먼저 채웁니다.",
+    },
+    {
+      label: "Reviewer gate",
+      value: completeness.reviewReady ? "ready" : `${completeness.missing.length} gaps`,
+      tone: completeness.reviewReady
+        ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+        : "bg-amber-50 border-amber-200 text-amber-700",
+      description: completeness.reviewReady
+        ? "소유자·타임라인·리스크·레퍼런스가 모두 보입니다."
+        : "승인 전 필수 커버리지를 채워 reviewer가 바로 스캔할 수 있게 만듭니다.",
+    },
+    {
+      label: "Export pack",
+      value: completeness.reviewReady ? "json + pdf unlocked" : "blocked",
+      tone: completeness.reviewReady
+        ? "bg-yellow-50 border-yellow-200 text-yellow-700"
+        : "bg-rose-50 border-rose-200 text-rose-700",
+      description: "백엔드 승인 상태는 흉내 내지 않고, 수동 리뷰 완료 후 내보내기만 열어 둡니다.",
+    },
+  ];
 
   if (!data) {
     return (
@@ -310,6 +368,53 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
           </button>
           </div>
         </div>
+      </div>
+      <div className="border-b border-yellow-100 bg-gradient-to-br from-white via-yellow-50/50 to-amber-50/60 px-6 py-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-xl">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-700">
+              Approval lane
+            </p>
+            <h3 className="mt-1 text-base font-black text-gray-900">
+              편집 → reviewer 확인 → export 순서를 한 화면에서 정리합니다.
+            </h3>
+            <p className="mt-2 text-[11px] leading-relaxed text-gray-600">
+              자동 승인처럼 보이게 하지 않고, reviewer가 실제로 읽어야 하는 필수 공백만 드러낸 뒤 JSON/PDF export를 엽니다.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-gray-200 bg-white/90 px-4 py-3 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
+              Reviewer handoff
+            </p>
+            <p className="mt-1 text-sm font-black text-gray-900">
+              Completeness {completeness.score}% · {completeness.reviewReady ? "review-ready" : "manual follow-up"}
+            </p>
+            <p className="mt-1 text-[11px] text-gray-600">
+              Missing: {completeness.missing.length === 0 ? "none" : completeness.missing.join(", ")}
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 xl:grid-cols-3">
+          {approvalSteps.map((step) => (
+            <article key={step.label} className={`rounded-2xl border p-4 ${step.tone}`}>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em]">{step.label}</p>
+              <p className="mt-2 text-sm font-black">{step.value}</p>
+              <p className="mt-2 text-[11px] leading-relaxed opacity-90">{step.description}</p>
+            </article>
+          ))}
+        </div>
+        {!completeness.reviewReady && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {completeness.missing.map((item) => (
+              <span
+                key={item}
+                className="rounded-full border border-amber-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-700"
+              >
+                fill {item}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
       {!completeness.reviewReady && (
         <div className="px-6 py-3 bg-red-50 border-b border-red-100 text-[11px] font-bold text-red-700">
