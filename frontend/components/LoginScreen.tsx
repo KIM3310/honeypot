@@ -74,17 +74,17 @@ const LoginScreen: React.FC<Props> = ({
   return (
     <div className="min-h-screen bg-[#FFFDF0] flex items-center justify-center p-6 relative overflow-hidden">
       <div className="honeycomb-bg"></div>
-      
+
       {/* Floating Elements for Decoration */}
       <div className="absolute top-20 left-20 w-32 h-32 bg-yellow-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
       <div className="absolute bottom-20 right-20 w-40 h-40 bg-orange-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
 
-      <div className="w-full max-w-2xl bg-white/80 backdrop-blur-2xl p-10 rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(252,211,77,0.2)] border border-white relative z-10 animate-in zoom-in-95 duration-700">
+      <div className="w-full max-w-5xl bg-white/80 backdrop-blur-2xl p-8 lg:p-10 rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(252,211,77,0.2)] border border-white relative z-10 animate-in zoom-in-95 duration-700">
         <div className="flex flex-col items-center mb-10 text-center">
           <div className="w-40 h-40 mb-4 group hover:scale-110 transition-all duration-500 cursor-pointer">
-             <img 
-               src="https://i.ibb.co/PvGzg7cK/Gemini-Generated-Image-ip7k7xip7k7xip7k.png" 
-               alt="꿀단지 로고" 
+             <img
+               src="https://i.ibb.co/PvGzg7cK/Gemini-Generated-Image-ip7k7xip7k7xip7k.png"
+               alt="꿀단지 로고"
                className="w-full h-full object-contain drop-shadow-2xl transition-transform rounded-full"
                onError={(e) => {
                  e.currentTarget.src = "https://api.iconify.design/noto:honey-pot.svg";
@@ -95,74 +95,86 @@ const LoginScreen: React.FC<Props> = ({
           <p className="text-sm font-bold text-yellow-600 mt-2">당신의 업무를 가장 달콤하게 이어주는 AI</p>
         </div>
 
-        <div className="mb-6">
-          <div
-            className={`mb-4 rounded-2xl border px-4 py-3 text-left text-xs font-bold leading-relaxed ${connectionTone}`}
-            role="status"
-          >
-            {runtimeStatusMessage}
+        <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
+          <div>
+            <div
+              className={`mb-4 rounded-2xl border px-4 py-3 text-left text-xs font-bold leading-relaxed ${connectionTone}`}
+              role="status"
+            >
+              {runtimeStatusMessage}
+            </div>
+            <div className="mb-4 rounded-2xl border border-yellow-200 bg-yellow-50/70 px-4 py-4 text-left">
+              <p className="text-[10px] font-black text-yellow-700 uppercase tracking-[0.16em]">Reviewer fast path</p>
+              <ol className="mt-2 space-y-2 text-[12px] font-bold text-yellow-900 leading-relaxed">
+                <li>1. Health / Runtime Brief로 handover claim과 trust boundary를 읽습니다.</li>
+                <li>2. Handover Schema로 editor / export contract를 고정합니다.</li>
+                <li>3. 로그인 후 draft, reviewer bundle, security snapshot으로 handoff를 이어갑니다.</li>
+              </ol>
+            </div>
+
+            {error && (
+              <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-2xl text-sm font-bold">
+                ⚠️ {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6 rounded-[2rem] border border-yellow-100 bg-white/90 p-6 shadow-sm">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">사번 또는 ID</label>
+                <input
+                  type="text"
+                  value={id}
+                  onChange={(e) => setId(e.target.value)}
+                  placeholder="operator-id"
+                  disabled={loginDisabled}
+                  className="w-full px-6 py-4 bg-yellow-50/50 border border-yellow-100 rounded-2xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all font-bold placeholder:text-yellow-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">비밀번호</label>
+                <input
+                  type="password"
+                  value={pw}
+                  onChange={(e) => setPw(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={loginDisabled}
+                  className="w-full px-6 py-4 bg-yellow-50/50 border border-yellow-100 rounded-2xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all font-bold placeholder:text-yellow-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loginDisabled}
+                className="w-full py-5 bg-gray-900 text-white rounded-2xl font-black text-lg shadow-2xl hover:bg-black hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {isLoading
+                  ? "로그인 중..."
+                  : apiMisconfigured
+                    ? "백엔드 설정 필요"
+                    : backendReachable
+                      ? "로그인"
+                      : "백엔드 연결 필요"}
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </form>
           </div>
-          <div className="mb-4 rounded-2xl border border-yellow-200 bg-yellow-50/70 px-4 py-3 text-left">
-            <p className="text-[10px] font-black text-yellow-700 uppercase tracking-[0.16em]">빠른 검토 경로</p>
-            <p className="mt-2 text-[12px] font-bold text-yellow-900 leading-relaxed">
-              Health → Runtime Brief → Handover Schema → Ops Runtime 순서로 보면
-              이 서비스가 무엇을 증명하는지 가장 빠르게 읽힙니다.
-            </p>
+
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50/80 px-4 py-4 text-left">
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.16em]">Front door promise</p>
+              <p className="mt-2 text-[12px] leading-relaxed text-gray-700">
+                이 화면은 “로그인만 하는 곳”이 아니라, reviewer가 먼저 무엇을 보고 handover를 어떻게 넘겨받는지까지 설명하는 입구입니다.
+              </p>
+            </div>
+            <ServiceReadinessBoard
+              handoverSchema={handoverSchema}
+              healthSummary={healthSummary}
+              serviceBrief={serviceBrief}
+              serviceMeta={serviceMeta}
+              variant="compact"
+            />
           </div>
-          <ServiceReadinessBoard
-            handoverSchema={handoverSchema}
-            healthSummary={healthSummary}
-            serviceBrief={serviceBrief}
-            serviceMeta={serviceMeta}
-            variant="compact"
-          />
         </div>
-
-        {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-2xl text-sm font-bold">
-            ⚠️ {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">사번 또는 ID</label>
-            <input 
-              type="text" 
-              value={id}
-              onChange={(e) => setId(e.target.value)}
-              placeholder="operator-id"
-              disabled={loginDisabled}
-              className="w-full px-6 py-4 bg-yellow-50/50 border border-yellow-100 rounded-2xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all font-bold placeholder:text-yellow-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">비밀번호</label>
-            <input 
-              type="password" 
-              value={pw}
-              onChange={(e) => setPw(e.target.value)}
-              placeholder="••••••••"
-              disabled={loginDisabled}
-              className="w-full px-6 py-4 bg-yellow-50/50 border border-yellow-100 rounded-2xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all font-bold placeholder:text-yellow-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            />
-          </div>
-
-          <button 
-            type="submit"
-            disabled={loginDisabled}
-            className="w-full py-5 bg-gray-900 text-white rounded-2xl font-black text-lg shadow-2xl hover:bg-black hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-          >
-            {isLoading
-              ? "로그인 중..."
-              : apiMisconfigured
-                ? "백엔드 설정 필요"
-                : backendReachable
-                  ? "로그인"
-                  : "백엔드 연결 필요"}
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </form>
 
         <div className="mt-10 pt-8 border-t border-yellow-50 flex flex-col gap-4">
           <div className="flex items-center gap-3 text-[11px] font-bold text-gray-400">

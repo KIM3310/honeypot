@@ -200,7 +200,7 @@ const ChatWindow: React.FC<Props> = ({
           // 채팅 모드
           <>
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto">
+              <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto">
                 <div className="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mb-8 shadow-inner">
                   <Sparkles className="w-12 h-12 text-yellow-400 animate-pulse" />
                 </div>
@@ -216,6 +216,16 @@ const ChatWindow: React.FC<Props> = ({
                     왼쪽 보관함에 자료를 먼저 넣어주세요!
                   </span>
                 </p>
+                <div className="mb-6 w-full rounded-2xl border border-gray-200 bg-white/90 p-4 text-left shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
+                    Reviewer-first path
+                  </p>
+                  <ol className="mt-2 space-y-2 text-[11px] leading-relaxed text-gray-700">
+                    <li>1. 자료를 업로드하고 draft를 생성합니다.</li>
+                    <li>2. 좌측 editor에서 owner / timeline / risk / reference 공백을 메웁니다.</li>
+                    <li>3. 이 채팅으로 reviewer 질문을 받아 draft 근거를 확인합니다.</li>
+                  </ol>
+                </div>
                 <button
                   onClick={onGenerate}
                   disabled={isProcessing}
