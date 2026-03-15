@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import traceback
 import uuid
@@ -44,7 +45,24 @@ def get_metrics_route_path(request: Request) -> str:
         return route_path
     return request.url.path
 
+def get_runtime_metrics_context(*, include_routes: bool) -> dict:
+    metrics = get_metrics_snapshot(include_routes=include_routes)
+    return {
+        "metrics": metrics,
+        "totals": metrics.get("totals", {}),
+        "allowed_origins_count": len(get_allowed_origins()),
+    }
 
+
+def build_local_verification_contract() -> dict[str, str]:
+    return {
+        "local_quality_command": "make ci",
+        "backend_setup": "make backend-install",
+        "backend_suite": ".venv/bin/python -m unittest discover -s tests -p 'test_*.py'",
+        "frontend_suite": "cd frontend && npm run build",
+        "install_scope": "project-local virtualenv",
+        "python_executable": sys.executable,
+    }
 # CORS 미들웨어 설정
 def get_allowed_origins():
     """환경에 따라 허용할 Origin 목록 반환"""
@@ -189,6 +207,7 @@ def health_check(request: Request):
             "runtime_mode": APP_MODE,
             "next_action": "Open /api/runtime-brief first, then /api/ops/runtime to inspect live route diagnostics.",
         },
+        "verification": build_local_verification_contract(),
         "ops_contract": {
             "schema": "ops-envelope-v1",
             "version": 1,

@@ -28,6 +28,9 @@ class TestSmoke(unittest.TestCase):
         self.assertIn("service-metadata-surface", payload["capabilities"])
         self.assertEqual(payload["ops_contract"]["schema"], "ops-envelope-v1")
         self.assertIn("next_action", payload["diagnostics"])
+        self.assertEqual(payload["verification"]["local_quality_command"], "make ci")
+        self.assertEqual(payload["verification"]["install_scope"], "project-local virtualenv")
+        self.assertEqual(payload["verification"]["frontend_suite"], "cd frontend && npm run build")
 
 
 if __name__ == "__main__":

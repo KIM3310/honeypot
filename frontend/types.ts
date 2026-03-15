@@ -189,6 +189,15 @@ export interface HandoverSchema {
   links: Record<string, string>;
 }
 
+export interface HealthVerification {
+  local_quality_command: string;
+  backend_setup: string;
+  backend_suite: string;
+  frontend_suite: string;
+  install_scope: string;
+  python_executable: string;
+}
+
 export interface HealthSummary {
   status: string;
   service: string;
@@ -203,6 +212,7 @@ export interface HealthSummary {
     runtime_mode: string;
     next_action: string;
   };
+  verification?: HealthVerification;
   capabilities: string[];
   links: Record<string, string>;
 }

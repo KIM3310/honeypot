@@ -58,6 +58,14 @@ function buildStaticHealthSummary(): HealthSummary {
       runtime_mode: "demo",
       next_action: "Start the backend, then open /api/runtime-brief and /api/ops/runtime to inspect live diagnostics.",
     },
+    verification: {
+      local_quality_command: "make ci",
+      backend_setup: "make backend-install",
+      backend_suite: ".venv/bin/python -m unittest discover -s tests -p 'test_*.py'",
+      frontend_suite: "cd frontend && npm run build",
+      install_scope: "project-local virtualenv",
+      python_executable: ".venv/bin/python",
+    },
     capabilities: [
       "document-ingest",
       "handover-chat",

@@ -112,6 +112,17 @@ const ServiceReadinessBoard: React.FC<Props> = ({
     "Honeypot review routes",
     ...reviewLinks.map(([label, path]) => `- ${label}: ${path}`),
   ].join("\n");
+  const localQualityText = healthSummary.verification
+    ? [
+        "Honeypot local quality gate",
+        `- command: ${healthSummary.verification.local_quality_command}`,
+        `- backend setup: ${healthSummary.verification.backend_setup}`,
+        `- backend suite: ${healthSummary.verification.backend_suite}`,
+        `- frontend suite: ${healthSummary.verification.frontend_suite}`,
+        `- install scope: ${healthSummary.verification.install_scope}`,
+        `- python: ${healthSummary.verification.python_executable}`,
+      ].join("\n")
+    : "";
   const twoMinuteReviewText = [
     "Honeypot review flow",
     ...twoMinuteReview.map((step) => `- ${step}`),
@@ -180,6 +191,11 @@ const ServiceReadinessBoard: React.FC<Props> = ({
   const handleCopyRoutes = async () => {
     const ok = await copyTextToClipboard(reviewRouteText);
     setCopyStatus(ok ? "Copied review routes." : "Failed to copy review routes.");
+  };
+
+  const handleCopyLocalQuality = async () => {
+    const ok = await copyTextToClipboard(localQualityText);
+    setCopyStatus(ok ? "Copied local quality gate." : "Failed to copy local quality gate.");
   };
 
   const handleCopyTwoMinuteReview = async () => {
@@ -439,6 +455,15 @@ const ServiceReadinessBoard: React.FC<Props> = ({
           >
             Copy Evidence Snapshot
           </button>
+          {healthSummary.verification ? (
+            <button
+              type="button"
+              onClick={() => void handleCopyLocalQuality()}
+              className="rounded-full border border-gray-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-700"
+            >
+              Copy Local Quality Gate
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => void handleCopyDeliveryBoundary()}
@@ -476,6 +501,47 @@ const ServiceReadinessBoard: React.FC<Props> = ({
           ))}
         </div>
       </div>
+
+      {healthSummary.verification ? (
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Local Quality Gate</p>
+              <p className="mt-1 text-xs text-gray-700">
+                Reviewers can rerun the documented local proof path without touching system Python.
+              </p>
+            </div>
+            <code className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-[11px] font-semibold text-emerald-700">
+              {healthSummary.verification.local_quality_command}
+            </code>
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <article className="rounded-2xl border border-emerald-100 bg-white p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Install Scope</p>
+              <p className="mt-2 text-xs text-gray-700">{healthSummary.verification.install_scope}</p>
+            </article>
+            <article className="rounded-2xl border border-emerald-100 bg-white p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Backend Setup</p>
+              <code className="mt-2 block rounded-xl bg-emerald-50 px-2 py-1 text-[10px] text-gray-700">
+                {healthSummary.verification.backend_setup}
+              </code>
+            </article>
+            <article className="rounded-2xl border border-emerald-100 bg-white p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Backend Suite</p>
+              <code className="mt-2 block rounded-xl bg-emerald-50 px-2 py-1 text-[10px] text-gray-700">
+                {healthSummary.verification.backend_suite}
+              </code>
+            </article>
+            <article className="rounded-2xl border border-emerald-100 bg-white p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Frontend Suite</p>
+              <code className="mt-2 block rounded-xl bg-emerald-50 px-2 py-1 text-[10px] text-gray-700">
+                {healthSummary.verification.frontend_suite}
+              </code>
+              <p className="mt-2 text-[11px] text-gray-500 break-all">{healthSummary.verification.python_executable}</p>
+            </article>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-4 grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
