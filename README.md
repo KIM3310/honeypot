@@ -262,6 +262,8 @@ Read endpoints that expose indexed/document metadata also require:
   - runtime contract for auth mode, retrieval mode, review pack, and watchouts
 - `GET /api/runtime-scorecard`
   - compact route pressure, alert count, and security posture snapshot
+- `GET /api/approval-matrix`
+  - role coverage, blocked sections, and handover-readiness gate before delivery claims
 - `GET /api/schema/handover`
   - handover export contract (`honeypot-handover-v1`)
 
@@ -271,6 +273,7 @@ The frontend renders the same reviewer pack on the login screen and main workspa
 - Open `/api/health` to confirm whether the service is demo or live-configured.
 - Read `/api/runtime-scorecard` for route pressure, alert count, and security posture.
 - Read `/api/runtime-brief` for trust boundary, delivery modes, and watchouts.
+- Inspect `/api/approval-matrix` before treating the generated draft as handoff-ready.
 - Inspect `/api/schema/handover` before trusting the editor contract.
 - Open `/api/ops/runtime` before making production-readiness claims.
 
@@ -278,6 +281,7 @@ The frontend renders the same reviewer pack on the login screen and main workspa
 - `app/main.py` for the top-level runtime envelope and next-action posture
 - `app/service_meta.py` for runtime brief and review-pack builders
 - `app/runtime_scorecard.py` for the compact runtime scorecard contract
+- `/api/approval-matrix` for reviewer-ready coverage, blocked sections, and owner-role gaps
 - `app/routers/ops.py` for route-by-route diagnostics and runtime evidence
 - `frontend/components/ServiceReadinessBoard.tsx` for the shared reviewer surface on login and workspace
 
@@ -364,6 +368,7 @@ curl -fsS http://localhost:8000/api/schema/handover | python -m json.tool | head
 
 ## Runtime Surfaces
 - `GET /api/meta`: service summary for reviewers with runtime posture, Azure trust boundary, proof inventory, and operator review flow
+- `GET /api/approval-matrix`: reviewer-facing coverage and gating surface for owner, timeline, risk, and reference completeness
 - `GET /api/schema/handover`: explicit contract for the handover draft structure and operator rules
 - The frontend now renders an `Enterprise Handover Readiness` board on both the login screen and the main workspace, so the product reads like a service before the user even uploads files
 
