@@ -227,6 +227,8 @@ Do not publish shared credentials in deployed environments.
 - `frontend/dist/` is the static build export used for deployment/review handoff; editable UI source lives under `frontend/src/`.
 - `frontend/electron/` remains optional desktop packaging and is not the primary review path.
 - Review surfaces under `/api/*` are the main proof path; generated handover JSON and uploaded documents are runtime data rather than curated repo content.
+- Public posture: keep this repo review-first and read-only for recruiter-facing use. Do not expose a broad public OpenAI live lane here because Azure Search, Blob, and Document Intelligence dependencies widen both cost and failure surface.
+- Internal posture: if OpenAI is layered in, treat it as BYOK or operator-only refresh logic rather than a public arbitrary-upload endpoint.
 
 ## API
 All state-changing requests must include:
