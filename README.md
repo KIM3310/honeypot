@@ -23,7 +23,7 @@ Status: reviewable handover workflow build. Some security controls still use in-
 
 ## Role signals
 - **AI engineer:** retrieval-backed handover generation and follow-up Q&A show a real document workflow, not a one-shot prompt.
-- **Solution / cloud architect:** ingest, extraction, retrieval, and review posture are clear enough to discuss enterprise adoption trade-offs.
+- **Solutions architect:** ingest, extraction, retrieval, and review posture are clear enough to discuss enterprise adoption trade-offs.
 - **Field / solutions engineer:** the before/after walkthrough is concrete: messy documents in, structured handover out.
 
 
