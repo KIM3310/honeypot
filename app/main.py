@@ -13,6 +13,7 @@ from app.config import APP_MODE, CONFIG_VALID
 from app.metrics import get_metrics_snapshot, get_route_diagnostics, record_request
 from app.security import get_security_runtime_snapshot, validate_security_runtime
 from app.service_meta import (
+    build_honeypot_approval_matrix,
     build_handover_schema,
     build_honeypot_review_summary,
     build_honeypot_review_summary_schema,
@@ -217,6 +218,7 @@ def health_check(request: Request):
             "readiness": "honeypot-runtime-brief-v1",
             "runtime_brief": "/api/runtime-brief",
             "runtime_scorecard": "/api/runtime-scorecard",
+            "approval_matrix": "/api/approval-matrix",
             "report_schema": "/api/schema/handover",
             "review_summary": "/api/review-summary",
         },
@@ -228,12 +230,14 @@ def health_check(request: Request):
             "service-metadata-surface",
             "runtime-brief-surface",
             "runtime-scorecard-surface",
+            "approval-matrix-surface",
             "review-summary-surface",
         ],
         "links": {
             "meta": "/api/meta",
             "runtime_brief": "/api/runtime-brief",
             "runtime_scorecard": "/api/runtime-scorecard",
+            "approval_matrix": "/api/approval-matrix",
             "review_summary": "/api/review-summary",
             "handover_schema": "/api/schema/handover",
             "ops_metrics": "/api/ops/metrics",
@@ -282,6 +286,14 @@ def runtime_scorecard():
         metrics=metrics,
         route_diagnostics=get_route_diagnostics(),
         security=get_security_runtime_snapshot(),
+    )
+
+
+@app.get("/api/approval-matrix")
+def approval_matrix():
+    return build_honeypot_approval_matrix(
+        config_valid=CONFIG_VALID,
+        mode=APP_MODE,
     )
 
 

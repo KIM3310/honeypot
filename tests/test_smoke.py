@@ -23,14 +23,28 @@ class TestSmoke(unittest.TestCase):
         self.assertEqual(payload["service"], "honeypot")
         self.assertEqual(payload["links"]["ops_runtime"], "/api/ops/runtime")
         self.assertEqual(payload["links"]["meta"], "/api/meta")
+        self.assertEqual(payload["links"]["approval_matrix"], "/api/approval-matrix")
         self.assertEqual(payload["links"]["handover_schema"], "/api/schema/handover")
         self.assertIn("security-guardrails", payload["capabilities"])
+        self.assertIn("approval-matrix-surface", payload["capabilities"])
         self.assertIn("service-metadata-surface", payload["capabilities"])
         self.assertEqual(payload["ops_contract"]["schema"], "ops-envelope-v1")
         self.assertIn("next_action", payload["diagnostics"])
         self.assertEqual(payload["verification"]["local_quality_command"], "make ci")
         self.assertEqual(payload["verification"]["install_scope"], "project-local virtualenv")
         self.assertEqual(payload["verification"]["frontend_suite"], "cd frontend && npm run build")
+
+    def test_approval_matrix_route_exists(self):
+        from fastapi.testclient import TestClient
+        from app.main import app
+
+        client = TestClient(app)
+        response = client.get("/api/approval-matrix")
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["contract_version"], "honeypot-approval-matrix-v1")
+        self.assertEqual(payload["links"]["approval_matrix"], "/api/approval-matrix")
+        self.assertGreaterEqual(len(payload["roles"]), 3)
 
 
 if __name__ == "__main__":

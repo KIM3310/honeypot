@@ -84,6 +84,50 @@ def _build_handover_completeness_gate(sample: Optional[Dict[str, object]] = None
     }
 
 
+def build_honeypot_approval_matrix(*, config_valid: bool, mode: str) -> Dict[str, object]:
+    completeness_gate = _build_handover_completeness_gate()
+    return {
+        "service": "honeypot",
+        "contract_version": "honeypot-approval-matrix-v1",
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "summary": {
+            "review_ready": completeness_gate["review_ready"],
+            "completeness_score": completeness_gate["score_pct"],
+            "runtime_mode": mode,
+            "config_valid": config_valid,
+        },
+        "roles": [
+            {
+                "role": "transferor",
+                "required": ["owner coverage", "timeline coverage"],
+                "status": "ready" if "owner coverage" not in completeness_gate["missing_fields"] else "needs-review",
+            },
+            {
+                "role": "reviewer",
+                "required": ["risk coverage", "reference coverage"],
+                "status": "ready" if completeness_gate["review_ready"] else "needs-review",
+            },
+            {
+                "role": "approver",
+                "required": ["config valid or explicit demo posture", "ops runtime visible"],
+                "status": "ready" if config_valid or mode == "demo" else "blocked",
+            },
+        ],
+        "review_actions": [
+            "Open the approval matrix before claiming the draft is ready for delivery.",
+            "Treat missing coverage as a handoff blocker, not an editorial footnote.",
+            "Keep ops runtime and approval matrix paired during reviewer walkthroughs.",
+        ],
+        "links": {
+            "approval_matrix": "/api/approval-matrix",
+            "runtime_brief": "/api/runtime-brief",
+            "runtime_scorecard": "/api/runtime-scorecard",
+            "review_summary": "/api/review-summary",
+            "handover_schema": "/api/schema/handover",
+        },
+    }
+
+
 def build_honeypot_service_meta(
     *,
     allowed_origins_count: int,
@@ -244,6 +288,7 @@ def build_honeypot_service_meta(
             "Open /api/health to confirm runtime mode and the next diagnostics step.",
             "Read /api/runtime-brief for trust boundary, review flow, and watchouts.",
             "Read /api/runtime-scorecard to understand route pressure and security posture before live claims.",
+            "Open /api/approval-matrix before treating the draft as reviewer-ready.",
             "Inspect /api/schema/handover before trusting draft structure claims.",
             "Open /api/ops/runtime before claiming live Azure-backed readiness.",
         ],
@@ -253,6 +298,7 @@ def build_honeypot_service_meta(
                 ("Runtime Brief Builder", "app/service_meta.py", "endpoint"),
                 ("Runtime Scorecard Builder", "app/runtime_scorecard.py", "endpoint"),
                 ("Ops Runtime Route", "app/routers/ops.py", "endpoint"),
+                ("Approval Matrix Route", "app/main.py", "endpoint"),
                 ("Readiness Board", "frontend/components/ServiceReadinessBoard.tsx", "surface"),
             ]
         ),
@@ -294,6 +340,7 @@ def build_honeypot_service_meta(
             "meta": "/api/meta",
             "runtime_brief": "/api/runtime-brief",
             "runtime_scorecard": "/api/runtime-scorecard",
+            "approval_matrix": "/api/approval-matrix",
             "review_summary": "/api/review-summary",
             "handover_schema": "/api/schema/handover",
             "ops_metrics": "/api/ops/metrics",
@@ -410,6 +457,7 @@ def build_honeypot_runtime_brief(
             "Open /api/health to confirm whether the service is demo or live-configured.",
             "Read /api/runtime-scorecard for request pressure, alert count, and security posture.",
             "Read /api/runtime-brief for trust boundary, delivery modes, and watchouts.",
+            "Open /api/approval-matrix before trusting a generated draft as handoff-ready.",
             "Inspect /api/schema/handover before trusting the editor contract.",
             "Open /api/ops/runtime before making production-readiness claims.",
         ],
@@ -419,6 +467,7 @@ def build_honeypot_runtime_brief(
             {"label": "Health", "path": "/api/health", "kind": "endpoint", "why": "Confirms whether the service is demo or live-configured before a review."},
             {"label": "Runtime Scorecard", "path": "/api/runtime-scorecard", "kind": "endpoint", "why": "Summarizes route pressure, top alerts, and security posture in one compact payload."},
             {"label": "Runtime Brief", "path": "/api/runtime-brief", "kind": "endpoint", "why": "Pins trust boundary, delivery modes, and runtime watchouts in one payload."},
+            {"label": "Approval Matrix", "path": "/api/approval-matrix", "kind": "endpoint", "why": "Makes role coverage and handoff blockers explicit before delivery claims."},
             {"label": "Handover Schema", "path": "/api/schema/handover", "kind": "endpoint", "why": "Locks the editor and export contract before trusting draft structure claims."},
             {"label": "Ops Runtime", "path": "/api/ops/runtime", "kind": "endpoint", "why": "Shows route-by-route diagnostics before any production-readiness claim."},
         ],
@@ -427,6 +476,7 @@ def build_honeypot_runtime_brief(
             "meta": "/api/meta",
             "runtime_brief": "/api/runtime-brief",
             "runtime_scorecard": "/api/runtime-scorecard",
+            "approval_matrix": "/api/approval-matrix",
             "handover_schema": "/api/schema/handover",
             "review_summary": "/api/review-summary",
             "ops_runtime": "/api/ops/runtime",
@@ -494,6 +544,7 @@ def build_honeypot_review_summary(
                 "/api/health",
                 "/api/runtime-scorecard",
                 "/api/runtime-brief",
+                "/api/approval-matrix",
                 "/api/review-summary",
                 "/api/schema/handover",
                 "/api/ops/runtime",
@@ -505,6 +556,7 @@ def build_honeypot_review_summary(
             "/api/review-summary",
             "/api/runtime-scorecard",
             "/api/runtime-brief",
+            "/api/approval-matrix",
             "/api/schema/handover",
         ],
         "stage_highlights": [
@@ -522,6 +574,7 @@ def build_honeypot_review_summary(
             "meta": "/api/meta",
             "runtime_brief": "/api/runtime-brief",
             "runtime_scorecard": "/api/runtime-scorecard",
+            "approval_matrix": "/api/approval-matrix",
             "review_summary": "/api/review-summary",
             "review_summary_schema": "/api/review-summary/schema",
             "handover_schema": "/api/schema/handover",
@@ -548,6 +601,7 @@ def build_honeypot_review_summary_schema() -> Dict[str, object]:
             "meta": "/api/meta",
             "runtime_brief": "/api/runtime-brief",
             "runtime_scorecard": "/api/runtime-scorecard",
+            "approval_matrix": "/api/approval-matrix",
             "review_summary": "/api/review-summary",
         },
     }
