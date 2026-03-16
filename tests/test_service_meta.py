@@ -21,7 +21,7 @@ class TestServiceMeta(unittest.TestCase):
         self.assertTrue(
             any(stage["key"] == "review" for stage in payload["stages"])
         )
-        self.assertEqual(len(payload["two_minute_review"]), 5)
+        self.assertEqual(len(payload["two_minute_review"]), 6)
         self.assertEqual(payload["proof_assets"][0]["label"], "Health Route")
         self.assertEqual(payload["links"]["runtime_brief"], "/api/runtime-brief")
         self.assertEqual(payload["links"]["runtime_scorecard"], "/api/runtime-scorecard")
@@ -43,7 +43,7 @@ class TestServiceMeta(unittest.TestCase):
         self.assertEqual(payload["report_contract"]["schema"], "honeypot-handover-v1")
         self.assertIn("jwt-access-token", payload["auth_mode"])
         self.assertTrue(any("api/upload" in step for step in payload["review_flow"]))
-        self.assertEqual(len(payload["two_minute_review"]), 5)
+        self.assertEqual(len(payload["two_minute_review"]), 6)
         self.assertEqual(payload["proof_assets"][0]["path"], "/api/health")
         self.assertIn("demo or live-configured", payload["proof_assets"][0]["why"])
         self.assertEqual(payload["proof_assets"][1]["path"], "/api/runtime-scorecard")
