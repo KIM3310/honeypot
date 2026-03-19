@@ -40,7 +40,7 @@ def _build_watchouts(*, config_valid: bool, mode: str) -> List[str]:
     ]
     if mode == "demo":
         watchouts.append(
-            "The backend is in demo mode by design for review fallback; treat it as a safe walkthrough path, not partial proof of the live Azure stack."
+            "The backend is in demo mode by design; treat it as a walkthrough path, not the live Azure stack."
         )
     if not config_valid:
         watchouts.append(
@@ -278,7 +278,7 @@ def build_honeypot_service_meta(
         ],
         "strengths": [
             "The service covers upload, structure extraction, retrieval, draft generation, and operator review in one product surface.",
-            "Azure-native retrieval architecture is paired with local BYO LLM override support for reviewer-friendly demos.",
+            "Azure-native retrieval architecture is paired with local BYO LLM override support for offline demos.",
             "JWT, refresh-token, CSRF rotation, security headers, and ops runtime endpoints make the prototype operationally legible.",
             "The interactive editor, print template, and follow-up chat keep the handover flow grounded in practical output.",
         ],
@@ -419,7 +419,7 @@ def build_honeypot_runtime_brief(
         "status": "ok",
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "readiness_contract": "honeypot-runtime-brief-v1",
-        "headline": "Azure-native handover workflow with reviewer-visible controls from login to editable draft.",
+        "headline": "Azure-native handover workflow with visible controls from login to editable draft.",
         "runtime_mode": mode,
         "auth_mode": "jwt-access-token + refresh-token + csrf-header",
         "retrieval_mode": retrieval_mode,
@@ -522,7 +522,7 @@ def build_honeypot_review_summary(
     return {
         "service": "honeypot",
         "contract_version": "honeypot-review-summary-v1",
-        "headline": "Compact reviewer snapshot for the Azure handover workflow, from session issuance to ops diagnostics.",
+        "headline": "Runtime snapshot for the Azure handover workflow, from session issuance to ops diagnostics.",
         "snapshot": {
             "mode": mode,
             "config_valid": config_valid,

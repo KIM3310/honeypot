@@ -15,28 +15,12 @@ Core capabilities:
 - Handover completeness gate that blocks review-ready export when owner/timeline/risk/reference coverage is incomplete
 - Practical web security basics (JWT, refresh tokens, CSRF, security headers)
 
-Status: reviewable handover workflow build. Some security controls still use in-memory stores (acceptable for demo/dev, not production).
+Status: working prototype. Some security controls still use in-memory stores (fine for demo/dev, not production).
 
-## Portfolio posture
-- Read this repo like a handover quality workflow where review-only and live modes are both intentional, not half-finished.
-- Runtime brief, service meta, schema routes, and the editor/retrieval loop are the proof surfaces before any Azure-readiness claim.
-
-## Role signals
-- **AI engineer:** retrieval-backed handover generation and follow-up Q&A show a real document workflow, not a one-shot prompt.
-- **Solutions architect:** ingest, extraction, retrieval, and review posture are clear enough to discuss enterprise adoption trade-offs.
-- **Field / solutions engineer:** the before/after walkthrough is concrete: messy documents in, structured handover out.
-
-
-## Portfolio context
-- **Portfolio family:** applied document and workflow systems
-- **This repo's role:** handover-quality workflow that connects ingest, retrieval, drafting, and review controls.
-- **Related repos:** `Upstage-DocuAgent`, `enterprise-llm-adoption-kit`, `secure-xl2hwp-local`
-
-## Repository surfaces
+## Project layout
 - **Primary runtime:** the document-to-handover workflow lives in `app/`, `frontend/`, and the FastAPI services.
 - **Packaging experiments:** Railway, Vercel, Electron, and desktop build files are optional delivery paths for the same workflow.
-- **Ops/support docs:** deployment and runbook material at the root exists to make the workflow reviewable, not to suggest separate products.
-- **If you're new:** run the local app/API flow first, then only step into packaging notes if you care about delivery tradeoffs.
+- **Related repos:** `Upstage-DocuAgent`, `enterprise-llm-adoption-kit`, `secure-xl2hwp-local`
 
 ## Scope
 - System architecture design (end-to-end flow + component boundaries)
@@ -222,13 +206,11 @@ Default local endpoint:
 For local development, seed demo users through the auth bootstrap or test fixtures in the backend.
 Do not publish shared credentials in deployed environments.
 
-## Canonical runtime + artifact map
-- Canonical runtime: FastAPI backend in `app/` plus the React/Vite web client in `frontend/`.
-- `frontend/dist/` is the static build export used for deployment/review handoff; editable UI source lives under `frontend/src/`.
-- `frontend/electron/` remains optional desktop packaging and is not the primary review path.
-- Review surfaces under `/api/*` are the main proof path; generated handover JSON and uploaded documents are runtime data rather than curated repo content.
-- Public posture: keep this repo review-first and read-only for recruiter-facing use. Do not expose a broad public OpenAI live lane here because Azure Search, Blob, and Document Intelligence dependencies widen both cost and failure surface.
-- Internal posture: if OpenAI is layered in, treat it as BYOK or operator-only refresh logic rather than a public arbitrary-upload endpoint.
+## Runtime notes
+- The primary runtime is the FastAPI backend in `app/` plus the React/Vite client in `frontend/`.
+- `frontend/dist/` is the static build export; editable source lives under `frontend/src/`.
+- `frontend/electron/` is optional desktop packaging.
+- If OpenAI is configured, it runs as BYOK or operator-only refresh -- no public arbitrary-upload endpoint.
 
 ## API
 All state-changing requests must include:
@@ -255,37 +237,28 @@ Read endpoints that expose indexed/document metadata also require:
     - `index_name` format: lowercase letters/numbers/`-`/`_`, 2-63 chars
 - `GET /api/upload/status/{task_id}` (owner/admin only)
 
-### Review Surfaces
+### Status and schema endpoints
 - `GET /api/health`
   - runtime status, ops contract, review links
 - `GET /api/meta`
   - trust boundary, staged evidence, runtime posture
 - `GET /api/runtime-brief`
-  - runtime contract for auth mode, retrieval mode, review pack, and watchouts
+  - runtime contract for auth mode, retrieval mode, and configuration status
 - `GET /api/runtime-scorecard`
   - compact route pressure, alert count, and security posture snapshot
 - `GET /api/approval-matrix`
-  - role coverage, blocked sections, and handover-readiness gate before delivery claims
+  - role coverage, blocked sections, and handover readiness gate
 - `GET /api/schema/handover`
   - handover export contract (`honeypot-handover-v1`)
 
-The frontend renders the same reviewer pack on the login screen and main workspace, so the product posture is visible before any upload or chat action.
+The frontend renders the same status board on the login screen and main workspace.
 
-### Review Flow
-- Open `/api/health` to confirm whether the service is demo or live-configured.
-- Read `/api/runtime-scorecard` for route pressure, alert count, and security posture.
-- Read `/api/runtime-brief` for trust boundary, delivery modes, and watchouts.
-- Inspect `/api/approval-matrix` before treating the generated draft as handoff-ready.
-- Inspect `/api/schema/handover` before trusting the editor contract.
-- Open `/api/ops/runtime` before making production-readiness claims.
-
-### Proof Assets
-- `app/main.py` for the top-level runtime envelope and next-action posture
-- `app/service_meta.py` for runtime brief and review-pack builders
-- `app/runtime_scorecard.py` for the compact runtime scorecard contract
-- `/api/approval-matrix` for reviewer-ready coverage, blocked sections, and owner-role gaps
-- `app/routers/ops.py` for route-by-route diagnostics and runtime evidence
-- `frontend/components/ServiceReadinessBoard.tsx` for the shared reviewer surface on login and workspace
+### Key implementation files
+- `app/main.py` -- FastAPI entrypoint and middleware
+- `app/service_meta.py` -- runtime brief and status builders
+- `app/runtime_scorecard.py` -- runtime scorecard contract
+- `app/routers/ops.py` -- route diagnostics and runtime info
+- `frontend/components/ServiceReadinessBoard.tsx` -- readiness board component
 
 - `GET /api/upload/documents` (optional query: `index_name`)
 - `GET /api/upload/indexes`
@@ -368,11 +341,10 @@ curl -fsS http://localhost:8000/api/meta | python -m json.tool | head -n 80
 curl -fsS http://localhost:8000/api/schema/handover | python -m json.tool | head -n 60
 ```
 
-## Runtime Surfaces
-- `GET /api/meta`: service summary for reviewers with runtime posture, Azure trust boundary, proof inventory, and operator review flow
-- `GET /api/approval-matrix`: reviewer-facing coverage and gating surface for owner, timeline, risk, and reference completeness
-- `GET /api/schema/handover`: explicit contract for the handover draft structure and operator rules
-- The frontend now renders an `Enterprise Handover Readiness` board on both the login screen and the main workspace, so the product reads like a service before the user even uploads files
+## Status endpoints
+- `GET /api/meta`: service summary with runtime configuration and Azure trust boundary
+- `GET /api/approval-matrix`: role coverage and gating for owner, timeline, risk, and reference completeness
+- `GET /api/schema/handover`: contract for the handover draft structure and validation rules
 
 ## Ops Artifacts
 - `docs/ops/RUNBOOK.md` (local demo runbook)

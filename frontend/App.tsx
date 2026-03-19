@@ -501,7 +501,7 @@ const App: React.FC = () => {
             return true;
           }
         } catch (_error) {
-          // Fall back to static reviewer surfaces when the backend is unavailable.
+          // Fall back to static data when the backend is unavailable.
         }
 
         if (!cancelled) {

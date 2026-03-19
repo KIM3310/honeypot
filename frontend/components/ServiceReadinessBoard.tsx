@@ -234,7 +234,7 @@ const ServiceReadinessBoard: React.FC<Props> = ({
       ],
     },
     reviewer: {
-      title: "Reviewer gate lens",
+      title: "Quality gate lens",
       summary: "Review Pack과 fast routes를 먼저 보고, 업로드/생성은 그 다음에 보는 렌즈입니다.",
       cards: [
         ["01 · Review routes", "health / meta / runtime brief로 trust boundary를 먼저 읽습니다."],

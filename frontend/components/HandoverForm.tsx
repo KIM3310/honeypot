@@ -480,7 +480,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
             <ul className="mt-2 space-y-2 text-[11px] leading-relaxed text-slate-700">
               <li>1. 인계자/인수자/프로젝트 owner를 reviewer가 한 번에 확인할 수 있어야 합니다.</li>
               <li>2. timeline, risk, reference 공백 없이 reviewer summary를 닫은 뒤 export를 엽니다.</li>
-              <li>3. export 전에는 runtime brief → runtime scorecard → schema 순서로 reviewer proof route를 고정합니다.</li>
+              <li>3. export 전에는 runtime brief → runtime scorecard → schema 순서로 검증 경로를 고정합니다.</li>
             </ul>
           </article>
           <article className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
@@ -498,7 +498,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
         <div className="mt-3 grid gap-3 xl:grid-cols-2">
           <article className="rounded-2xl border border-blue-200 bg-blue-50/80 p-4 shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">
-              Reviewer proof route
+              Verification route
             </p>
             <p className="mt-2 text-[11px] leading-relaxed text-blue-900">
               /api/runtime-brief → /api/runtime-scorecard → /api/review-summary → /api/schema/handover
