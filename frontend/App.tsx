@@ -923,7 +923,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div id="app-container" className="h-screen bg-[#FFFDF0] text-gray-900 overflow-hidden relative">
+    <div id="app-container" className="h-screen bg-[#FFFDF0] text-gray-900 overflow-hidden relative" role="application" aria-label="Honeypot AI Handover System">
       <div className="main-ui flex h-full w-full">
         <div className="honeycomb-bg"></div>
 
@@ -1107,7 +1107,8 @@ const App: React.FC = () => {
 
       <button
         onClick={() => setShowEngagementHub(true)}
-        className="fixed bottom-5 right-5 z-[65] rounded-2xl bg-gray-900 text-white px-4 py-2 text-[11px] font-black tracking-wide shadow-xl hover:bg-black"
+        aria-label="Open community hub"
+        className="fixed bottom-5 right-5 z-[65] rounded-2xl bg-gray-900 text-white px-4 py-2 text-[11px] font-black tracking-wide shadow-xl hover:bg-black hover:scale-105 active:scale-95 transition-all"
       >
         COMMUNITY HUB
       </button>

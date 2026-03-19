@@ -113,30 +113,41 @@ const LoginScreen: React.FC<Props> = ({
             </div>
 
             {error && (
-              <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-2xl text-sm font-bold">
-                ⚠️ {error}
+              <div role="alert" aria-live="assertive" className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-2xl text-sm font-bold flex items-start gap-3" style={{ animation: 'shake 0.4s ease-in-out' }}>
+                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                </svg>
+                <span>{error}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6 rounded-[2rem] border border-yellow-100 bg-white/90 p-6 shadow-sm">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">사번 또는 ID</label>
+                <label htmlFor="login-id" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">사번 또는 ID</label>
                 <input
+                  id="login-id"
                   type="text"
                   value={id}
                   onChange={(e) => setId(e.target.value)}
                   placeholder="operator-id"
+                  required
+                  autoComplete="username"
+                  aria-required="true"
                   disabled={loginDisabled}
                   className="w-full px-6 py-4 bg-yellow-50/50 border border-yellow-100 rounded-2xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all font-bold placeholder:text-yellow-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">비밀번호</label>
+                <label htmlFor="login-pw" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">비밀번호</label>
                 <input
+                  id="login-pw"
                   type="password"
                   value={pw}
                   onChange={(e) => setPw(e.target.value)}
                   placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                  aria-required="true"
                   disabled={loginDisabled}
                   className="w-full px-6 py-4 bg-yellow-50/50 border border-yellow-100 rounded-2xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all font-bold placeholder:text-yellow-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
@@ -145,16 +156,23 @@ const LoginScreen: React.FC<Props> = ({
               <button
                 type="submit"
                 disabled={loginDisabled}
+                aria-busy={isLoading}
                 className="w-full py-5 bg-gray-900 text-white rounded-2xl font-black text-lg shadow-2xl hover:bg-black hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                {isLoading
-                  ? "로그인 중..."
-                  : apiMisconfigured
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    로그인 중...
+                  </>
+                ) : apiMisconfigured
                     ? "백엔드 설정 필요"
                     : backendReachable
                       ? "로그인"
                       : "백엔드 연결 필요"}
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                {!isLoading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
               </button>
             </form>
           </div>

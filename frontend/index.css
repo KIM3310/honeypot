@@ -10,6 +10,88 @@ body {
   background-color: #fffdf0;
 }
 
+/* ── Focus-visible accessibility ring ── */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #d97706;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ── Smooth transitions for interactive elements ── */
+a, button {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease,
+    transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* ── Selection style ── */
+::selection {
+  background: rgba(252, 211, 77, 0.4);
+  color: #1c1917;
+}
+
+/* ── Form validation visual feedback ── */
+input:invalid:not(:placeholder-shown):not(:focus) {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+input:valid:not(:placeholder-shown) {
+  border-color: #22c55e !important;
+}
+
+/* ── Error shake animation ── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* ── Animated blob delay helper ── */
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+/* ── Mobile responsive overrides ── */
+@media (max-width: 768px) {
+  #app-container .main-ui {
+    flex-direction: column !important;
+  }
+
+  #app-container main {
+    flex-direction: column !important;
+    padding: 1rem !important;
+    gap: 1rem !important;
+  }
+
+  #app-container main > div {
+    width: 100% !important;
+  }
+
+  input, textarea {
+    font-size: 16px !important; /* prevent iOS zoom */
+  }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .honeycomb-bg {
   background-color: #fffdf0;
   background-image: radial-gradient(#fcd34d 0.5px, transparent 0.5px),
