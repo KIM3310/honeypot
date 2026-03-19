@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 import time
@@ -10,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from app.routers import upload, chat, auth, ops  # ← 추가: auth import
 from app.config import APP_MODE, CONFIG_VALID
+from app.logging_config import setup_logging, get_logger, generate_request_id
 from app.metrics import get_metrics_snapshot, get_route_diagnostics, record_request
 from app.security import get_security_runtime_snapshot, validate_security_runtime
 from app.service_meta import (
@@ -22,9 +24,12 @@ from app.service_meta import (
 )
 from app.runtime_scorecard import build_runtime_scorecard
 
+# Initialize structured logging
+setup_logging(level=os.getenv("LOG_LEVEL", "INFO"))
+logger = get_logger("main")
 
 if not CONFIG_VALID:
-    print("⚠️ Live cloud config is incomplete. Running in demo mode by default.")
+    logger.warning("Live cloud config is incomplete. Running in demo mode by default.")
 
 
 APP_STARTED_AT = int(time.time())
@@ -115,14 +120,16 @@ app.add_middleware(
 # ✅ 보안 헤더 미들웨어 추가 (CORS 다음에)
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
-    request_id = request.headers.get("x-request-id") or f"req-{uuid.uuid4().hex[:12]}"
+    request_id = request.headers.get("x-request-id") or generate_request_id()
     request.state.request_id = request_id
     started = time.time()
     try:
         response = await call_next(request)
     except Exception as exc:  # noqa: BLE001
-        print(f"❌ Unhandled error request_id={request_id}: {exc}")
-        traceback.print_exc()
+        logger.error(
+            "Unhandled error",
+            extra={"request_id": request_id, "error": str(exc), "path": request.url.path},
+        )
         latency_ms = int((time.time() - started) * 1000)
         record_request(request.method, get_metrics_route_path(request), 500, latency_ms)
         return JSONResponse(
