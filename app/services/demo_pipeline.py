@@ -235,12 +235,12 @@ def generate_demo_chat_answer(query: str, context: str) -> str:
     q_tokens = [t for t in re.split(r"[^0-9A-Za-z가-힣]+", q.lower()) if len(t) >= 2]
     hits: List[str] = []
     for line in (context or "").splitlines():
-        l = line.strip()
-        if not l:
+        stripped = line.strip()
+        if not stripped:
             continue
-        ll = l.lower()
-        if any(t in ll for t in q_tokens):
-            hits.append(l)
+        lower = stripped.lower()
+        if any(t in lower for t in q_tokens):
+            hits.append(stripped)
         if len(hits) >= 5:
             break
 

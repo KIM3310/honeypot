@@ -386,13 +386,13 @@ def analyze_files_for_handover(
             max_tokens=4000,
         )
 
-        print(f"✅ OpenAI 응답 수신")
+        print("OpenAI 응답 수신")
         response_text = response.choices[0].message.content
         print(f"   응답 길이: {len(response_text)} 글자")
 
         # JSON 파싱 시도
         try:
-            print(f"🔍 JSON 파싱 시도...")
+            print("JSON 파싱 시도...")
             result = json.loads(response_text)
             print(f"✅ JSON 파싱 성공 - 키: {list(result.keys())}")
             return result

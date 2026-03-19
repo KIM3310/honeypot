@@ -105,7 +105,7 @@ def create_index_if_not_exists(index_name: str = None):
     try:
         index_client.get_index(target_index)
         return
-    except:
+    except Exception:
         pass
     
     fields = [

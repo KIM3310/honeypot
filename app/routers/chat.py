@@ -126,7 +126,7 @@ async def analyze(
             if isinstance(response, str):
                 try:
                     response = json.loads(response)
-                except:
+                except (ValueError, TypeError):
                     response = {"overview": {}, "jobStatus": {}}
 
         # 필수 필드 확인

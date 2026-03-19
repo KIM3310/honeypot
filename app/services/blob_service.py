@@ -11,7 +11,6 @@ except Exception:
 
 from datetime import datetime, timedelta, timezone
 from app.config import AZURE_STORAGE_ACCOUNT_NAME, AZURE_STORAGE_ACCOUNT_KEY, ENVIRONMENT
-import os
 
 # ===== Blob 클라이언트 초기화 =====
 

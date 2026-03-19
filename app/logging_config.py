@@ -6,7 +6,6 @@ Provides JSON-structured log output with request ID correlation.
 import logging
 import json
 import sys
-import time
 import uuid
 from typing import Optional
 

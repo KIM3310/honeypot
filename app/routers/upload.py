@@ -4,7 +4,7 @@ from app.security import get_current_user, verify_and_rotate_csrf_from_request, 
 from app.config import APP_MODE, is_demo_mode
 from app.services.blob_service import upload_to_blob, save_processed_json
 from app.services.document_service import extract_text_from_url, extract_text_from_docx
-from app.services.search_service import add_document_to_index, get_document_count, get_all_documents
+from app.services.search_service import get_document_count
 import uuid
 import traceback
 from typing import Optional
