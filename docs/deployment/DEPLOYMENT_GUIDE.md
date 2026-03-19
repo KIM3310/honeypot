@@ -184,7 +184,7 @@ Vercel은 Git 기반 배포를 지원합니다:
 ```bash
 git add .
 git commit -m "feat: Add Vercel deployment configuration"
-git push origin claude/review-vercel-deployment-MbTDB
+git push origin main
 ```
 
 ### 2단계: Vercel 프로젝트 생성

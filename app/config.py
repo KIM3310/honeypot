@@ -127,7 +127,7 @@ def validate_config():
 
 # ===== App mode =====
 #
-# This portfolio repo is designed to be reviewable without cloud credentials.
+# This repo is designed to be runnable without cloud credentials.
 # If the live (Azure/OpenAI/Search) config is missing, we automatically fall back
 # to demo mode so the UI + pipeline can still be exercised end-to-end.
 CONFIG_VALID = validate_config()

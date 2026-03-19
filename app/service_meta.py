@@ -245,7 +245,7 @@ def build_honeypot_service_meta(
         "service": "honeypot",
         "contract_version": "honeypot-service-meta-v1",
         "tagline": "AI-assisted handover generation with Azure retrieval and operator review",
-        "maturity_stage": "prototype with service-grade controls",
+        "maturity_stage": "prototype with operational controls",
         "runtime": {
             "mode": mode,
             "config_valid": config_valid,
