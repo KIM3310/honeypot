@@ -1,0 +1,25 @@
+honeypot test run — 2026-03-19
+Runner: pytest 8.3.5
+Platform: darwin (macOS), Python 3.11.15
+
+============================= test session starts ==============================
+platform darwin -- Python 3.11.15, pytest-8.3.5, pluggy-1.6.0
+rootdir: /Users/doeonkim/repo-audit/honeypot
+configfile: pyproject.toml
+plugins: anyio-4.12.1, langsmith-0.7.20
+collected 33 items
+
+tests/test_csrf_rotation.py .                                            [  3%]
+tests/test_frontend_handover_contract.py ..                              [  9%]
+tests/test_input_validation.py ..                                        [ 15%]
+tests/test_llm_override.py ....                                          [ 27%]
+tests/test_metrics_limits.py .                                           [ 30%]
+tests/test_ops_metrics.py .                                              [ 33%]
+tests/test_security_headers.py ...                                       [ 42%]
+tests/test_security_runtime.py .....                                     [ 57%]
+tests/test_service_meta.py ......                                        [ 75%]
+tests/test_smoke.py ....                                                 [ 87%]
+tests/test_task_manager.py ..                                            [ 93%]
+tests/test_upload_authz.py ..                                            [100%]
+
+============================== 33 passed in 1.90s ==============================
