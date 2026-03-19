@@ -1,5 +1,9 @@
 # Honeypot (Kkuldanji) — AI-Assisted Handover Document Generator
 
+![Python](https://img.shields.io/badge/python-3.9%2B-blue)
+![Node](https://img.shields.io/badge/node-18%2B-green)
+![License](https://img.shields.io/github/license/KIM3310/honeypot)
+
 Kkuldanji converts internal documents into a structured 6-section handover document and supports follow-up Q&A via retrieval (vector + semantic search).
 
 This repo explores a document-to-handover workflow with a security-conscious web stack and an explicit split between:
@@ -26,19 +30,6 @@ Status: working prototype. Some security controls still use in-memory stores (fi
 - System architecture design (end-to-end flow + component boundaries)
 - Backend implementation (FastAPI ingestion/status, extraction routing, blob/search integration)
 - RAG quality improvement support (schema-first chunking + retrieval tuning)
-
-## Table of Contents
-- [Problem](#problem)
-- [Key Features](#key-features)
-- [Architecture](#architecture)
-- [LLM Strategy](#llm-strategy)
-- [Directory Structure](#directory-structure)
-- [Local Run](#local-run)
-- [API](#api)
-- [Security Notes](#security-notes)
-- [Testing](#testing)
-- [Ops Artifacts](#ops-artifacts)
-- [Limitations](#limitations)
 
 ## Problem
 Handover documents are often:
@@ -134,7 +125,7 @@ Configuration is controlled by `proto.env`:
 └── .github/workflows/ci.yml
 ```
 
-## Local Run
+## Quick Start
 ### Prerequisites
 - Python 3.9+
 - Node.js 18+

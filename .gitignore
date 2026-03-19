@@ -11,10 +11,12 @@ venv/
 proto.env
 .env
 .env.*
+!.env.example
 
 # Frontend local env
 frontend/.env
 frontend/.env.*
+!frontend/.env.example
 
 # Frontend build artifacts
 frontend/node_modules/
