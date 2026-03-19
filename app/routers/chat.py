@@ -15,6 +15,7 @@ import traceback
 router = APIRouter()
 MAX_MESSAGES = 40
 MAX_MESSAGE_CHARS = 12000
+MAX_TOTAL_CONTENT_CHARS = 100_000  # 100 KB cap to prevent OOM on large payloads
 INDEX_NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{1,62}$")
 
 class ChatMessage(BaseModel):
@@ -49,6 +50,7 @@ def _validate_messages(messages: list) -> None:
     if len(messages) > MAX_MESSAGES:
         raise HTTPException(status_code=400, detail=f"messages는 최대 {MAX_MESSAGES}개까지 허용됩니다.")
 
+    total_chars = 0
     allowed_roles = {"system", "user", "assistant"}
     for idx, item in enumerate(messages):
         if not isinstance(item, dict):
@@ -63,6 +65,12 @@ def _validate_messages(messages: list) -> None:
             raise HTTPException(
                 status_code=400,
                 detail=f"messages[{idx}].content 길이는 최대 {MAX_MESSAGE_CHARS}자입니다.",
+            )
+        total_chars += len(content)
+        if total_chars > MAX_TOTAL_CONTENT_CHARS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"전체 메시지 합계가 최대 {MAX_TOTAL_CONTENT_CHARS}자를 초과합니다.",
             )
 
 # ===== 변경 1: analyze 함수 =====

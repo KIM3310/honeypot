@@ -1,4 +1,4 @@
-from openai import AzureOpenAI, OpenAI
+from openai import AzureOpenAI, BadRequestError, OpenAI
 from app.config import (
     AZURE_OPENAI_ENDPOINT, 
     AZURE_OPENAI_API_KEY, 
@@ -72,10 +72,11 @@ def _create_chat_completion_with_json_fallback(
 
     try:
         return client.chat.completions.create(**options)
-    except Exception as exc:
+    except BadRequestError:
         # Some OpenAI-compatible providers do not support response_format=json_object.
-        if "response_format" not in str(exc):
-            raise
+        pass
+    except Exception:
+        raise
 
     options.pop("response_format", None)
     return client.chat.completions.create(**options)

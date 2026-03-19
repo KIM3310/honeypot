@@ -105,7 +105,7 @@ def get_allowed_origins():
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_allowed_origins(),
-    allow_origin_regex=r"https://.*\.vercel\.app",  # Vercel Preview 배포 허용
+    allow_origin_regex=r"https://[a-z0-9\-]+\.vercel\.app",  # Vercel Preview 배포 허용 (단일 서브도메인만)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],  # CSRF Token 헤더 포함

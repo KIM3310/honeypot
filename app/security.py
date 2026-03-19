@@ -167,7 +167,14 @@ def get_security_runtime_snapshot() -> dict:
 
 
 def get_client_ip(request: Request) -> str:
-    # NOTE: This is for demo/dev only. In production behind proxies, use forwarded headers.
+    """Return the client IP, respecting X-Forwarded-For when behind a reverse proxy."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        # X-Forwarded-For may contain a chain: "client, proxy1, proxy2".
+        # The leftmost entry is the original client IP.
+        ip = forwarded.split(",")[0].strip()
+        if ip:
+            return ip
     return request.client.host if request.client else "unknown"
 
 
