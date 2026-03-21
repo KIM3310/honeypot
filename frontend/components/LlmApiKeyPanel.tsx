@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
 import { Eye, EyeOff, KeyRound, Save, Trash2 } from "lucide-react";
+import type React from "react";
+import { useMemo, useState } from "react";
 import {
   buildOllamaPreset,
   clearLlmSettings,
@@ -19,8 +20,8 @@ const LlmApiKeyPanel: React.FC = () => {
     initial.apiKey
       ? "개인 API 키가 연결되어 있습니다."
       : isLlmSettingsActive(initial)
-      ? "커스텀 LLM 엔드포인트가 연결되어 있습니다."
-      : "서버 기본 키 모드입니다."
+        ? "커스텀 LLM 엔드포인트가 연결되어 있습니다."
+        : "서버 기본 키 모드입니다.",
   );
 
   const isConnected = isLlmSettingsActive({ apiKey, model, baseUrl });

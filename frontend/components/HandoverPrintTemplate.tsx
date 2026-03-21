@@ -1,5 +1,5 @@
-import React from "react";
-import { HandoverData } from "../types";
+import type React from "react";
+import type { HandoverData } from "../types";
 
 interface Props {
   data: HandoverData;
@@ -13,11 +13,12 @@ export const HandoverPrintTemplate: React.FC<Props> = ({ data }) => {
         <h1 className="text-4xl font-extrabold tracking-[0.2em] mb-3 uppercase">업무 인수인계서</h1>
         <div className="flex justify-between items-end px-2">
           <p className="text-xs font-bold text-gray-500">
-            문서번호: HO-{new Date().getFullYear()}-{Math.floor(Math.random() * 10000).toString().padStart(4, '0')}
+            문서번호: HO-{new Date().getFullYear()}-
+            {Math.floor(Math.random() * 10000)
+              .toString()
+              .padStart(4, "0")}
           </p>
-          <p className="text-sm font-bold">
-            작성일: {new Date().toLocaleDateString()}
-          </p>
+          <p className="text-sm font-bold">작성일: {new Date().toLocaleDateString()}</p>
         </div>
       </div>
 
@@ -29,31 +30,23 @@ export const HandoverPrintTemplate: React.FC<Props> = ({ data }) => {
         <table className="w-full border-collapse border-2 border-black text-sm">
           <tbody>
             <tr>
-              <th className="border border-black bg-gray-50 p-3 w-32 text-center font-bold">
-                인계자
-              </th>
+              <th className="border border-black bg-gray-50 p-3 w-32 text-center font-bold">인계자</th>
               <td className="border border-black p-3 w-1/3">
                 {data.overview.transferor.name || "(성함)"} / {data.overview.transferor.position || "(직위/부서)"}
               </td>
-              <th className="border border-black bg-gray-50 p-3 w-32 text-center font-bold">
-                인수자
-              </th>
+              <th className="border border-black bg-gray-50 p-3 w-32 text-center font-bold">인수자</th>
               <td className="border border-black p-3">
                 {data.overview.transferee.name || "(성함)"} / {data.overview.transferee.position || "(직위/부서)"}
               </td>
             </tr>
             <tr>
-              <th className="border border-black bg-gray-50 p-3 text-center font-bold">
-                인계 기간
-              </th>
+              <th className="border border-black bg-gray-50 p-3 text-center font-bold">인계 기간</th>
               <td className="border border-black p-3" colSpan={3}>
                 {data.overview.period || "해당 없음"}
               </td>
             </tr>
             <tr>
-              <th className="border border-black bg-gray-50 p-3 text-center font-bold">
-                인계 사유
-              </th>
+              <th className="border border-black bg-gray-50 p-3 text-center font-bold">인계 사유</th>
               <td className="border border-black p-3 h-24 align-top" colSpan={3}>
                 {data.overview.reason || "상세 내용 없음"}
               </td>
@@ -70,21 +63,17 @@ export const HandoverPrintTemplate: React.FC<Props> = ({ data }) => {
         <table className="w-full border-collapse border-2 border-black text-sm">
           <tbody>
             <tr>
-              <th className="border border-black bg-gray-50 p-3 w-32 text-center font-bold">
-                담당 직무명
-              </th>
-              <td className="border border-black p-3 font-bold">
-                {data.jobStatus?.title}
-              </td>
+              <th className="border border-black bg-gray-50 p-3 w-32 text-center font-bold">담당 직무명</th>
+              <td className="border border-black p-3 font-bold">{data.jobStatus?.title}</td>
             </tr>
             <tr>
-              <th className="border border-black bg-gray-50 p-3 text-center font-bold">
-                주요 책임
-              </th>
+              <th className="border border-black bg-gray-50 p-3 text-center font-bold">주요 책임</th>
               <td className="border border-black p-3">
                 <ul className="list-disc pl-6 space-y-2">
                   {(data.jobStatus?.responsibilities || []).map((r, i) => (
-                    <li key={i} className="text-gray-800">{r}</li>
+                    <li key={i} className="text-gray-800">
+                      {r}
+                    </li>
                   ))}
                 </ul>
               </td>
@@ -115,9 +104,7 @@ export const HandoverPrintTemplate: React.FC<Props> = ({ data }) => {
                 <td className="border border-black p-3 text-center">
                   <span className="px-2 py-1 border border-black text-[10px] font-bold uppercase">{p.status}</span>
                 </td>
-                <td className="border border-black p-3 text-center font-mono">
-                  {p.deadline}
-                </td>
+                <td className="border border-black p-3 text-center font-mono">{p.deadline}</td>
               </tr>
             ))}
           </tbody>
@@ -142,15 +129,9 @@ export const HandoverPrintTemplate: React.FC<Props> = ({ data }) => {
             {(data.ongoingProjects || []).map((p, i) => (
               <tr key={i}>
                 <td className="border border-black p-3 font-bold">{p.name}</td>
-                <td className="border border-black p-3 text-center">
-                  {p.owner}
-                </td>
-                <td className="border border-black p-3 text-center font-mono">
-                  {p.progress}%
-                </td>
-                <td className="border border-black p-3 text-xs leading-normal bg-gray-50/30">
-                  {p.description}
-                </td>
+                <td className="border border-black p-3 text-center">{p.owner}</td>
+                <td className="border border-black p-3 text-center font-mono">{p.progress}%</td>
+                <td className="border border-black p-3 text-xs leading-normal bg-gray-50/30">{p.description}</td>
               </tr>
             ))}
           </tbody>
@@ -183,7 +164,9 @@ export const HandoverPrintTemplate: React.FC<Props> = ({ data }) => {
           <ul className="list-disc pl-5 space-y-3">
             {(data.resources?.docs || []).map((d, i) => (
               <li key={i}>
-                <div className="font-bold">[{d.category}] {d.name}</div>
+                <div className="font-bold">
+                  [{d.category}] {d.name}
+                </div>
                 <div className="text-[10px] text-gray-400 font-mono italic">{d.location}</div>
               </li>
             ))}
@@ -217,7 +200,8 @@ export const HandoverPrintTemplate: React.FC<Props> = ({ data }) => {
           </div>
         </div>
         <div className="mt-16 text-center text-[10px] text-gray-400 font-bold tracking-tighter">
-          본 문서는 보안 문서로 무단 복제 및 외부 유출을 금지함. COPYRIGHT {new Date().getFullYear()} 꿀단지 RAG ALL RIGHTS RESERVED.
+          본 문서는 보안 문서로 무단 복제 및 외부 유출을 금지함. COPYRIGHT {new Date().getFullYear()} 꿀단지 RAG ALL
+          RIGHTS RESERVED.
         </div>
       </section>
     </div>

@@ -38,9 +38,7 @@
     "internal": [{ "name": "이름", "role": "역할" }],
     "external": [{ "name": "이름", "role": "역할" }]
   },
-  "teamMembers": [
-    { "name": "팀원명", "position": "직급", "role": "역할", "notes": "비고" }
-  ],
+  "teamMembers": [{ "name": "팀원명", "position": "직급", "role": "역할", "notes": "비고" }],
   "ongoingProjects": [
     {
       "name": "프로젝트명",
@@ -55,9 +53,7 @@
   "roadmap": { "shortTerm": "단기계획", "longTerm": "장기계획" },
   "resources": {
     "docs": [{ "category": "분류", "name": "문서명", "location": "위치" }],
-    "systems": [
-      { "name": "시스템명", "usage": "사용방법", "contact": "담당자" }
-    ],
+    "systems": [{ "name": "시스템명", "usage": "사용방법", "contact": "담당자" }],
     "contacts": [
       {
         "category": "분류",

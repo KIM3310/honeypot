@@ -1,18 +1,19 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
 import {
+  Archive,
+  ChevronDown,
+  Database,
+  File as FileIcon,
+  Image as ImageIcon,
   Plus,
   Search,
-  File as FileIcon,
   Trash2,
-  Image as ImageIcon,
-  Archive,
-  Database,
-  ChevronDown,
 } from "lucide-react";
-import { SourceFile } from "../types.ts";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { API_ENDPOINTS } from "../config/api";
-import { getLlmHeaders } from "../utils/llmConfig";
 import { fetchWithSession } from "../services/sessionFetch";
+import type { SourceFile } from "../types.ts";
+import { getLlmHeaders } from "../utils/llmConfig";
 
 interface Props {
   onIndexChange?: (indexName: string) => void;
@@ -22,13 +23,7 @@ interface Props {
   onRemove: (id: string) => void;
 }
 
-const SourceSidebar: React.FC<Props> = ({
-  files,
-  onUpload,
-  onUpdate,
-  onRemove,
-  onIndexChange,
-}) => {
+const SourceSidebar: React.FC<Props> = ({ files, onUpload, onUpdate, onRemove, onIndexChange }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMountedRef = useRef(true);
   const cancelledFileIdsRef = useRef<Set<string>>(new Set());
@@ -59,9 +54,7 @@ const SourceSidebar: React.FC<Props> = ({
 
           // 기본 인덱스 선택 (첫 번째 인덱스 또는 documents-index)
           if (indexNames.length > 0) {
-            const defaultIndex =
-              indexNames.find((name: string) => name === "documents-index") ||
-              indexNames[0];
+            const defaultIndex = indexNames.find((name: string) => name === "documents-index") || indexNames[0];
             setSelectedIndex(defaultIndex);
             if (onIndexChange) {
               onIndexChange(defaultIndex);
@@ -78,7 +71,7 @@ const SourceSidebar: React.FC<Props> = ({
     };
 
     fetchIndexes();
-  }, []);
+  }, [onIndexChange]);
 
   const pollTaskStatus = async (fileId: string, taskId: string): Promise<void> => {
     const maxPolls = 120; // about 3 minutes at 1.5s interval
@@ -87,9 +80,7 @@ const SourceSidebar: React.FC<Props> = ({
         return;
       }
       try {
-        const response = await fetchWithSession(
-          `${API_ENDPOINTS.UPLOAD}/status/${encodeURIComponent(taskId)}`
-        );
+        const response = await fetchWithSession(`${API_ENDPOINTS.UPLOAD}/status/${encodeURIComponent(taskId)}`);
         if (!response.ok) {
           throw new Error(`status check failed (${response.status})`);
         }
@@ -262,12 +253,8 @@ const SourceSidebar: React.FC<Props> = ({
           <span className="text-2xl">🍯</span>
         </div>
         <div>
-          <h1 className="text-xl font-extrabold text-gray-800 tracking-tight">
-            꿀단지
-          </h1>
-          <p className="text-[10px] text-yellow-600 font-bold uppercase tracking-widest">
-            Sweet Handover AI
-          </p>
+          <h1 className="text-xl font-extrabold text-gray-800 tracking-tight">꿀단지</h1>
+          <p className="text-[10px] text-yellow-600 font-bold uppercase tracking-widest">Sweet Handover AI</p>
         </div>
       </div>
 
@@ -325,22 +312,16 @@ const SourceSidebar: React.FC<Props> = ({
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:border-yellow-400 transition-all flex items-center justify-between"
             >
-              <span className="truncate">
-                {selectedIndex || "인덱스를 선택하세요"}
-              </span>
+              <span className="truncate">{selectedIndex || "인덱스를 선택하세요"}</span>
               <ChevronDown
-                className={`w-4 h-4 text-gray-400 transition-transform ${
-                  isDropdownOpen ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 text-gray-400 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
               />
             </button>
 
             {isDropdownOpen && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-20">
                 {availableIndexes.length === 0 ? (
-                  <div className="px-4 py-3 text-sm text-gray-400 text-center">
-                    사용 가능한 인덱스가 없습니다
-                  </div>
+                  <div className="px-4 py-3 text-sm text-gray-400 text-center">사용 가능한 인덱스가 없습니다</div>
                 ) : (
                   availableIndexes.map((indexName) => (
                     <button
@@ -354,9 +335,7 @@ const SourceSidebar: React.FC<Props> = ({
                         console.log("✅ RAG 인덱스 선택:", indexName);
                       }}
                       className={`w-full px-4 py-2.5 text-left text-sm font-medium transition-colors ${
-                        selectedIndex === indexName
-                          ? "bg-yellow-50 text-yellow-600"
-                          : "text-gray-700 hover:bg-gray-50"
+                        selectedIndex === indexName ? "bg-yellow-50 text-yellow-600" : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >
                       {indexName}
@@ -369,18 +348,22 @@ const SourceSidebar: React.FC<Props> = ({
 
           {selectedIndex && (
             <div className="mt-2 px-3 py-1.5 bg-yellow-50 rounded-lg">
-              <p className="text-[10px] font-bold text-yellow-600">
-                현재 인덱스: {selectedIndex}
-              </p>
+              <p className="text-[10px] font-bold text-yellow-600">현재 인덱스: {selectedIndex}</p>
             </div>
           )}
         </div>
 
         <div className="mt-2 space-y-2 overflow-y-auto pr-1 flex-1 no-scrollbar">
           <div className="mb-2 grid grid-cols-4 gap-2 text-[10px] font-bold">
-            <div className="rounded-lg bg-gray-100 px-2 py-1 text-center text-gray-500">대기 {uploadSummary.pending}</div>
-            <div className="rounded-lg bg-yellow-100 px-2 py-1 text-center text-yellow-700">처리 {uploadSummary.processing}</div>
-            <div className="rounded-lg bg-emerald-100 px-2 py-1 text-center text-emerald-700">완료 {uploadSummary.completed}</div>
+            <div className="rounded-lg bg-gray-100 px-2 py-1 text-center text-gray-500">
+              대기 {uploadSummary.pending}
+            </div>
+            <div className="rounded-lg bg-yellow-100 px-2 py-1 text-center text-yellow-700">
+              처리 {uploadSummary.processing}
+            </div>
+            <div className="rounded-lg bg-emerald-100 px-2 py-1 text-center text-emerald-700">
+              완료 {uploadSummary.completed}
+            </div>
             <div className="rounded-lg bg-red-100 px-2 py-1 text-center text-red-700">실패 {uploadSummary.failed}</div>
           </div>
           {filteredFiles.length === 0 ? (
@@ -415,12 +398,8 @@ const SourceSidebar: React.FC<Props> = ({
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-700 truncate">
-                    {file.name}
-                  </p>
-                  <p className="text-[10px] text-yellow-500 font-bold uppercase">
-                    {file.type.split("/")[1] || "FILE"}
-                  </p>
+                  <p className="text-sm font-bold text-gray-700 truncate">{file.name}</p>
+                  <p className="text-[10px] text-yellow-500 font-bold uppercase">{file.type.split("/")[1] || "FILE"}</p>
                   {file.uploadStatus && (
                     <div className="mt-1.5">
                       <p className={`text-[10px] font-bold ${getUploadTone(file.uploadStatus)}`}>

@@ -1,5 +1,5 @@
-import { setToken, setCsrfToken, setRefreshToken, setUserInfo } from "../utils/auth";
 import { API_ENDPOINTS, fetchWithRetry } from "../config/api";
+import { setCsrfToken, setRefreshToken, setToken, setUserInfo } from "../utils/auth";
 
 // ✅ Backend 응답 형식에 맞춤
 interface LoginResponse {
@@ -15,10 +15,7 @@ interface LoginResponse {
   csrf_expires_in: number; // ← 추가!
 }
 
-export const loginUser = async (
-  email: string,
-  password: string
-): Promise<LoginResponse> => {
+export const loginUser = async (email: string, password: string): Promise<LoginResponse> => {
   const response = await fetchWithRetry(API_ENDPOINTS.LOGIN, {
     method: "POST",
     headers: {

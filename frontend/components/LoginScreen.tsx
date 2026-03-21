@@ -1,10 +1,10 @@
 // frontend/components/LoginScreen.tsx
 
-import React, { useState } from "react";
-import { LogIn, Sparkles, ShieldCheck, ArrowRight } from "lucide-react";
+import { ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
 import { loginUser } from "../services/authService.ts";
-import { setToken, setUserInfo } from "../utils/auth.ts";
-import { HandoverSchema, HealthSummary, ServiceBrief, ServiceMeta } from "../types.ts";
+import type { HandoverSchema, HealthSummary, ServiceBrief, ServiceMeta } from "../types.ts";
 import ServiceReadinessBoard from "./ServiceReadinessBoard.tsx";
 
 interface Props {
@@ -82,14 +82,14 @@ const LoginScreen: React.FC<Props> = ({
       <div className="w-full max-w-5xl bg-white/80 backdrop-blur-2xl p-8 lg:p-10 rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(252,211,77,0.2)] border border-white relative z-10 animate-in zoom-in-95 duration-700">
         <div className="flex flex-col items-center mb-10 text-center">
           <div className="w-40 h-40 mb-4 group hover:scale-110 transition-all duration-500 cursor-pointer">
-             <img
-               src="https://i.ibb.co/PvGzg7cK/Gemini-Generated-Image-ip7k7xip7k7xip7k.png"
-               alt="꿀단지 로고"
-               className="w-full h-full object-contain drop-shadow-2xl transition-transform rounded-full"
-               onError={(e) => {
-                 e.currentTarget.src = "https://api.iconify.design/noto:honey-pot.svg";
-               }}
-             />
+            <img
+              src="https://i.ibb.co/PvGzg7cK/Gemini-Generated-Image-ip7k7xip7k7xip7k.png"
+              alt="꿀단지 로고"
+              className="w-full h-full object-contain drop-shadow-2xl transition-transform rounded-full"
+              onError={(e) => {
+                e.currentTarget.src = "https://api.iconify.design/noto:honey-pot.svg";
+              }}
+            />
           </div>
           <h1 className="text-3xl font-black text-gray-800 tracking-tighter">꿀단지 접속하기</h1>
           <p className="text-sm font-bold text-yellow-600 mt-2">당신의 업무를 가장 달콤하게 이어주는 AI</p>
@@ -113,17 +113,41 @@ const LoginScreen: React.FC<Props> = ({
             </div>
 
             {error && (
-              <div role="alert" aria-live="assertive" className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-2xl text-sm font-bold flex items-start gap-3" style={{ animation: 'shake 0.4s ease-in-out' }}>
-                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-2xl text-sm font-bold flex items-start gap-3"
+                style={{ animation: "shake 0.4s ease-in-out" }}
+              >
+                <svg
+                  className="w-5 h-5 flex-shrink-0 mt-0.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+                  />
                 </svg>
                 <span>{error}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6 rounded-[2rem] border border-yellow-100 bg-white/90 p-6 shadow-sm">
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-6 rounded-[2rem] border border-yellow-100 bg-white/90 p-6 shadow-sm"
+            >
               <div className="space-y-2">
-                <label htmlFor="login-id" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">사번 또는 ID</label>
+                <label
+                  htmlFor="login-id"
+                  className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1"
+                >
+                  사번 또는 ID
+                </label>
                 <input
                   id="login-id"
                   type="text"
@@ -138,7 +162,12 @@ const LoginScreen: React.FC<Props> = ({
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="login-pw" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">비밀번호</label>
+                <label
+                  htmlFor="login-pw"
+                  className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1"
+                >
+                  비밀번호
+                </label>
                 <input
                   id="login-pw"
                   type="password"
@@ -163,15 +192,21 @@ const LoginScreen: React.FC<Props> = ({
                   <>
                     <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
                     </svg>
                     로그인 중...
                   </>
-                ) : apiMisconfigured
-                    ? "백엔드 설정 필요"
-                    : backendReachable
-                      ? "로그인"
-                      : "백엔드 연결 필요"}
+                ) : apiMisconfigured ? (
+                  "백엔드 설정 필요"
+                ) : backendReachable ? (
+                  "로그인"
+                ) : (
+                  "백엔드 연결 필요"
+                )}
                 {!isLoading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
               </button>
             </form>
@@ -181,7 +216,8 @@ const LoginScreen: React.FC<Props> = ({
             <div className="rounded-2xl border border-gray-200 bg-gray-50/80 px-4 py-4 text-left">
               <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.16em]">Front door promise</p>
               <p className="mt-2 text-[12px] leading-relaxed text-gray-700">
-                이 화면은 “로그인만 하는 곳”이 아니라, reviewer가 먼저 무엇을 보고 handover를 어떻게 넘겨받는지까지 설명하는 입구입니다.
+                이 화면은 “로그인만 하는 곳”이 아니라, reviewer가 먼저 무엇을 보고 handover를 어떻게 넘겨받는지까지
+                설명하는 입구입니다.
               </p>
             </div>
             <ServiceReadinessBoard

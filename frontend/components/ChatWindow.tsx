@@ -1,16 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
-import {
-  Send,
-  Paperclip,
-  MessageSquare,
-  Wand2,
-  Sparkles,
-  Loader2,
-  Info,
-} from "lucide-react";
-import { ChatMessage, ViewMode, SourceFile, ChatSession } from "../types";
+import { Info, Loader2, MessageSquare, Send, Sparkles, Wand2 } from "lucide-react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { API_ENDPOINTS } from "../config/api";
 import { fetchWithSession } from "../services/sessionFetch";
+import { type ChatMessage, type ChatSession, type SourceFile, ViewMode } from "../types";
 
 interface Props {
   messages: ChatMessage[];
@@ -73,42 +66,36 @@ const ChatWindow: React.FC<Props> = ({
       : failedUploads > 0
         ? "retry-upload"
         : "waiting-for-sources";
-  const workflowHeadline = workflowStage === "reviewer-ready"
-    ? "업로드 → draft → reviewer 질문 흐름이 열렸어요"
-    : workflowStage === "ingesting"
-      ? "자료를 정리 중입니다"
-      : workflowStage === "retry-upload"
-        ? "업로드 복구가 먼저 필요합니다"
-        : "먼저 자료를 넣어 첫 workflow를 시작하세요";
-  const workflowDetails = workflowStage === "reviewer-ready"
-    ? [
-        `${completedUploads}개 자료가 reviewer 질문용 근거로 준비되었습니다.`,
-        "이제 draft를 생성하고 owner / timeline / risk / reference 공백만 메우면 handoff가 훨씬 읽기 쉬워집니다.",
-      ]
-    : workflowStage === "ingesting"
+  const workflowHeadline =
+    workflowStage === "reviewer-ready"
+      ? "업로드 → draft → reviewer 질문 흐름이 열렸어요"
+      : workflowStage === "ingesting"
+        ? "자료를 정리 중입니다"
+        : workflowStage === "retry-upload"
+          ? "업로드 복구가 먼저 필요합니다"
+          : "먼저 자료를 넣어 첫 workflow를 시작하세요";
+  const workflowDetails =
+    workflowStage === "reviewer-ready"
       ? [
-          `${processingUploads}개 자료가 아직 처리 중입니다. 업로드 완료 후 draft를 생성하세요.`,
-          "처리 중에는 빈 handover를 만드는 대신 reviewer가 확인할 근거를 먼저 확보합니다.",
+          `${completedUploads}개 자료가 reviewer 질문용 근거로 준비되었습니다.`,
+          "이제 draft를 생성하고 owner / timeline / risk / reference 공백만 메우면 handoff가 훨씬 읽기 쉬워집니다.",
         ]
-      : workflowStage === "retry-upload"
+      : workflowStage === "ingesting"
         ? [
-            `${failedUploads}개 업로드가 실패했습니다. 실패 원인을 정리한 뒤 다시 올려야 reviewer handoff가 흔들리지 않습니다.`,
-            "근거 없는 draft 생성 대신 업로드 복구를 먼저 안내합니다.",
+            `${processingUploads}개 자료가 아직 처리 중입니다. 업로드 완료 후 draft를 생성하세요.`,
+            "처리 중에는 빈 handover를 만드는 대신 reviewer가 확인할 근거를 먼저 확보합니다.",
           ]
-        : [
-            "좌측 보관함에 파일을 넣으면 source → draft → reviewer Q&A 순서가 바로 열립니다.",
-            "자료가 없을 때는 빈 결과를 만들지 않고 첫 입력부터 요청합니다.",
-          ];
-  const systemDotClass = isOffline
-    ? "bg-red-500"
-    : stats.mode === "demo"
-      ? "bg-yellow-500"
-      : "bg-green-500";
-  const systemLabel = isOffline
-    ? "System Offline"
-    : stats.mode === "demo"
-      ? "System Demo"
-      : "System Live";
+        : workflowStage === "retry-upload"
+          ? [
+              `${failedUploads}개 업로드가 실패했습니다. 실패 원인을 정리한 뒤 다시 올려야 reviewer handoff가 흔들리지 않습니다.`,
+              "근거 없는 draft 생성 대신 업로드 복구를 먼저 안내합니다.",
+            ]
+          : [
+              "좌측 보관함에 파일을 넣으면 source → draft → reviewer Q&A 순서가 바로 열립니다.",
+              "자료가 없을 때는 빈 결과를 만들지 않고 첫 입력부터 요청합니다.",
+            ];
+  const systemDotClass = isOffline ? "bg-red-500" : stats.mode === "demo" ? "bg-yellow-500" : "bg-green-500";
+  const systemLabel = isOffline ? "System Offline" : stats.mode === "demo" ? "System Demo" : "System Live";
 
   // 통계 조회
   useEffect(() => {
@@ -117,7 +104,7 @@ const ChatWindow: React.FC<Props> = ({
         const indexName = selectedRagIndex || "documents-index";
         const response = await fetchWithSession(
           `${API_ENDPOINTS.STATS}?index_name=${encodeURIComponent(indexName)}`,
-          {}
+          {},
         );
         if (response.ok) {
           const data = await response.json();
@@ -140,7 +127,7 @@ const ChatWindow: React.FC<Props> = ({
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,23 +144,17 @@ const ChatWindow: React.FC<Props> = ({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <div className={`w-1.5 h-1.5 ${systemDotClass} rounded-full animate-pulse`}></div>
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
-              {systemLabel}
-            </span>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">{systemLabel}</span>
           </div>
         </div>
         <div className="flex items-center gap-4 text-[10px] font-black">
           <div className="flex items-center gap-1 text-yellow-600">
             <span className="opacity-50 text-gray-400">최근 업로드</span>
-            <span className="bg-yellow-100 px-1.5 py-0.5 rounded-md">
-              {files.length}건
-            </span>
+            <span className="bg-yellow-100 px-1.5 py-0.5 rounded-md">{files.length}건</span>
           </div>
           <div className="flex items-center gap-1 text-blue-600">
             <span className="opacity-50 text-gray-400">인덱스 문서</span>
-            <span className="bg-blue-50 px-1.5 py-0.5 rounded-md">
-              {stats.total_documents}개
-            </span>
+            <span className="bg-blue-50 px-1.5 py-0.5 rounded-md">{stats.total_documents}개</span>
           </div>
         </div>
       </div>
@@ -200,9 +181,7 @@ const ChatWindow: React.FC<Props> = ({
             <button
               onClick={() => setViewMode(ViewMode.CHAT)}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                viewMode === ViewMode.CHAT
-                  ? "bg-white text-yellow-600 shadow-sm"
-                  : "text-gray-400 hover:text-gray-600"
+                viewMode === ViewMode.CHAT ? "bg-white text-yellow-600 shadow-sm" : "text-gray-400 hover:text-gray-600"
               }`}
             >
               채팅
@@ -229,10 +208,7 @@ const ChatWindow: React.FC<Props> = ({
         </div>
       </div>
 
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#FFFEFA]"
-      >
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#FFFEFA]">
         {viewMode === ViewMode.CHAT ? (
           // 채팅 모드
           <>
@@ -241,17 +217,13 @@ const ChatWindow: React.FC<Props> = ({
                 <div className="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mb-8 shadow-inner">
                   <Sparkles className="w-12 h-12 text-yellow-400 animate-pulse" />
                 </div>
-                <h3 className="text-2xl font-black text-gray-800 mb-3">
-                  달콤한 인수인계 가이드
-                </h3>
+                <h3 className="text-2xl font-black text-gray-800 mb-3">달콤한 인수인계 가이드</h3>
                 <p className="text-gray-500 text-sm leading-relaxed mb-10 font-medium">
                   업로드하신 파일을 분석하여
                   <br />
                   완벽한 인수인계서를 만들어 드릴게요.
                   <br />
-                  <span className="text-yellow-600">
-                    왼쪽 보관함에 자료를 먼저 넣어주세요!
-                  </span>
+                  <span className="text-yellow-600">왼쪽 보관함에 자료를 먼저 넣어주세요!</span>
                 </p>
                 <div className="mb-4 w-full rounded-2xl border border-gray-200 bg-white/90 p-4 text-left shadow-sm">
                   <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
@@ -291,11 +263,7 @@ const ChatWindow: React.FC<Props> = ({
                   disabled={isProcessing || !hasUsableSources}
                   className="w-full bg-yellow-400 text-white py-4 rounded-2xl font-black shadow-xl shadow-yellow-100 hover:bg-yellow-500 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 mb-3"
                 >
-                  {isProcessing ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                  ) : (
-                    <Wand2 className="w-6 h-6" />
-                  )}
+                  {isProcessing ? <Loader2 className="w-6 h-6 animate-spin" /> : <Wand2 className="w-6 h-6" />}
                   {hasUsableSources ? "인수인계서 생성하기" : "업로드 완료 후 생성 가능"}
                 </button>
                 {!hasUsableSources && (
@@ -312,12 +280,7 @@ const ChatWindow: React.FC<Props> = ({
               </div>
             ) : (
               messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`flex ${
-                    msg.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
+                <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                   <div
                     className={`max-w-[85%] rounded-3xl px-5 py-3.5 shadow-sm border ${
                       msg.role === "user"
@@ -325,9 +288,7 @@ const ChatWindow: React.FC<Props> = ({
                         : "bg-white border-yellow-100 text-gray-700 font-medium rounded-tl-none"
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                      {msg.text}
-                    </p>
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.text}</p>
                   </div>
                 </div>
               ))
@@ -349,9 +310,7 @@ const ChatWindow: React.FC<Props> = ({
                       style={{ animationDelay: "300ms" }}
                     ></div>
                   </div>
-                  <span className="text-xs text-yellow-600 font-bold italic">
-                    자료를 달콤하게 분석 중...
-                  </span>
+                  <span className="text-xs text-yellow-600 font-bold italic">자료를 달콤하게 분석 중...</span>
                 </div>
               </div>
             )}
@@ -364,9 +323,7 @@ const ChatWindow: React.FC<Props> = ({
                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
                   <MessageSquare className="w-8 h-8 text-blue-400" />
                 </div>
-                <h3 className="text-xl font-black text-gray-800 mb-2">
-                  채팅 기록이 없어요
-                </h3>
+                <h3 className="text-xl font-black text-gray-800 mb-2">채팅 기록이 없어요</h3>
                 <p className="text-gray-500 text-sm">
                   왼쪽 채팅 탭에서 시작한 대화가
                   <br />
@@ -385,20 +342,15 @@ const ChatWindow: React.FC<Props> = ({
                   }`}
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-bold text-gray-800 line-clamp-2">
-                      {session.title}
-                    </h4>
+                    <h4 className="font-bold text-gray-800 line-clamp-2">{session.title}</h4>
                     <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">
                       {new Date(session.updatedAt).toLocaleDateString("ko-KR")}
                     </span>
                   </div>
                   <p className="text-[12px] text-gray-600 line-clamp-2">
-                    {session.messages[session.messages.length - 1]?.text ||
-                      "내용이 없습니다"}
+                    {session.messages[session.messages.length - 1]?.text || "내용이 없습니다"}
                   </p>
-                  <div className="text-[10px] text-gray-400 mt-2">
-                    메시지 {session.messages.length}개
-                  </div>
+                  <div className="text-[10px] text-gray-400 mt-2">메시지 {session.messages.length}개</div>
                 </div>
               ))
             )}

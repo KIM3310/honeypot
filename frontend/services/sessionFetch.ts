@@ -1,11 +1,5 @@
 import { API_ENDPOINTS, fetchWithRetry } from "../config/api";
-import {
-  getAuthHeaders,
-  getRefreshToken,
-  removeAllTokens,
-  setCsrfToken,
-  setToken,
-} from "../utils/auth";
+import { getAuthHeaders, getRefreshToken, removeAllTokens, setCsrfToken, setToken } from "../utils/auth";
 
 function syncCsrfFromResponse(response: Response): void {
   const nextCsrf = response.headers.get("X-CSRF-Token");
@@ -27,7 +21,7 @@ async function tryRefreshAccessToken(): Promise<boolean> {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: refreshToken }),
       },
-      2
+      2,
     );
   } catch {
     return false;
@@ -46,11 +40,7 @@ async function tryRefreshAccessToken(): Promise<boolean> {
   return true;
 }
 
-export async function fetchWithSession(
-  url: string,
-  options: RequestInit = {},
-  maxRetries = 3
-): Promise<Response> {
+export async function fetchWithSession(url: string, options: RequestInit = {}, maxRetries = 3): Promise<Response> {
   const makeRequest = () => {
     const headers = {
       ...(getAuthHeaders() as Record<string, string>),
@@ -65,7 +55,7 @@ export async function fetchWithSession(
         ...options,
         headers,
       },
-      maxRetries
+      maxRetries,
     );
   };
 

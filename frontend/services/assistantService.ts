@@ -1,4 +1,5 @@
 import { API_ENDPOINTS, fetchWithRetry } from "../config/api";
+import type { HandoverData, SourceFile } from "../types";
 import {
   getAuthHeaders,
   getRefreshToken,
@@ -8,7 +9,6 @@ import {
   setToken,
 } from "../utils/auth";
 import { getLlmHeaders } from "../utils/llmConfig";
-import { HandoverData, SourceFile } from "../types";
 
 type ChatHistoryMessage = { role: string; text: string };
 
@@ -40,7 +40,7 @@ async function refreshAccessToken(): Promise<string | null> {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: refreshToken }),
       },
-      2
+      2,
     );
   } catch {
     return null;
@@ -97,9 +97,7 @@ async function postJsonWithAuth(url: string, payload: unknown): Promise<unknown>
   if (response.status === 429) {
     const retryAfter = response.headers.get("Retry-After");
     throw new Error(
-      retryAfter
-        ? `Too many requests. Retry after ${retryAfter}s.`
-        : "Too many requests. Please retry later."
+      retryAfter ? `Too many requests. Retry after ${retryAfter}s.` : "Too many requests. Please retry later.",
     );
   }
 
@@ -154,10 +152,7 @@ async function postJsonWithAuth(url: string, payload: unknown): Promise<unknown>
   return content;
 }
 
-export async function analyzeFilesForHandover(
-  files: SourceFile[],
-  indexName?: string
-): Promise<HandoverData> {
+export async function analyzeFilesForHandover(files: SourceFile[], indexName?: string): Promise<HandoverData> {
   const fileContext = files
     .map((f) => {
       const content = f.content.substring(0, 2000);
@@ -188,7 +183,7 @@ export async function chatWithAssistant(
   message: string,
   _files: SourceFile[],
   history: ChatHistoryMessage[],
-  indexName?: string
+  indexName?: string,
 ): Promise<string> {
   const payload = {
     messages: [

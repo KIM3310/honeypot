@@ -36,11 +36,11 @@ export function parseWorkspaceUrlState(search: string): WorkspaceUrlState {
   return next;
 }
 
-export function buildWorkspaceUrlSearch(state: Required<WorkspaceUrlState>) {
+export function buildWorkspaceUrlSearch(state: WorkspaceUrlState) {
   const params = new URLSearchParams();
-  if (state.viewMode !== ViewMode.CHAT) params.set("view", state.viewMode);
+  if (state.viewMode && state.viewMode !== ViewMode.CHAT) params.set("view", state.viewMode);
   if (state.sessionId) params.set("session", state.sessionId);
-  if (state.selectedRagIndex !== "documents-index") {
+  if (state.selectedRagIndex && state.selectedRagIndex !== "documents-index") {
     params.set("index", state.selectedRagIndex);
   }
   return params.toString();
@@ -59,17 +59,11 @@ export function buildWorkspaceShareUrl(
     origin?: string;
     pathname?: string;
     hash?: string;
-  }
+  },
 ) {
-  const origin =
-    options?.origin ??
-    (typeof window !== "undefined" ? window.location.origin : "");
-  const pathname =
-    options?.pathname ??
-    (typeof window !== "undefined" ? window.location.pathname : "/");
-  const hash =
-    options?.hash ??
-    (typeof window !== "undefined" ? window.location.hash : "");
+  const origin = options?.origin ?? (typeof window !== "undefined" ? window.location.origin : "");
+  const pathname = options?.pathname ?? (typeof window !== "undefined" ? window.location.pathname : "/");
+  const hash = options?.hash ?? (typeof window !== "undefined" ? window.location.hash : "");
   const search = nextSearch ? `?${nextSearch}` : "";
   return `${origin}${pathname}${search}${hash}`;
 }

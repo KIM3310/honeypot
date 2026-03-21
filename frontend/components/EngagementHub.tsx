@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   open: boolean;
@@ -38,14 +39,7 @@ const EngagementHub: React.FC<Props> = ({ open, onClose }) => {
   }, [open]);
 
   useEffect(() => {
-    if (
-      !open ||
-      !giscusRef.current ||
-      !GISCUS_REPO ||
-      !GISCUS_REPO_ID ||
-      !GISCUS_CATEGORY ||
-      !GISCUS_CATEGORY_ID
-    ) {
+    if (!open || !giscusRef.current || !GISCUS_REPO || !GISCUS_REPO_ID || !GISCUS_CATEGORY || !GISCUS_CATEGORY_ID) {
       return;
     }
     if (giscusRef.current.querySelector("script[data-giscus]")) {
@@ -166,9 +160,7 @@ const EngagementHub: React.FC<Props> = ({ open, onClose }) => {
               </button>
             </form>
             {notice && (
-              <p className={`mt-2 text-[11px] ${status === "error" ? "text-red-600" : "text-emerald-700"}`}>
-                {notice}
-              </p>
+              <p className={`mt-2 text-[11px] ${status === "error" ? "text-red-600" : "text-emerald-700"}`}>{notice}</p>
             )}
           </section>
 

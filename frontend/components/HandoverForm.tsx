@@ -1,36 +1,29 @@
-import React, { useState, useEffect } from "react";
-import { HandoverData } from "../types.ts";
 import {
-  FileText,
-  Users,
-  Briefcase,
-  ListTodo,
-  Layers,
-  Key,
-  CheckSquare,
-  Sparkles,
   AlertTriangle,
-  Clock,
+  Briefcase,
+  CheckSquare,
   ChevronRight,
-  Plus,
-  Trash2,
-  Printer,
-  Save,
+  Clock,
   Download,
+  FileText,
+  Key,
+  Layers,
+  ListTodo,
+  Plus,
+  Save,
+  Sparkles,
+  Trash2,
 } from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import type { HandoverData } from "../types.ts";
 
 interface Props {
   data: HandoverData | null;
   onUpdate: (data: HandoverData) => void;
 }
 
-const InputField = ({
-  label,
-  value,
-  onChange,
-  multiline = false,
-  placeholder = "",
-}: any) => {
+const InputField = ({ label, value, onChange, multiline = false, placeholder = "" }: any) => {
   const [localValue, setLocalValue] = useState(value || "");
 
   useEffect(() => {
@@ -49,9 +42,7 @@ const InputField = ({
 
   return (
     <div className="mb-4 group">
-      <label className="block text-[9px] font-black text-yellow-600 uppercase mb-1.5 tracking-widest">
-        {label}
-      </label>
+      <label className="block text-[9px] font-black text-yellow-600 uppercase mb-1.5 tracking-widest">{label}</label>
       {multiline ? (
         <textarea
           value={localValue}
@@ -86,7 +77,9 @@ const Section = ({ title, icon, color = "yellow", children, onAdd }: any) => {
   };
 
   return (
-    <div className={`p-6 rounded-[2rem] border shadow-sm relative overflow-hidden group/section ${colors[color] || colors.yellow}`}>
+    <div
+      className={`p-6 rounded-[2rem] border shadow-sm relative overflow-hidden group/section ${colors[color] || colors.yellow}`}
+    >
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-[10px] font-black mb-0 flex items-center gap-2 uppercase tracking-widest">
           {icon || <ChevronRight className="w-3 h-3" />} {title}
@@ -144,12 +137,8 @@ function buildCompletenessGate(data: HandoverData | null) {
   const hasTimeline =
     data.priorities.some((item) => String(item.deadline || "").trim().length > 0) ||
     data.ongoingProjects.some((item) => String(item.deadline || "").trim().length > 0);
-  const hasRisk =
-    Boolean(String(data.risks?.issues || "").trim()) ||
-    Boolean(String(data.risks?.risks || "").trim());
-  const hasReference =
-    (data.resources?.docs?.length || 0) > 0 ||
-    (data.resources?.systems?.length || 0) > 0;
+  const hasRisk = Boolean(String(data.risks?.issues || "").trim()) || Boolean(String(data.risks?.risks || "").trim());
+  const hasReference = (data.resources?.docs?.length || 0) > 0 || (data.resources?.systems?.length || 0) > 0;
 
   if (!hasOwner) missing.push("owner coverage");
   if (!hasTimeline) missing.push("timeline coverage");
@@ -170,23 +159,18 @@ function countFilledSections(data: HandoverData | null) {
     Boolean(
       data.overview?.transferor?.name?.trim() ||
         data.overview?.transferee?.name?.trim() ||
-        data.overview?.reason?.trim()
+        data.overview?.reason?.trim(),
     ),
     Boolean(
-      data.jobStatus?.title?.trim() ||
-        data.jobStatus?.responsibilities?.some((item) => String(item || "").trim())
+      data.jobStatus?.title?.trim() || data.jobStatus?.responsibilities?.some((item) => String(item || "").trim()),
     ),
     data.priorities.some((item) => String(item.title || "").trim()),
-    Boolean(
-      data.stakeholders?.internal?.length ||
-        data.teamMembers?.length ||
-        data.ongoingProjects?.length
-    ),
+    Boolean(data.stakeholders?.internal?.length || data.teamMembers?.length || data.ongoingProjects?.length),
     Boolean(
       data.resources?.docs?.length ||
         data.resources?.systems?.length ||
         data.risks?.issues?.trim() ||
-        data.risks?.risks?.trim()
+        data.risks?.risks?.trim(),
     ),
     data.checklist.some((item) => String(item.text || "").trim()),
   ];
@@ -234,9 +218,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
   const [activeTab, setActiveTab] = useState(0);
   const completeness = buildCompletenessGate(data);
   const filledSections = countFilledSections(data);
-  const reviewerGapLabels = completeness.missing.map(
-    (item) => REVIEWER_GAP_LABELS[item] || item
-  );
+  const reviewerGapLabels = completeness.missing.map((item) => REVIEWER_GAP_LABELS[item] || item);
   const nextReviewerAction = completeness.reviewReady
     ? "JSON/PDF export 전에 reviewer가 runtime summary와 핵심 리스크를 한 번 더 읽도록 전달하세요."
     : `${reviewerGapLabels[0] || "필수 공백"}부터 채워 reviewer가 막히지 않게 handoff를 닫으세요.`;
@@ -289,9 +271,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
         <div className="w-24 h-24 bg-yellow-100 rounded-3xl flex items-center justify-center mb-6 shadow-inner animate-bounce">
           <Sparkles className="w-12 h-12 text-yellow-500" />
         </div>
-        <h3 className="text-xl font-black text-gray-800">
-          새로운 꿀단지가 비어있어요
-        </h3>
+        <h3 className="text-xl font-black text-gray-800">새로운 꿀단지가 비어있어요</h3>
         <p className="text-gray-400 mt-2 text-xs font-bold leading-relaxed">
           오른쪽 보관함에 자료를 넣고 '리포트 생성'을 눌러주세요.
           <br />
@@ -339,8 +319,6 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
     { name: "6. 확인", icon: <CheckSquare className="w-4 h-4" /> },
   ];
 
-
-
   const handleExportJSON = async () => {
     if (!completeness.reviewReady) {
       alert(`리뷰 준비 전입니다. 보완 필요: ${completeness.missing.join(", ")}`);
@@ -350,7 +328,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
       try {
         const result = await (window as any).electronAPI.saveJson(
           data,
-          `handover_${new Date().toISOString().split("T")[0]}.json`
+          `handover_${new Date().toISOString().split("T")[0]}.json`,
         );
         if (result.success) {
           alert(`저장되었습니다: ${result.filePath}`);
@@ -381,7 +359,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
     if ((window as any).electronAPI) {
       try {
         const result = await (window as any).electronAPI.savePdf(
-          `handover_${new Date().toISOString().split("T")[0]}.pdf`
+          `handover_${new Date().toISOString().split("T")[0]}.pdf`,
         );
         if (result.success) {
           alert(`저장되었습니다: ${result.filePath}`);
@@ -407,54 +385,53 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
           <Sparkles className="w-4 h-4" /> 인수인계서 리포트
         </h2>
         <div className="flex items-center gap-3">
-          <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black ${
-            completeness.reviewReady
-              ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-              : "bg-red-50 text-red-700 border border-red-100"
-          }`}>
+          <div
+            className={`px-3 py-1.5 rounded-xl text-[10px] font-black ${
+              completeness.reviewReady
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                : "bg-red-50 text-red-700 border border-red-100"
+            }`}
+          >
             Completeness {completeness.score}% · {completeness.reviewReady ? "review-ready" : "blocked"}
           </div>
           <div className="flex gap-2">
-          <button
-            onClick={handleCopyReviewerSnapshot}
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors"
-          >
-            <CheckSquare className="w-3.5 h-3.5" /> Reviewer snapshot
-          </button>
-          <button
-            onClick={handleExportJSON}
-            disabled={!completeness.reviewReady}
-            className="flex items-center gap-2 px-3 py-1.5 bg-yellow-50 text-yellow-600 rounded-lg text-xs font-bold hover:bg-yellow-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Save className="w-3.5 h-3.5" /> JSON 저장
-          </button>
-          <button
-            onClick={handleExportPDF}
-            disabled={!completeness.reviewReady}
-            className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500 text-white rounded-lg text-xs font-bold hover:bg-yellow-600 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Download className="w-3.5 h-3.5" /> PDF 저장
-          </button>
+            <button
+              onClick={handleCopyReviewerSnapshot}
+              className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors"
+            >
+              <CheckSquare className="w-3.5 h-3.5" /> Reviewer snapshot
+            </button>
+            <button
+              onClick={handleExportJSON}
+              disabled={!completeness.reviewReady}
+              className="flex items-center gap-2 px-3 py-1.5 bg-yellow-50 text-yellow-600 rounded-lg text-xs font-bold hover:bg-yellow-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Save className="w-3.5 h-3.5" /> JSON 저장
+            </button>
+            <button
+              onClick={handleExportPDF}
+              disabled={!completeness.reviewReady}
+              className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500 text-white rounded-lg text-xs font-bold hover:bg-yellow-600 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Download className="w-3.5 h-3.5" /> PDF 저장
+            </button>
           </div>
         </div>
       </div>
       <div className="border-b border-yellow-100 bg-gradient-to-br from-white via-yellow-50/50 to-amber-50/60 px-6 py-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-xl">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-700">
-              Approval lane
-            </p>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-700">Approval lane</p>
             <h3 className="mt-1 text-base font-black text-gray-900">
               편집 → reviewer 확인 → export 순서를 한 화면에서 정리합니다.
             </h3>
             <p className="mt-2 text-[11px] leading-relaxed text-gray-600">
-              자동 승인처럼 보이게 하지 않고, reviewer가 실제로 읽어야 하는 필수 공백만 드러낸 뒤 JSON/PDF export를 엽니다.
+              자동 승인처럼 보이게 하지 않고, reviewer가 실제로 읽어야 하는 필수 공백만 드러낸 뒤 JSON/PDF export를
+              엽니다.
             </p>
           </div>
           <div className="rounded-2xl border border-gray-200 bg-white/90 px-4 py-3 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
-              Reviewer handoff
-            </p>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Reviewer handoff</p>
             <p className="mt-1 text-sm font-black text-gray-900">
               Completeness {completeness.score}% · {completeness.reviewReady ? "review-ready" : "manual follow-up"}
             </p>
@@ -474,9 +451,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
         </div>
         <div className="mt-4 grid gap-3 xl:grid-cols-2">
           <article className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
-              Export unlock checklist
-            </p>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Export unlock checklist</p>
             <ul className="mt-2 space-y-2 text-[11px] leading-relaxed text-slate-700">
               <li>1. 인계자/인수자/프로젝트 owner를 reviewer가 한 번에 확인할 수 있어야 합니다.</li>
               <li>2. timeline, risk, reference 공백 없이 reviewer summary를 닫은 뒤 export를 엽니다.</li>
@@ -484,12 +459,8 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
             </ul>
           </article>
           <article className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">
-              Next reviewer action
-            </p>
-            <p className="mt-2 text-[12px] font-bold leading-relaxed text-amber-900">
-              {nextReviewerAction}
-            </p>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">Next reviewer action</p>
+            <p className="mt-2 text-[12px] font-bold leading-relaxed text-amber-900">{nextReviewerAction}</p>
             <p className="mt-2 text-[11px] leading-relaxed text-amber-800">
               Remaining blockers: {reviewerGapLabels.length ? reviewerGapLabels.join(", ") : "없음"}
             </p>
@@ -497,20 +468,17 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
         </div>
         <div className="mt-3 grid gap-3 xl:grid-cols-2">
           <article className="rounded-2xl border border-blue-200 bg-blue-50/80 p-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">
-              Verification route
-            </p>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">Verification route</p>
             <p className="mt-2 text-[11px] leading-relaxed text-blue-900">
               /api/runtime-brief → /api/runtime-scorecard → /api/review-summary → /api/schema/handover
             </p>
             <p className="mt-2 text-[11px] leading-relaxed text-blue-800">
-              Reviewer가 export gate를 신뢰할 때는 draft보다 먼저 runtime posture와 schema contract를 같은 순서로 읽게 하세요.
+              Reviewer가 export gate를 신뢰할 때는 draft보다 먼저 runtime posture와 schema contract를 같은 순서로 읽게
+              하세요.
             </p>
           </article>
           <article className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">
-              First secure workflow
-            </p>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">First secure workflow</p>
             <ul className="mt-2 space-y-2 text-[11px] leading-relaxed text-emerald-900">
               {firstSecureWorkflow.map((item) => (
                 <li key={item}>{item}</li>
@@ -519,12 +487,8 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
           </article>
         </div>
         <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-600">
-            Review evidence snapshot
-          </p>
-          <p className="mt-2 text-[11px] leading-relaxed text-slate-700 whitespace-pre-line">
-            {reviewerSnapshot}
-          </p>
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-600">Review evidence snapshot</p>
+          <p className="mt-2 text-[11px] leading-relaxed text-slate-700 whitespace-pre-line">{reviewerSnapshot}</p>
         </div>
         {!completeness.reviewReady && (
           <div className="mt-4 flex flex-wrap gap-2">
@@ -638,9 +602,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                 label="핵심 책임 (엔터로 구분)"
                 value={data.jobStatus.responsibilities.join("\n")}
                 multiline
-                onChange={(v: any) =>
-                  handleChange("jobStatus.responsibilities", v.split("\n"))
-                }
+                onChange={(v: any) => handleChange("jobStatus.responsibilities", v.split("\n"))}
               />
               <div className="grid grid-cols-2 gap-6">
                 <InputField
@@ -666,9 +628,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                 label="현재 핵심 목표"
                 value={data.jobStatus.teamGoals?.join("\n") || ""}
                 multiline
-                onChange={(v: any) =>
-                  handleChange("jobStatus.teamGoals", v.split("\n"))
-                }
+                onChange={(v: any) => handleChange("jobStatus.teamGoals", v.split("\n"))}
               />
             </Section>
           </div>
@@ -688,7 +648,9 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                     </span>
                     <div className="flex-1 grid grid-cols-12 gap-6">
                       <div className="col-span-6">
-                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest block mb-1">과제명</label>
+                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest block mb-1">
+                          과제명
+                        </label>
                         <input
                           className="w-full text-xs font-black text-gray-800 outline-none bg-transparent"
                           value={p.title}
@@ -700,7 +662,9 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                         />
                       </div>
                       <div className="col-span-3">
-                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest block mb-1">상태</label>
+                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest block mb-1">
+                          상태
+                        </label>
                         <input
                           className="w-full text-[10px] font-bold text-gray-500 outline-none bg-transparent"
                           value={p.status}
@@ -712,7 +676,9 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                         />
                       </div>
                       <div className="col-span-3 text-right">
-                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest block mb-1">기한</label>
+                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest block mb-1">
+                          기한
+                        </label>
                         <input
                           className="w-full text-[10px] font-black text-red-500 outline-none bg-transparent text-right"
                           value={p.deadline}
@@ -730,9 +696,9 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
             </Section>
 
             <div className="grid grid-cols-2 gap-6">
-              <Section 
-                title="핵심 관계자" 
-                color="yellow" 
+              <Section
+                title="핵심 관계자"
+                color="yellow"
                 onAdd={() => addItem("stakeholders.internal", { name: "이름", role: "역할" })}
               >
                 <ListEditor
@@ -764,10 +730,10 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                   )}
                 />
               </Section>
-              
-              <Section 
-                title="팀 구성원" 
-                color="blue" 
+
+              <Section
+                title="팀 구성원"
+                color="blue"
                 onAdd={() => addItem("teamMembers", { name: "이름", position: "직급", role: "역할", notes: "" })}
               >
                 <ListEditor
@@ -806,10 +772,19 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
         {/* Tab 4: 현황 */}
         {activeTab === 3 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Section 
-              title="프로젝트 진행 로드맵" 
-              color="indigo" 
-              onAdd={() => addItem("ongoingProjects", { name: "새 프로젝트", owner: "담당", status: "진행", progress: 0, deadline: "YYYY.MM.DD", description: "" })}
+            <Section
+              title="프로젝트 진행 로드맵"
+              color="indigo"
+              onAdd={() =>
+                addItem("ongoingProjects", {
+                  name: "새 프로젝트",
+                  owner: "담당",
+                  status: "진행",
+                  progress: 0,
+                  deadline: "YYYY.MM.DD",
+                  description: "",
+                })
+              }
             >
               <ListEditor
                 items={data.ongoingProjects}
@@ -844,7 +819,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                           value={p.progress}
                           onChange={(e) => {
                             const next = [...data.ongoingProjects];
-                            next[i].progress = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                            next[i].progress = Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0));
                             handleChange("ongoingProjects", next);
                           }}
                         />
@@ -852,7 +827,10 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                       </div>
                     </div>
                     <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden mb-4 shadow-inner">
-                      <div className="bg-indigo-500 h-full transition-all duration-1000" style={{ width: `${p.progress}%` }}></div>
+                      <div
+                        className="bg-indigo-500 h-full transition-all duration-1000"
+                        style={{ width: `${p.progress}%` }}
+                      ></div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <InputField
@@ -901,9 +879,9 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
         {/* Tab 5: 자료 */}
         {activeTab === 4 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Section 
-              title="핵심 문서 및 링크" 
-              color="emerald" 
+            <Section
+              title="핵심 문서 및 링크"
+              color="emerald"
               onAdd={() => addItem("resources.docs", { category: "구분", name: "문서명", location: "경로" })}
             >
               <ListEditor
@@ -945,9 +923,9 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
               />
             </Section>
 
-            <Section 
-              title="운영 도구 및 시스템" 
-              color="teal" 
+            <Section
+              title="운영 도구 및 시스템"
+              color="teal"
               onAdd={() => addItem("resources.systems", { name: "시스템명", usage: "용도", contact: "담당자" })}
             >
               <ListEditor
@@ -994,7 +972,11 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
         {/* Tab 6: 확인 */}
         {activeTab === 5 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Section title="인수인계 최종 체크리스트" color="yellow" icon={<CheckSquare className="w-5 h-5 text-yellow-500" />}>
+            <Section
+              title="인수인계 최종 체크리스트"
+              color="yellow"
+              icon={<CheckSquare className="w-5 h-5 text-yellow-500" />}
+            >
               <ListEditor
                 items={data.checklist}
                 onRemove={(idx: number) => removeItem("checklist", idx)}
@@ -1011,9 +993,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                         }}
                         className="w-6 h-6 rounded-lg border-2 border-yellow-200 text-yellow-500 focus:ring-yellow-500 focus:ring-offset-0 transition-all cursor-pointer appearance-none checked:bg-yellow-500 checked:border-yellow-500"
                       />
-                      {c.completed && (
-                        <CheckSquare className="w-4 h-4 text-white absolute pointer-events-none" />
-                      )}
+                      {c.completed && <CheckSquare className="w-4 h-4 text-white absolute pointer-events-none" />}
                     </div>
                     <input
                       className={`flex-1 text-[11px] font-bold outline-none bg-transparent transition-all ${
@@ -1036,8 +1016,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                 <Sparkles className="w-48 h-48 text-white" />
               </div>
               <p className="text-lg font-black italic mb-10 leading-relaxed text-white">
-                "본 인수인계서의 모든 내용에 대해 인계자로부터 충분한 설명을
-                들었으며,
+                "본 인수인계서의 모든 내용에 대해 인계자로부터 충분한 설명을 들었으며,
                 <br />
                 관련 자료를 모두 정상적으로 전달받았음을 공식적으로 확인합니다."
               </p>
@@ -1080,7 +1059,9 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                     value={data.stakeholders.manager || ""}
                     onChange={(e) => handleChange("stakeholders.manager", e.target.value)}
                   />
-                  <span className="text-[9px] font-black mt-2 text-white/80 uppercase tracking-widest text-center">최종 매니저 확인 서명</span>
+                  <span className="text-[9px] font-black mt-2 text-white/80 uppercase tracking-widest text-center">
+                    최종 매니저 확인 서명
+                  </span>
                 </div>
               </div>
             </div>

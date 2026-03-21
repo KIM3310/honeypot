@@ -1,13 +1,13 @@
 /**
  * Zod-based request validation schemas for frontend API calls.
  */
-import { z } from 'zod';
+import { z } from "zod";
 
 // --- Auth ---
 
 export const LoginRequestSchema = z.object({
-  email: z.string().min(1, 'Email is required').max(255),
-  password: z.string().min(1, 'Password is required').max(255),
+  email: z.string().min(1, "Email is required").max(255),
+  password: z.string().min(1, "Password is required").max(255),
 });
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 
@@ -28,7 +28,7 @@ export type LoginResponse = z.infer<typeof LoginResponseSchema>;
 // --- Chat ---
 
 export const ChatMessageSchema = z.object({
-  role: z.enum(['system', 'user', 'assistant']),
+  role: z.enum(["system", "user", "assistant"]),
   content: z.string().min(1).max(12000),
 });
 
@@ -43,11 +43,13 @@ export const ChatResponseSchema = z.object({
   content: z.unknown(),
   response: z.unknown().optional(),
   sources: z.array(z.string()).optional(),
-  user_info: z.object({
-    name: z.string(),
-    email: z.string(),
-    role: z.string(),
-  }).optional(),
+  user_info: z
+    .object({
+      name: z.string(),
+      email: z.string(),
+      role: z.string(),
+    })
+    .optional(),
 });
 
 // --- Health ---

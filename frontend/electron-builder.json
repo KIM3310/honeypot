@@ -5,11 +5,7 @@
     "output": "release",
     "buildResources": "electron/resources"
   },
-  "files": [
-    "dist/**/*",
-    "electron/**/*",
-    "package.json"
-  ],
+  "files": ["dist/**/*", "electron/**/*", "package.json"],
   "extraResources": [
     {
       "from": "../dist/backend",
@@ -18,23 +14,16 @@
     }
   ],
   "win": {
-    "target": [
-      "nsis"
-    ],
+    "target": ["nsis"],
     "icon": "electron/resources/icon.ico"
   },
   "mac": {
-    "target": [
-      "dmg"
-    ],
+    "target": ["dmg"],
     "icon": "electron/resources/icon.icns",
     "category": "public.app-category.productivity"
   },
   "linux": {
-    "target": [
-      "AppImage",
-      "deb"
-    ],
+    "target": ["AppImage", "deb"],
     "icon": "electron/resources/icon.png",
     "category": "Utility"
   },

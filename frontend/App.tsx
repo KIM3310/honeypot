@@ -1,44 +1,35 @@
-import React, { useState, useEffect } from "react";
-import {
-  removeAllTokens,
-  getTokenExpiresIn,
-} from "./utils/auth";
-import SourceSidebar from "./components/SourceSidebar";
-import ChatWindow from "./components/ChatWindow";
-import HandoverForm from "./components/HandoverForm";
-import LoginScreen from "./components/LoginScreen";
-import EngagementHub from "./components/EngagementHub";
+import type React from "react";
+import { useEffect, useState } from "react";
 import AdSenseSlot from "./components/AdSenseSlot";
+import ChatWindow from "./components/ChatWindow";
+import EngagementHub from "./components/EngagementHub";
+import HandoverForm from "./components/HandoverForm";
+import { HandoverPrintTemplate } from "./components/HandoverPrintTemplate";
 import LlmApiKeyPanel from "./components/LlmApiKeyPanel";
+import LoginScreen from "./components/LoginScreen";
 import ServiceReadinessBoard from "./components/ServiceReadinessBoard";
+import SourceSidebar from "./components/SourceSidebar";
+import { API_ENDPOINTS, API_RUNTIME_CONFIG, fetchWithTimeout } from "./config/api";
+import { analyzeFilesForHandover, chatWithAssistant } from "./services/assistantService";
+import { fetchWithSession } from "./services/sessionFetch";
 import {
-  SourceFile,
-  ChatMessage,
-  HandoverData,
+  type ChatMessage,
+  type ChatSession,
+  type HandoverData,
+  type HandoverSchema,
+  type HealthSummary,
+  type ServiceBrief,
+  type ServiceMeta,
+  type SourceFile,
   ViewMode,
-  ChatSession,
-  HandoverSchema,
-  HealthSummary,
-  ServiceBrief,
-  ServiceMeta,
 } from "./types";
-import {
-  analyzeFilesForHandover,
-  chatWithAssistant,
-} from "./services/assistantService";
-import {
-  API_ENDPOINTS,
-  API_RUNTIME_CONFIG,
-  fetchWithTimeout,
-} from "./config/api";
+import { getTokenExpiresIn, removeAllTokens } from "./utils/auth";
 import {
   buildWorkspaceShareUrl,
   buildWorkspaceUrlSearch,
   parseWorkspaceUrlState,
   replaceWorkspaceUrlSearch,
 } from "./utils/urlState";
-import { HandoverPrintTemplate } from "./components/HandoverPrintTemplate";
-import { fetchWithSession } from "./services/sessionFetch";
 
 const STORAGE_KEY_SESSIONS = "honeycomb_chat_sessions";
 const STORAGE_KEY_CURRENT_SESSION = "honeycomb_current_session";
@@ -97,12 +88,7 @@ function buildStaticServiceMeta(): ServiceMeta {
       errors_total: 0,
       error_rate: 0,
       security_headers_enabled: true,
-      auth_controls: [
-        "jwt-access-token",
-        "refresh-token",
-        "csrf-header",
-        "route-rate-limit",
-      ],
+      auth_controls: ["jwt-access-token", "refresh-token", "csrf-header", "route-rate-limit"],
     },
     evidence: {
       test_files: 9,
@@ -144,10 +130,30 @@ function buildStaticServiceMeta(): ServiceMeta {
       "Open /api/ops/runtime before claiming live Azure-backed readiness.",
     ],
     proof_assets: [
-      { label: "Health Route", path: "app/main.py", kind: "endpoint", why: "Confirms the top-level runtime envelope and next operator action." },
-      { label: "Runtime Brief Builder", path: "app/service_meta.py", kind: "endpoint", why: "Builds the runtime contract and trust boundary." },
-      { label: "Ops Runtime Route", path: "app/routers/ops.py", kind: "endpoint", why: "Provides route-by-route diagnostics before production-readiness claims." },
-      { label: "Readiness Board", path: "frontend/components/ServiceReadinessBoard.tsx", kind: "surface", why: "Shows the same posture at login and inside the main workspace." },
+      {
+        label: "Health Route",
+        path: "app/main.py",
+        kind: "endpoint",
+        why: "Confirms the top-level runtime envelope and next operator action.",
+      },
+      {
+        label: "Runtime Brief Builder",
+        path: "app/service_meta.py",
+        kind: "endpoint",
+        why: "Builds the runtime contract and trust boundary.",
+      },
+      {
+        label: "Ops Runtime Route",
+        path: "app/routers/ops.py",
+        kind: "endpoint",
+        why: "Provides route-by-route diagnostics before production-readiness claims.",
+      },
+      {
+        label: "Readiness Board",
+        path: "frontend/components/ServiceReadinessBoard.tsx",
+        kind: "surface",
+        why: "Shows the same posture at login and inside the main workspace.",
+      },
     ],
     stages: [
       {
@@ -213,10 +219,20 @@ function buildStaticServiceMeta(): ServiceMeta {
     ],
     review_flow: [
       { order: 1, title: "Login and issue a CSRF-protected session", endpoint: "/api/auth/login", persona: "operator" },
-      { order: 2, title: "Upload source documents into the selected index", endpoint: "/api/upload", persona: "operator" },
+      {
+        order: 2,
+        title: "Upload source documents into the selected index",
+        endpoint: "/api/upload",
+        persona: "operator",
+      },
       { order: 3, title: "Generate the editable handover draft", endpoint: "/api/analyze", persona: "buyer" },
       { order: 4, title: "Ask retrieval-backed follow-up questions", endpoint: "/api/chat", persona: "operator" },
-      { order: 5, title: "Inspect runtime diagnostics and security posture", endpoint: "/api/ops/runtime", persona: "security" },
+      {
+        order: 5,
+        title: "Inspect runtime diagnostics and security posture",
+        endpoint: "/api/ops/runtime",
+        persona: "security",
+      },
     ],
     links: {
       health: "/api/health",
@@ -300,10 +316,30 @@ function buildStaticServiceBrief(): ServiceBrief {
       required_checks: ["owner coverage", "timeline coverage", "risk coverage", "reference coverage"],
     },
     proof_assets: [
-      { label: "Health", path: "/api/health", kind: "endpoint", why: "Confirms whether the service is demo or live-configured before a review." },
-      { label: "Runtime Brief", path: "/api/runtime-brief", kind: "endpoint", why: "Pins trust boundary, delivery modes, and runtime watchouts in one payload." },
-      { label: "Handover Schema", path: "/api/schema/handover", kind: "endpoint", why: "Locks the editor and export contract before trusting draft structure claims." },
-      { label: "Ops Runtime", path: "/api/ops/runtime", kind: "endpoint", why: "Shows route-by-route diagnostics before any production-readiness claim." },
+      {
+        label: "Health",
+        path: "/api/health",
+        kind: "endpoint",
+        why: "Confirms whether the service is demo or live-configured before a review.",
+      },
+      {
+        label: "Runtime Brief",
+        path: "/api/runtime-brief",
+        kind: "endpoint",
+        why: "Pins trust boundary, delivery modes, and runtime watchouts in one payload.",
+      },
+      {
+        label: "Handover Schema",
+        path: "/api/schema/handover",
+        kind: "endpoint",
+        why: "Locks the editor and export contract before trusting draft structure claims.",
+      },
+      {
+        label: "Ops Runtime",
+        path: "/api/ops/runtime",
+        kind: "endpoint",
+        why: "Shows route-by-route diagnostics before any production-readiness claim.",
+      },
     ],
     links: {
       health: "/api/health",
@@ -330,12 +366,7 @@ function buildStaticHandoverSchema(): HandoverSchema {
       "resources",
       "checklist",
     ],
-    required_overview_fields: [
-      "transferor.name",
-      "transferor.position",
-      "transferee.name",
-      "transferee.position",
-    ],
+    required_overview_fields: ["transferor.name", "transferor.position", "transferee.name", "transferee.position"],
     delivery_modes: ["interactive-editor", "print-template", "retrieval-backed-chat"],
     operator_rules: [
       "Generated handover drafts require human review before production use.",
@@ -351,56 +382,40 @@ function buildStaticHandoverSchema(): HandoverSchema {
 }
 
 const App: React.FC = () => {
-  const initialWorkspaceState =
-    typeof window === "undefined"
-      ? {}
-      : parseWorkspaceUrlState(window.location.search);
+  const initialWorkspaceState = typeof window === "undefined" ? {} : parseWorkspaceUrlState(window.location.search);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [files, setFiles] = useState<SourceFile[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [handoverData, setHandoverData] = useState<HandoverData | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>(
-    () => initialWorkspaceState.viewMode ?? ViewMode.CHAT
-  );
+  const [viewMode, setViewMode] = useState<ViewMode>(() => initialWorkspaceState.viewMode ?? ViewMode.CHAT);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // 채팅 세션 관리
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(
-    () => initialWorkspaceState.sessionId ?? null
+    () => initialWorkspaceState.sessionId ?? null,
   );
-  const [selectedRagIndex, setSelectedRagIndex] =
-    useState<string>(() => initialWorkspaceState.selectedRagIndex ?? "documents-index");
+  const [selectedRagIndex, setSelectedRagIndex] = useState<string>(
+    () => initialWorkspaceState.selectedRagIndex ?? "documents-index",
+  );
   const [showEngagementHub, setShowEngagementHub] = useState(false);
-  const [healthSummary, setHealthSummary] = useState<HealthSummary>(() =>
-    buildStaticHealthSummary()
-  );
-  const [serviceMeta, setServiceMeta] = useState<ServiceMeta>(() =>
-    buildStaticServiceMeta()
-  );
-  const [serviceBrief, setServiceBrief] = useState<ServiceBrief>(() =>
-    buildStaticServiceBrief()
-  );
-  const [handoverSchema, setHandoverSchema] = useState<HandoverSchema>(() =>
-    buildStaticHandoverSchema()
-  );
+  const [healthSummary, setHealthSummary] = useState<HealthSummary>(() => buildStaticHealthSummary());
+  const [serviceMeta, setServiceMeta] = useState<ServiceMeta>(() => buildStaticServiceMeta());
+  const [serviceBrief, setServiceBrief] = useState<ServiceBrief>(() => buildStaticServiceBrief());
+  const [handoverSchema, setHandoverSchema] = useState<HandoverSchema>(() => buildStaticHandoverSchema());
   const [backendReachable, setBackendReachable] = useState(false);
-  const [apiMisconfigured, setApiMisconfigured] = useState(
-    API_RUNTIME_CONFIG.isProductionMisconfigured
-  );
+  const [apiMisconfigured, setApiMisconfigured] = useState(API_RUNTIME_CONFIG.isProductionMisconfigured);
   const [runtimeStatusMessage, setRuntimeStatusMessage] = useState(() =>
     API_RUNTIME_CONFIG.isProductionMisconfigured
       ? "지금은 기록된 리뷰 모드입니다. backend 주소를 붙이면 live handover 흐름까지 바로 이어집니다."
-      : "백엔드 연결 상태를 확인 중입니다."
+      : "백엔드 연결 상태를 확인 중입니다.",
   );
   const [workspaceNotice, setWorkspaceNotice] = useState("");
 
   // localStorage에서 세션 로드
   useEffect(() => {
     const savedSessions = localStorage.getItem(STORAGE_KEY_SESSIONS);
-    const savedCurrentSession = localStorage.getItem(
-      STORAGE_KEY_CURRENT_SESSION
-    );
+    const savedCurrentSession = localStorage.getItem(STORAGE_KEY_CURRENT_SESSION);
 
     if (savedSessions) {
       try {
@@ -436,24 +451,16 @@ const App: React.FC = () => {
         viewMode,
         sessionId: currentSessionId ?? undefined,
         selectedRagIndex,
-      })
+      }),
     );
   }, [currentSessionId, selectedRagIndex, viewMode]);
 
   // 세션 선택 시 메시지 로드
   useEffect(() => {
-    const selectedSession = chatSessions.find(
-      (session) => session.id === currentSessionId
-    );
+    const selectedSession = chatSessions.find((session) => session.id === currentSessionId);
     if (selectedSession) {
       setMessages(selectedSession.messages);
-      console.log(
-        "📂 세션 로드됨:",
-        selectedSession.title,
-        "메시지",
-        selectedSession.messages.length,
-        "개"
-      );
+      console.log("📂 세션 로드됨:", selectedSession.title, "메시지", selectedSession.messages.length, "개");
     }
   }, [currentSessionId, chatSessions]);
 
@@ -488,11 +495,7 @@ const App: React.FC = () => {
     let cancelled = false;
 
     async function loadServiceSurfaces() {
-      async function loadSurface<T>(
-        url: string,
-        fallback: () => T,
-        assign: (value: T) => void
-      ) {
+      async function loadSurface<T>(url: string, fallback: () => T, assign: (value: T) => void) {
         try {
           const response = await fetchWithTimeout(url, {}, 8000);
           const data = await response.json().catch(() => null);
@@ -519,33 +522,17 @@ const App: React.FC = () => {
           setBackendReachable(false);
           setApiMisconfigured(true);
           setRuntimeStatusMessage(
-            "지금은 기록된 리뷰 모드입니다. live handover 흐름이 필요하면 backend 주소만 연결하면 됩니다."
+            "지금은 기록된 리뷰 모드입니다. live handover 흐름이 필요하면 backend 주소만 연결하면 됩니다.",
           );
         }
         return;
       }
 
       const [healthLive] = await Promise.all([
-        loadSurface<HealthSummary>(
-          API_ENDPOINTS.HEALTH,
-          buildStaticHealthSummary,
-          setHealthSummary
-        ),
-        loadSurface<ServiceMeta>(
-          API_ENDPOINTS.META,
-          buildStaticServiceMeta,
-          setServiceMeta
-        ),
-        loadSurface<ServiceBrief>(
-          API_ENDPOINTS.RUNTIME_BRIEF,
-          buildStaticServiceBrief,
-          setServiceBrief
-        ),
-        loadSurface<HandoverSchema>(
-          API_ENDPOINTS.HANDOVER_SCHEMA,
-          buildStaticHandoverSchema,
-          setHandoverSchema
-        ),
+        loadSurface<HealthSummary>(API_ENDPOINTS.HEALTH, buildStaticHealthSummary, setHealthSummary),
+        loadSurface<ServiceMeta>(API_ENDPOINTS.META, buildStaticServiceMeta, setServiceMeta),
+        loadSurface<ServiceBrief>(API_ENDPOINTS.RUNTIME_BRIEF, buildStaticServiceBrief, setServiceBrief),
+        loadSurface<HandoverSchema>(API_ENDPOINTS.HANDOVER_SCHEMA, buildStaticHandoverSchema, setHandoverSchema),
       ]);
 
       if (!cancelled) {
@@ -554,7 +541,7 @@ const App: React.FC = () => {
         setRuntimeStatusMessage(
           healthLive
             ? "백엔드가 연결되어 live service surface를 표시 중입니다."
-            : "백엔드에 연결할 수 없어 리뷰 전용 정적 surface를 표시 중입니다."
+            : "백엔드에 연결할 수 없어 리뷰 전용 정적 surface를 표시 중입니다.",
         );
       }
     }
@@ -581,9 +568,7 @@ const App: React.FC = () => {
   };
 
   const handleFileUpdate = (id: string, patch: Partial<SourceFile>) => {
-    setFiles((prev) =>
-      prev.map((file) => (file.id === id ? { ...file, ...patch } : file))
-    );
+    setFiles((prev) => prev.map((file) => (file.id === id ? { ...file, ...patch } : file)));
   };
 
   const handleFileRemove = (id: string) => {
@@ -601,7 +586,7 @@ const App: React.FC = () => {
         viewMode,
         sessionId: currentSessionId ?? undefined,
         selectedRagIndex,
-      })
+      }),
     );
 
     try {
@@ -619,7 +604,7 @@ const App: React.FC = () => {
         viewMode,
         sessionId: currentSessionId ?? undefined,
         selectedRagIndex,
-      })
+      }),
     );
     const reviewRoutes = Object.values(healthSummary?.links || {}).filter(Boolean);
     const lines = [
@@ -630,7 +615,7 @@ const App: React.FC = () => {
       `Share link: ${shareUrl}`,
       "",
       "Two-minute review",
-      ...((serviceMeta?.two_minute_review || []).map((item) => `- ${item}`)),
+      ...(serviceMeta?.two_minute_review || []).map((item) => `- ${item}`),
       "",
       "Fast routes",
       ...(reviewRoutes.length > 0 ? reviewRoutes.map((item) => `- ${item}`) : ["- Runtime links unavailable."]),
@@ -679,7 +664,9 @@ const App: React.FC = () => {
       `Auth controls: ${(serviceMeta?.runtime?.auth_controls || []).join(", ") || "unknown"}`,
       "",
       "Fast routes",
-      ...(reviewRoutes.length > 0 ? reviewRoutes.slice(0, 5).map((item) => `- ${item}`) : ["- Runtime links unavailable."]),
+      ...(reviewRoutes.length > 0
+        ? reviewRoutes.slice(0, 5).map((item) => `- ${item}`)
+        : ["- Runtime links unavailable."]),
     ];
 
     try {
@@ -696,10 +683,7 @@ const App: React.FC = () => {
       const target = event.target as HTMLElement | null;
       const tagName = String(target?.tagName || "").toLowerCase();
       const isTypingTarget =
-        Boolean(target?.isContentEditable) ||
-        tagName === "input" ||
-        tagName === "textarea" ||
-        tagName === "select";
+        Boolean(target?.isContentEditable) || tagName === "input" || tagName === "textarea" || tagName === "select";
       if (isTypingTarget || event.metaKey || event.ctrlKey || event.altKey) {
         return;
       }
@@ -732,7 +716,9 @@ const App: React.FC = () => {
       }
       if (key === "?") {
         event.preventDefault();
-        setWorkspaceNotice("Shortcuts: 1 chat · 2 history · ⇧L link · ⇧B bundle · ⇧S session snapshot · ⇧X security snapshot · ⇧N new chat");
+        setWorkspaceNotice(
+          "Shortcuts: 1 chat · 2 history · ⇧L link · ⇧B bundle · ⇧S session snapshot · ⇧X security snapshot · ⇧N new chat",
+        );
         return;
       }
       if (event.shiftKey) {
@@ -750,26 +736,19 @@ const App: React.FC = () => {
     window.addEventListener("keydown", handleKeyboardShortcuts);
     return () => window.removeEventListener("keydown", handleKeyboardShortcuts);
   }, [
-    currentSessionId,
-    files.length,
-    healthSummary?.links,
-    healthSummary?.status,
-    messages.length,
-    selectedRagIndex,
     handleCopyFocusedSession,
     handleCopySecuritySnapshot,
-    serviceMeta?.two_minute_review,
-    viewMode,
+    handleCopyReviewerBundle,
+    handleCopyWorkspaceLink,
+    handleNewChat,
   ]);
 
   const updateCurrentSessionMessages = (newMessages: ChatMessage[]) => {
     if (!currentSessionId) return;
     setChatSessions((prev) =>
       prev.map((session) =>
-        session.id === currentSessionId
-          ? { ...session, messages: newMessages, updatedAt: new Date() }
-          : session
-      )
+        session.id === currentSessionId ? { ...session, messages: newMessages, updatedAt: new Date() } : session,
+      ),
     );
   };
 
@@ -795,12 +774,7 @@ const App: React.FC = () => {
     }
 
     try {
-      const responseText = await chatWithAssistant(
-        text,
-        files,
-        updatedMessages,
-        selectedRagIndex
-      );
+      const responseText = await chatWithAssistant(text, files, updatedMessages, selectedRagIndex);
       const aiMsg: ChatMessage = { role: "assistant", text: responseText };
       const finalMessages = [...updatedMessages, aiMsg];
       setMessages(finalMessages);
@@ -824,9 +798,7 @@ const App: React.FC = () => {
     try {
       let filesToAnalyze = files.filter(
         (file) =>
-          !file.uploadStatus ||
-          file.uploadStatus === "completed" ||
-          file.uploadStatus === "completed_with_warning"
+          !file.uploadStatus || file.uploadStatus === "completed" || file.uploadStatus === "completed_with_warning",
       );
 
       // 업로드된 파일이 없으면 AI Search 인덱스에서 문서 가져오기
@@ -837,21 +809,19 @@ const App: React.FC = () => {
       }
 
       if (filesToAnalyze.length === 0) {
-        console.log(
-          "📚 업로드된 파일이 없음 - AI Search 인덱스에서 문서 조회..."
-        );
+        console.log("📚 업로드된 파일이 없음 - AI Search 인덱스에서 문서 조회...");
         try {
           const indexName = selectedRagIndex || "documents-index";
           const response = await fetchWithSession(
             `${API_ENDPOINTS.DOCUMENTS}?index_name=${encodeURIComponent(indexName)}`,
-            {}
+            {},
           );
           if (response.ok) {
             const data = await response.json();
             if (data.documents && data.documents.length > 0) {
               console.log(`✅ 인덱스에서 ${data.documents.length}개 문서 조회`);
               // 인덱스 문서들을 SourceFile 형식으로 변환
-              filesToAnalyze = data.documents.map((doc: any, idx: number) => ({
+              filesToAnalyze = data.documents.map((doc: any, _idx: number) => ({
                 id: doc.id,
                 name: doc.file_name,
                 type: "text/plain",
@@ -859,17 +829,13 @@ const App: React.FC = () => {
                 mimeType: "text/plain",
               }));
               console.log(
-                `📄 변환된 파일 수: ${
-                  filesToAnalyze.length
-                }, 총 길이: ${filesToAnalyze.reduce(
+                `📄 변환된 파일 수: ${filesToAnalyze.length}, 총 길이: ${filesToAnalyze.reduce(
                   (sum, f) => sum + f.content.length,
-                  0
-                )}`
+                  0,
+                )}`,
               );
             } else {
-              alert(
-                "업로드된 파일도 없고, AI Search 인덱스에도 문서가 없습니다. 먼저 자료를 추가해주세요!"
-              );
+              alert("업로드된 파일도 없고, AI Search 인덱스에도 문서가 없습니다. 먼저 자료를 추가해주세요!");
               setIsProcessing(false);
               return;
             }
@@ -879,8 +845,8 @@ const App: React.FC = () => {
           const errorMsg = error instanceof Error ? error.message : String(error);
           alert(
             `인덱스에서 문서를 가져오는 데 실패했습니다.\n\n` +
-            `오류: ${errorMsg}\n\n` +
-            `백엔드가 실행 중인지 확인하거나, 자료 보관함에 파일을 직접 추가해주세요.`
+              `오류: ${errorMsg}\n\n` +
+              `백엔드가 실행 중인지 확인하거나, 자료 보관함에 파일을 직접 추가해주세요.`,
           );
           setIsProcessing(false);
           return;
@@ -923,7 +889,12 @@ const App: React.FC = () => {
   }
 
   return (
-    <div id="app-container" className="h-screen bg-[#FFFDF0] text-gray-900 overflow-hidden relative" role="application" aria-label="Honeypot AI Handover System">
+    <div
+      id="app-container"
+      className="h-screen bg-[#FFFDF0] text-gray-900 overflow-hidden relative"
+      role="application"
+      aria-label="Honeypot AI Handover System"
+    >
       <div className="main-ui flex h-full w-full">
         <div className="honeycomb-bg"></div>
 
@@ -943,9 +914,7 @@ const App: React.FC = () => {
               <div className="flex items-center gap-4">
                 <div className="w-2.5 h-10 bg-yellow-400 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-black text-gray-800 tracking-tighter">
-                    인수인계 리포트 마스터
-                  </h2>
+                  <h2 className="text-2xl font-black text-gray-800 tracking-tighter">인수인계 리포트 마스터</h2>
                   <p className="text-[10px] font-black text-yellow-600 uppercase tracking-[0.2em] mt-0.5">
                     Interactive Handover Editor
                   </p>
@@ -989,11 +958,10 @@ const App: React.FC = () => {
                     </ul>
                   </div>
                   <div className="rounded-2xl border border-gray-200 bg-gray-50/80 p-4">
-                    <p className="text-[10px] font-black tracking-[0.16em] text-gray-500 uppercase">
-                      Export posture
-                    </p>
+                    <p className="text-[10px] font-black tracking-[0.16em] text-gray-500 uppercase">Export posture</p>
                     <p className="mt-2 text-[11px] leading-relaxed text-gray-700">
-                      Editor export는 좌측 completeness gate가 열릴 때만 진행됩니다. 여기서는 reviewer에게 현재 상태와 근거 route를 넘기는 것까지만 돕습니다.
+                      Editor export는 좌측 completeness gate가 열릴 때만 진행됩니다. 여기서는 reviewer에게 현재 상태와
+                      근거 route를 넘기는 것까지만 돕습니다.
                     </p>
                   </div>
                 </div>
@@ -1046,20 +1014,15 @@ const App: React.FC = () => {
                     </span>
                   )}
                 </div>
-                {workspaceNotice && (
-                  <p className="mt-3 text-[11px] font-bold text-yellow-700">{workspaceNotice}</p>
-                )}
+                {workspaceNotice && <p className="mt-3 text-[11px] font-bold text-yellow-700">{workspaceNotice}</p>}
                 <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
-                  Shortcuts: 1 chat · 2 history · ⇧L link · ⇧B bundle · ⇧S session snapshot · ⇧X security snapshot · ⇧N new chat
+                  Shortcuts: 1 chat · 2 history · ⇧L link · ⇧B bundle · ⇧S session snapshot · ⇧X security snapshot · ⇧N
+                  new chat
                 </p>
               </section>
               <section className="rounded-2xl border border-gray-300 bg-white/95 p-4 shadow-sm">
-                <p className="text-[10px] font-black tracking-[0.16em] text-gray-500 uppercase">
-                  Sponsored
-                </p>
-                <p className="mt-1 text-[11px] text-gray-700 leading-relaxed">
-                  Google AdSense 광고 영역
-                </p>
+                <p className="text-[10px] font-black tracking-[0.16em] text-gray-500 uppercase">Sponsored</p>
+                <p className="mt-1 text-[11px] text-gray-700 leading-relaxed">Google AdSense 광고 영역</p>
                 <div className="mt-2">
                   <AdSenseSlot />
                 </div>
@@ -1092,16 +1055,36 @@ const App: React.FC = () => {
       <aside className="mx-5 mb-5 max-w-[480px] rounded-2xl border border-gray-300 bg-white/95 shadow-xl p-4">
         <p className="text-[10px] font-black tracking-[0.16em] text-gray-500 uppercase">Trust & Policy</p>
         <p className="mt-1 text-[11px] text-gray-700 leading-relaxed">
-          Contact: <a className="underline" href="https://github.com/KIM3310/honeypot/issues">GitHub Issues</a> · Privacy: only handover workflow data needed for this service is retained.
+          Contact:{" "}
+          <a className="underline" href="https://github.com/KIM3310/honeypot/issues">
+            GitHub Issues
+          </a>{" "}
+          · Privacy: only handover workflow data needed for this service is retained.
         </p>
         <p className="mt-1 text-[11px] text-gray-700 leading-relaxed">
           Terms: generated handover drafts require human approval before production use.
         </p>
         <p className="mt-1 text-[11px] text-gray-700 leading-relaxed">
-          Links: <a className="underline" href="/about.html">About</a> · <a className="underline" href="/privacy.html">Privacy</a> ·{" "}
-          <a className="underline" href="/terms.html">Terms</a> ·{" "}
-          <a className="underline" href="/contact.html">Contact</a> ·{" "}
-          <a className="underline" href="/compliance.html">Compliance</a>
+          Links:{" "}
+          <a className="underline" href="/about.html">
+            About
+          </a>{" "}
+          ·{" "}
+          <a className="underline" href="/privacy.html">
+            Privacy
+          </a>{" "}
+          ·{" "}
+          <a className="underline" href="/terms.html">
+            Terms
+          </a>{" "}
+          ·{" "}
+          <a className="underline" href="/contact.html">
+            Contact
+          </a>{" "}
+          ·{" "}
+          <a className="underline" href="/compliance.html">
+            Compliance
+          </a>
         </p>
       </aside>
 

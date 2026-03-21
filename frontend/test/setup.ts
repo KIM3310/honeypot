@@ -1,6 +1,6 @@
-import '@testing-library/jest-dom';
-import { afterEach, vi } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import "@testing-library/jest-dom";
+import { cleanup } from "@testing-library/react";
+import { afterEach, vi } from "vitest";
 
 // Provide a proper localStorage implementation for test environment
 // vitest v4 + jsdom sometimes provides a non-functional localStorage
@@ -26,7 +26,7 @@ const localStorageMock: Storage = {
   },
 };
 
-Object.defineProperty(globalThis, 'localStorage', {
+Object.defineProperty(globalThis, "localStorage", {
   value: localStorageMock,
   writable: true,
   configurable: true,
@@ -38,7 +38,7 @@ afterEach(() => {
 });
 
 // Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({
     matches: false,
@@ -58,7 +58,7 @@ class MockIntersectionObserver {
   unobserve = vi.fn();
   disconnect = vi.fn();
 }
-vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
 
 // Mock scrollTo
 Element.prototype.scrollTo = vi.fn() as any;

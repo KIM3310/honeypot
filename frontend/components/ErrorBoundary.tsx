@@ -1,7 +1,7 @@
-import React from 'react';
-import { createLogger } from '../lib/logger';
+import React from "react";
+import { createLogger } from "../lib/logger";
 
-const logger = createLogger('ErrorBoundary');
+const logger = createLogger("ErrorBoundary");
 
 interface Props {
   children: React.ReactNode;
@@ -24,10 +24,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    logger.error('Uncaught error in component tree', {
+    logger.error("Uncaught error in component tree", {
       error: error.message,
-      stack: error.stack ?? 'no stack',
-      componentStack: errorInfo.componentStack ?? 'no component stack',
+      stack: error.stack ?? "no stack",
+      componentStack: errorInfo.componentStack ?? "no component stack",
     });
   }
 
@@ -43,11 +43,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
       return (
         <div className="flex flex-col items-center justify-center min-h-[200px] p-8 bg-red-50 border border-red-200 rounded-2xl text-center">
-          <h2 className="text-lg font-black text-red-800 mb-2">
-            Something went wrong
-          </h2>
+          <h2 className="text-lg font-black text-red-800 mb-2">Something went wrong</h2>
           <p className="text-sm text-red-600 mb-4 max-w-md">
-            {this.state.error?.message ?? 'An unexpected error occurred.'}
+            {this.state.error?.message ?? "An unexpected error occurred."}
           </p>
           <button
             onClick={this.handleRetry}

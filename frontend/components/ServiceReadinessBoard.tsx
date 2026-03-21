@@ -1,5 +1,5 @@
 import React from "react";
-import { HandoverSchema, HealthSummary, ServiceBrief, ServiceMeta } from "../types";
+import type { HandoverSchema, HealthSummary, ServiceBrief, ServiceMeta } from "../types";
 
 interface Props {
   handoverSchema: HandoverSchema | null;
@@ -78,24 +78,24 @@ const ServiceReadinessBoard: React.FC<Props> = ({
   const visibleStages = compact ? serviceMeta.stages.slice(0, 3) : serviceMeta.stages;
   const visibleWatchouts = compact
     ? (serviceBrief?.watchouts ?? serviceMeta.watchouts).slice(0, 2)
-    : serviceBrief?.watchouts ?? serviceMeta.watchouts;
+    : (serviceBrief?.watchouts ?? serviceMeta.watchouts);
   const reviewSteps = compact
     ? (serviceBrief?.review_flow ?? serviceMeta.review_flow.map((step) => step.title)).slice(0, 3)
-    : serviceBrief?.review_flow ?? serviceMeta.review_flow.map((step) => step.title);
+    : (serviceBrief?.review_flow ?? serviceMeta.review_flow.map((step) => step.title));
   const twoMinuteReview = compact
     ? (serviceBrief?.two_minute_review ?? serviceMeta.two_minute_review).slice(0, 3)
-    : serviceBrief?.two_minute_review ?? serviceMeta.two_minute_review;
+    : (serviceBrief?.two_minute_review ?? serviceMeta.two_minute_review);
   const proofAssets = compact
     ? (serviceBrief?.proof_assets ?? serviceMeta.proof_assets).slice(0, 3)
-    : serviceBrief?.proof_assets ?? serviceMeta.proof_assets;
+    : (serviceBrief?.proof_assets ?? serviceMeta.proof_assets);
   const reviewLinks = Array.from(
     new Map(
       [
         ...(serviceBrief ? Object.entries(serviceBrief.links || {}) : []),
         ...Object.entries(serviceMeta.links || {}),
         ...Object.entries(handoverSchema.links || {}),
-      ].filter(([, path]) => typeof path === "string" && path)
-    ).entries()
+      ].filter(([, path]) => typeof path === "string" && path),
+    ).entries(),
   ).slice(0, compact ? 4 : 6);
   const reviewLinkHints: Record<string, string> = {
     health: "Confirm runtime mode and the next operator action before the walkthrough.",
@@ -108,10 +108,9 @@ const ServiceReadinessBoard: React.FC<Props> = ({
     deployment_guide: "Show the deployment path that follows the demo surface.",
     railway_deployment: "Keep hosted demo setup legible without leaving the repo context.",
   };
-  const reviewRouteText = [
-    "Honeypot review routes",
-    ...reviewLinks.map(([label, path]) => `- ${label}: ${path}`),
-  ].join("\n");
+  const reviewRouteText = ["Honeypot review routes", ...reviewLinks.map(([label, path]) => `- ${label}: ${path}`)].join(
+    "\n",
+  );
   const localQualityText = healthSummary.verification
     ? [
         "Honeypot local quality gate",
@@ -123,10 +122,7 @@ const ServiceReadinessBoard: React.FC<Props> = ({
         `- python: ${healthSummary.verification.python_executable}`,
       ].join("\n")
     : "";
-  const twoMinuteReviewText = [
-    "Honeypot review flow",
-    ...twoMinuteReview.map((step) => `- ${step}`),
-  ].join("\n");
+  const twoMinuteReviewText = ["Honeypot review flow", ...twoMinuteReview.map((step) => `- ${step}`)].join("\n");
   const evidenceText = [
     "Honeypot evidence snapshot",
     ...reviewLinks.map(([label, path]) => `- ${label}: ${path}`),
@@ -226,7 +222,8 @@ const ServiceReadinessBoard: React.FC<Props> = ({
   const lensContent = {
     operator: {
       title: "Handover lead lens",
-      summary: "Health → Runtime Brief → Handover Schema → Ops Runtime 순서로 읽으면 handover loop가 가장 빨리 드러납니다.",
+      summary:
+        "Health → Runtime Brief → Handover Schema → Ops Runtime 순서로 읽으면 handover loop가 가장 빨리 드러납니다.",
       cards: [
         ["01 · Health", "현재 모드와 다음 operator action부터 먼저 확인합니다."],
         ["02 · Draft contract", "handover schema와 runtime brief가 같은 editor contract를 가리키는지 봅니다."],
@@ -257,18 +254,16 @@ const ServiceReadinessBoard: React.FC<Props> = ({
     <section className="rounded-[2rem] border border-yellow-200 bg-white/95 shadow-[0_20px_40px_-20px_rgba(15,23,42,0.28)] p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-black tracking-[0.18em] text-yellow-600 uppercase">
-            Service Brief
-          </p>
+          <p className="text-[10px] font-black tracking-[0.18em] text-yellow-600 uppercase">Service Brief</p>
           <h3 className="mt-1 text-lg font-black text-gray-900 tracking-tight">
             {serviceBrief ? "Runtime Contract and Review Pack" : "Enterprise Handover Readiness"}
           </h3>
-          <p className="mt-1 text-xs text-gray-600 leading-relaxed">
-            {serviceBrief?.headline ?? serviceMeta.tagline}
-          </p>
+          <p className="mt-1 text-xs text-gray-600 leading-relaxed">{serviceBrief?.headline ?? serviceMeta.tagline}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide ${healthTone(healthSummary.status)}`}>
+          <span
+            className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide ${healthTone(healthSummary.status)}`}
+          >
             health {healthSummary.status}
           </span>
           <span className="rounded-full bg-gray-900 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-white">
@@ -283,9 +278,7 @@ const ServiceReadinessBoard: React.FC<Props> = ({
       {serviceBrief ? (
         <div className="mt-4 grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
-              Runtime Contract
-            </p>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Runtime Contract</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide text-gray-600 border border-gray-200">
                 {serviceBrief.readiness_contract}
@@ -300,16 +293,12 @@ const ServiceReadinessBoard: React.FC<Props> = ({
             <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
               <article className="rounded-2xl bg-white p-3 border border-gray-200">
                 <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Auth</p>
-                <strong className="mt-1 block text-sm font-black text-gray-900">
-                  CSRF + JWT
-                </strong>
+                <strong className="mt-1 block text-sm font-black text-gray-900">CSRF + JWT</strong>
                 <p className="mt-1 text-[11px] text-gray-600">{serviceBrief.auth_mode}</p>
               </article>
               <article className="rounded-2xl bg-white p-3 border border-gray-200">
                 <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Retrieve</p>
-                <strong className="mt-1 block text-sm font-black text-gray-900">
-                  Handover RAG
-                </strong>
+                <strong className="mt-1 block text-sm font-black text-gray-900">Handover RAG</strong>
                 <p className="mt-1 text-[11px] text-gray-600">{serviceBrief.retrieval_mode}</p>
               </article>
               <article className="rounded-2xl bg-white p-3 border border-gray-200">
@@ -338,17 +327,13 @@ const ServiceReadinessBoard: React.FC<Props> = ({
                 <li key={step}>• {step}</li>
               ))}
             </ul>
-            <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
-              Review Flow
-            </p>
+            <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Review Flow</p>
             <ul className="mt-2 space-y-2 text-xs text-gray-700">
               {twoMinuteReview.map((step) => (
                 <li key={step}>• {step}</li>
               ))}
             </ul>
-            <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
-              Trust Boundary
-            </p>
+            <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Trust Boundary</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {serviceBrief.trust_boundary.slice(0, compact ? 3 : 5).map((item) => (
                 <span
@@ -366,9 +351,7 @@ const ServiceReadinessBoard: React.FC<Props> = ({
       <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         <article className="rounded-2xl bg-yellow-50 p-3 border border-yellow-100">
           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-700">Tests</p>
-          <strong className="mt-1 block text-2xl font-black text-gray-900">
-            {serviceMeta.evidence.test_files}
-          </strong>
+          <strong className="mt-1 block text-2xl font-black text-gray-900">{serviceMeta.evidence.test_files}</strong>
         </article>
         <article className="rounded-2xl bg-yellow-50 p-3 border border-yellow-100">
           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-700">Deploy Docs</p>
@@ -378,9 +361,7 @@ const ServiceReadinessBoard: React.FC<Props> = ({
         </article>
         <article className="rounded-2xl bg-yellow-50 p-3 border border-yellow-100">
           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-700">Requests</p>
-          <strong className="mt-1 block text-2xl font-black text-gray-900">
-            {healthSummary.requests_total}
-          </strong>
+          <strong className="mt-1 block text-2xl font-black text-gray-900">{healthSummary.requests_total}</strong>
         </article>
         <article className="rounded-2xl bg-yellow-50 p-3 border border-yellow-100">
           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-700">Origins</p>
@@ -490,7 +471,9 @@ const ServiceReadinessBoard: React.FC<Props> = ({
         <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {reviewLinks.map(([label, path]) => (
             <article key={`${label}-${path}`} className="rounded-2xl border border-gray-200 bg-gray-50/70 p-3">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-gray-500">{label.replaceAll("_", " ")}</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-gray-500">
+                {label.replaceAll("_", " ")}
+              </p>
               <code className="mt-2 block rounded-xl bg-white px-2 py-1 text-[10px] text-gray-600 border border-gray-200">
                 {path}
               </code>
@@ -578,7 +561,9 @@ const ServiceReadinessBoard: React.FC<Props> = ({
           <article key={stage.key} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-black text-gray-900">{stage.label}</p>
-              <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${readinessTone(stage.readiness)}`}>
+              <span
+                className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${readinessTone(stage.readiness)}`}
+              >
                 {stage.readiness.replace("_", " ")}
               </span>
             </div>
@@ -606,14 +591,12 @@ const ServiceReadinessBoard: React.FC<Props> = ({
             {serviceBrief
               ? reviewSteps.map((step, index) => (
                   <li key={step}>
-                    <span className="font-black text-gray-900">{String(index + 1).padStart(2, "0")}</span>
-                    {" "} {step}
+                    <span className="font-black text-gray-900">{String(index + 1).padStart(2, "0")}</span> {step}
                   </li>
                 ))
               : serviceMeta.review_flow.slice(0, compact ? 3 : 5).map((step) => (
                   <li key={`${step.order}-${step.endpoint}`}>
-                    <span className="font-black text-gray-900">{String(step.order).padStart(2, "0")}</span>
-                    {" "} {step.title}
+                    <span className="font-black text-gray-900">{String(step.order).padStart(2, "0")}</span> {step.title}
                     <code className="mt-1 block rounded-xl bg-gray-100 px-2 py-1 text-[10px] text-gray-600">
                       {step.endpoint}
                     </code>
@@ -629,9 +612,7 @@ const ServiceReadinessBoard: React.FC<Props> = ({
               <li key={item}>• {item}</li>
             ))}
           </ul>
-          <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
-            Proof Assets
-          </p>
+          <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">Proof Assets</p>
           <ul className="mt-2 space-y-2 text-xs text-gray-700">
             {proofAssets.map((asset) => (
               <li key={`${asset.kind}-${asset.path}`}>
@@ -639,15 +620,11 @@ const ServiceReadinessBoard: React.FC<Props> = ({
                 <code className="mt-1 block rounded-xl bg-gray-100 px-2 py-1 text-[10px] text-gray-600">
                   {asset.path}
                 </code>
-                {asset.why ? (
-                  <p className="mt-1 text-[11px] text-gray-500">{asset.why}</p>
-                ) : null}
+                {asset.why ? <p className="mt-1 text-[11px] text-gray-500">{asset.why}</p> : null}
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
-            next action
-          </p>
+          <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">next action</p>
           <p className="mt-1 text-xs text-gray-700">{healthSummary.diagnostics.next_action}</p>
         </div>
       </div>
