@@ -70,9 +70,9 @@ export const HandoverPrintTemplate: React.FC<Props> = ({ data }) => {
               <th className="border border-black bg-gray-50 p-3 text-center font-bold">주요 책임</th>
               <td className="border border-black p-3">
                 <ul className="list-disc pl-6 space-y-2">
-                  {(data.jobStatus?.responsibilities || []).map((r, i) => (
-                    <li key={i} className="text-gray-800">
-                      {r}
+                  {(data.jobStatus?.responsibilities || []).map((responsibility) => (
+                    <li key={responsibility} className="text-gray-800">
+                      {responsibility}
                     </li>
                   ))}
                 </ul>
@@ -97,14 +97,16 @@ export const HandoverPrintTemplate: React.FC<Props> = ({ data }) => {
             </tr>
           </thead>
           <tbody>
-            {(data.priorities || []).map((p, i) => (
-              <tr key={i}>
-                <td className="border border-black p-3 text-center font-mono">{i + 1}</td>
-                <td className="border border-black p-3 bg-white font-bold">{p.title}</td>
+            {(data.priorities || []).map((priority, index) => (
+              <tr key={`${priority.title}-${priority.deadline ?? "no-deadline"}`}>
+                <td className="border border-black p-3 text-center font-mono">{index + 1}</td>
+                <td className="border border-black p-3 bg-white font-bold">{priority.title}</td>
                 <td className="border border-black p-3 text-center">
-                  <span className="px-2 py-1 border border-black text-[10px] font-bold uppercase">{p.status}</span>
+                  <span className="px-2 py-1 border border-black text-[10px] font-bold uppercase">
+                    {priority.status}
+                  </span>
                 </td>
-                <td className="border border-black p-3 text-center font-mono">{p.deadline}</td>
+                <td className="border border-black p-3 text-center font-mono">{priority.deadline}</td>
               </tr>
             ))}
           </tbody>
@@ -126,12 +128,12 @@ export const HandoverPrintTemplate: React.FC<Props> = ({ data }) => {
             </tr>
           </thead>
           <tbody>
-            {(data.ongoingProjects || []).map((p, i) => (
-              <tr key={i}>
-                <td className="border border-black p-3 font-bold">{p.name}</td>
-                <td className="border border-black p-3 text-center">{p.owner}</td>
-                <td className="border border-black p-3 text-center font-mono">{p.progress}%</td>
-                <td className="border border-black p-3 text-xs leading-normal bg-gray-50/30">{p.description}</td>
+            {(data.ongoingProjects || []).map((project) => (
+              <tr key={`${project.name}-${project.owner}`}>
+                <td className="border border-black p-3 font-bold">{project.name}</td>
+                <td className="border border-black p-3 text-center">{project.owner}</td>
+                <td className="border border-black p-3 text-center font-mono">{project.progress}%</td>
+                <td className="border border-black p-3 text-xs leading-normal bg-gray-50/30">{project.description}</td>
               </tr>
             ))}
           </tbody>
@@ -162,12 +164,12 @@ export const HandoverPrintTemplate: React.FC<Props> = ({ data }) => {
         </h2>
         <div className="border-2 border-black p-4 text-sm bg-white">
           <ul className="list-disc pl-5 space-y-3">
-            {(data.resources?.docs || []).map((d, i) => (
-              <li key={i}>
+            {(data.resources?.docs || []).map((doc) => (
+              <li key={`${doc.category}-${doc.name}-${doc.location}`}>
                 <div className="font-bold">
-                  [{d.category}] {d.name}
+                  [{doc.category}] {doc.name}
                 </div>
-                <div className="text-[10px] text-gray-400 font-mono italic">{d.location}</div>
+                <div className="text-[10px] text-gray-400 font-mono italic">{doc.location}</div>
               </li>
             ))}
           </ul>

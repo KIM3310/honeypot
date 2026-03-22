@@ -40,9 +40,9 @@ const ChatWindow: React.FC<Props> = ({
   isProcessing,
   files,
   chatSessions,
-  setChatSessions,
+  setChatSessions: _setChatSessions,
   currentSessionId,
-  setCurrentSessionId,
+  setCurrentSessionId: _setCurrentSessionId,
   onNewChat,
   onSelectSession,
   selectedRagIndex,
@@ -179,6 +179,7 @@ const ChatWindow: React.FC<Props> = ({
         <div className="flex gap-3 items-center">
           <div className="flex bg-gray-100 p-1 rounded-xl">
             <button
+              type="button"
               onClick={() => setViewMode(ViewMode.CHAT)}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                 viewMode === ViewMode.CHAT ? "bg-white text-yellow-600 shadow-sm" : "text-gray-400 hover:text-gray-600"
@@ -187,6 +188,7 @@ const ChatWindow: React.FC<Props> = ({
               채팅
             </button>
             <button
+              type="button"
               onClick={() => setViewMode(ViewMode.CHAT_HISTORY)}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                 viewMode === ViewMode.CHAT_HISTORY
@@ -199,6 +201,7 @@ const ChatWindow: React.FC<Props> = ({
           </div>
           {viewMode === ViewMode.CHAT && messages.length > 0 && (
             <button
+              type="button"
               onClick={onNewChat}
               className="px-3 py-2 rounded-lg text-xs font-bold bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition-all active:scale-95"
             >
@@ -259,6 +262,7 @@ const ChatWindow: React.FC<Props> = ({
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={onGenerate}
                   disabled={isProcessing || !hasUsableSources}
                   className="w-full bg-yellow-400 text-white py-4 rounded-2xl font-black shadow-xl shadow-yellow-100 hover:bg-yellow-500 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 mb-3"
@@ -272,6 +276,7 @@ const ChatWindow: React.FC<Props> = ({
                   </p>
                 )}
                 <button
+                  type="button"
                   onClick={onNewChat}
                   className="w-full bg-gray-200 text-gray-700 py-3 rounded-2xl font-bold hover:bg-gray-300 transition-all active:scale-95"
                 >
@@ -279,8 +284,11 @@ const ChatWindow: React.FC<Props> = ({
                 </button>
               </div>
             ) : (
-              messages.map((msg, idx) => (
-                <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              messages.map((msg) => (
+                <div
+                  key={`${msg.role}-${msg.text}-${msg.text.length}`}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
                   <div
                     className={`max-w-[85%] rounded-3xl px-5 py-3.5 shadow-sm border ${
                       msg.role === "user"
@@ -332,10 +340,11 @@ const ChatWindow: React.FC<Props> = ({
               </div>
             ) : (
               chatSessions.map((session) => (
-                <div
+                <button
                   key={session.id}
+                  type="button"
                   onClick={() => onSelectSession(session.id)}
-                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  className={`w-full rounded-xl border-2 p-4 text-left transition-all ${
                     currentSessionId === session.id
                       ? "bg-blue-50 border-blue-400"
                       : "bg-gray-50 border-gray-200 hover:border-blue-300"
@@ -351,7 +360,7 @@ const ChatWindow: React.FC<Props> = ({
                     {session.messages[session.messages.length - 1]?.text || "내용이 없습니다"}
                   </p>
                   <div className="text-[10px] text-gray-400 mt-2">메시지 {session.messages.length}개</div>
-                </div>
+                </button>
               ))
             )}
           </div>

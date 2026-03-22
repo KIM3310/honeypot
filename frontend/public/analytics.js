@@ -114,9 +114,9 @@
     window.dataLayer = window.dataLayer || [];
     window.gtag =
       window.gtag ||
-      function () {
-        window.dataLayer.push(arguments);
-      };
+      ((...args) => {
+        window.dataLayer.push(args);
+      });
     window.gtag("js", new Date());
     window.gtag("consent", "default", {
       analytics_storage: consentGranted ? "granted" : "denied",
@@ -140,9 +140,10 @@
     ((c, l, a, r, i, t, y) => {
       c[a] =
         c[a] ||
-        function () {
-          (c[a].q = c[a].q || []).push(arguments);
-        };
+        ((...args) => {
+          c[a].q = c[a].q || [];
+          c[a].q.push(args);
+        });
       t = l.createElement(r);
       t.async = 1;
       t.src = `https://www.clarity.ms/tag/${i}`;

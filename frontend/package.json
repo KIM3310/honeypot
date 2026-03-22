@@ -13,7 +13,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "npx @biomejs/biome check --write ."
+    "lint": "npx @biomejs/biome check --write .",
+    "lint:check": "npx @biomejs/biome check .",
+    "verify": "npm run lint:check && npm test && npm run build"
   },
   "dependencies": {
     "clsx": "^2.1.0",

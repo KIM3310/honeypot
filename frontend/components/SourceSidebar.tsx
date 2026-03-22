@@ -46,10 +46,11 @@ const SourceSidebar: React.FC<Props> = ({ files, onUpload, onUpdate, onRemove, o
   useEffect(() => {
     const fetchIndexes = async () => {
       try {
+        type IndexInfo = { name: string };
         const response = await fetchWithSession(API_ENDPOINTS.INDEXES);
         if (response.ok) {
           const data = await response.json();
-          const indexNames = data.indexes.map((idx: any) => idx.name);
+          const indexNames = ((data as { indexes?: IndexInfo[] }).indexes || []).map((idx) => idx.name);
           setAvailableIndexes(indexNames);
 
           // 기본 인덱스 선택 (첫 번째 인덱스 또는 documents-index)
@@ -264,6 +265,7 @@ const SourceSidebar: React.FC<Props> = ({ files, onUpload, onUpdate, onRemove, o
             <Archive className="w-4 h-4" /> 자료 보관함
           </h2>
           <button
+            type="button"
             onClick={() => fileInputRef.current?.click()}
             className="w-full bg-white text-yellow-600 hover:bg-yellow-50 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
           >
@@ -309,6 +311,7 @@ const SourceSidebar: React.FC<Props> = ({ files, onUpload, onUpdate, onRemove, o
           </h3>
           <div className="relative">
             <button
+              type="button"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:border-yellow-400 transition-all flex items-center justify-between"
             >
@@ -326,6 +329,7 @@ const SourceSidebar: React.FC<Props> = ({ files, onUpload, onUpdate, onRemove, o
                   availableIndexes.map((indexName) => (
                     <button
                       key={indexName}
+                      type="button"
                       onClick={() => {
                         setSelectedIndex(indexName);
                         setIsDropdownOpen(false);
@@ -417,6 +421,7 @@ const SourceSidebar: React.FC<Props> = ({ files, onUpload, onUpdate, onRemove, o
                   )}
                 </div>
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     cancelledFileIdsRef.current.add(file.id);

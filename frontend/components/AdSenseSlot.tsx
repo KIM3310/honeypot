@@ -38,7 +38,9 @@ export default function AdSenseSlot() {
       return;
     }
     try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
+      const adsbygoogle = window.adsbygoogle || [];
+      window.adsbygoogle = adsbygoogle;
+      adsbygoogle.push({});
       pushedRef.current = true;
     } catch (_err) {
       // no-op

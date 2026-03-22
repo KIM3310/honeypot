@@ -7,12 +7,18 @@ import { loginUser } from "../services/authService.ts";
 import type { HandoverSchema, HealthSummary, ServiceBrief, ServiceMeta } from "../types.ts";
 import ServiceReadinessBoard from "./ServiceReadinessBoard.tsx";
 
+type LoggedInUser = {
+  email: string;
+  name: string;
+  role: string;
+};
+
 interface Props {
   apiMisconfigured: boolean;
   backendReachable: boolean;
   handoverSchema: HandoverSchema | null;
   healthSummary: HealthSummary | null;
-  onLogin: (userInfo: any) => void;
+  onLogin: (userInfo: LoggedInUser) => void;
   runtimeStatusMessage: string;
   serviceBrief: ServiceBrief | null;
   serviceMeta: ServiceMeta | null;
@@ -83,7 +89,7 @@ const LoginScreen: React.FC<Props> = ({
         <div className="flex flex-col items-center mb-10 text-center">
           <div className="w-40 h-40 mb-4 group hover:scale-110 transition-all duration-500 cursor-pointer">
             <img
-              src="https://i.ibb.co/PvGzg7cK/Gemini-Generated-Image-ip7k7xip7k7xip7k.png"
+              src="https://api.iconify.design/noto:honey-pot.svg"
               alt="꿀단지 로고"
               className="w-full h-full object-contain drop-shadow-2xl transition-transform rounded-full"
               onError={(e) => {
@@ -156,7 +162,6 @@ const LoginScreen: React.FC<Props> = ({
                   placeholder="operator-id"
                   required
                   autoComplete="username"
-                  aria-required="true"
                   disabled={loginDisabled}
                   className="w-full px-6 py-4 bg-yellow-50/50 border border-yellow-100 rounded-2xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all font-bold placeholder:text-yellow-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
@@ -176,7 +181,6 @@ const LoginScreen: React.FC<Props> = ({
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
-                  aria-required="true"
                   disabled={loginDisabled}
                   className="w-full px-6 py-4 bg-yellow-50/50 border border-yellow-100 rounded-2xl focus:ring-4 focus:ring-yellow-400/10 focus:border-yellow-300 outline-none transition-all font-bold placeholder:text-yellow-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
@@ -237,7 +241,7 @@ const LoginScreen: React.FC<Props> = ({
           </div>
           <div className="flex items-center gap-3 text-[11px] font-bold text-gray-400">
             <Sparkles className="w-4 h-4 text-yellow-400" />
-            Microsoft Azure 클라우드 환경에서 안전하게 보호됩니다.
+            관리형 클라우드 환경에서 안전하게 보호됩니다.
           </div>
         </div>
 

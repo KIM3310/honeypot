@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AdSenseSlot from "./components/AdSenseSlot";
 import ChatWindow from "./components/ChatWindow";
 import EngagementHub from "./components/EngagementHub";
@@ -552,11 +552,11 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const handleNewChat = () => {
+  const handleNewChat = useCallback(() => {
     setMessages([]);
     setCurrentSessionId(null);
     setViewMode(ViewMode.CHAT_HISTORY);
-  };
+  }, []);
 
   const handleSelectSession = (sessionId: string) => {
     setCurrentSessionId(sessionId);
@@ -580,7 +580,7 @@ const App: React.FC = () => {
     console.log("✅ App: RAG 인덱스 변경됨:", indexName);
   };
 
-  const handleCopyWorkspaceLink = async () => {
+  const handleCopyWorkspaceLink = useCallback(async () => {
     const shareUrl = buildWorkspaceShareUrl(
       buildWorkspaceUrlSearch({
         viewMode,
@@ -596,9 +596,9 @@ const App: React.FC = () => {
       console.error("❌ workspace link 복사 실패:", error);
       setWorkspaceNotice("링크 복사에 실패했습니다.");
     }
-  };
+  }, [currentSessionId, selectedRagIndex, viewMode]);
 
-  const handleCopyReviewerBundle = async () => {
+  const handleCopyReviewerBundle = useCallback(async () => {
     const shareUrl = buildWorkspaceShareUrl(
       buildWorkspaceUrlSearch({
         viewMode,
@@ -628,9 +628,9 @@ const App: React.FC = () => {
       console.error("❌ reviewer bundle 복사 실패:", error);
       setWorkspaceNotice("리뷰어 번들 복사에 실패했습니다.");
     }
-  };
+  }, [currentSessionId, healthSummary?.links, selectedRagIndex, serviceMeta?.two_minute_review, viewMode]);
 
-  const handleCopyFocusedSession = async () => {
+  const handleCopyFocusedSession = useCallback(async () => {
     const lines = [
       "honeypot focused session snapshot",
       `View: ${viewMode === ViewMode.CHAT ? "chat" : "history"}`,
@@ -648,9 +648,9 @@ const App: React.FC = () => {
       console.error("❌ focused session 복사 실패:", error);
       setWorkspaceNotice("세션 스냅샷 복사에 실패했습니다.");
     }
-  };
+  }, [currentSessionId, files.length, healthSummary?.status, messages.length, selectedRagIndex, viewMode]);
 
-  const handleCopySecuritySnapshot = async () => {
+  const handleCopySecuritySnapshot = useCallback(async () => {
     const reviewRoutes = Object.values(healthSummary?.links || {}).filter(Boolean);
     const lines = [
       "honeypot security posture snapshot",
@@ -676,7 +676,17 @@ const App: React.FC = () => {
       console.error("❌ security snapshot 복사 실패:", error);
       setWorkspaceNotice("보안 posture 스냅샷 복사에 실패했습니다.");
     }
-  };
+  }, [
+    currentSessionId,
+    healthSummary?.links,
+    healthSummary?.status,
+    selectedRagIndex,
+    serviceMeta?.runtime?.allowed_origins_count,
+    serviceMeta?.runtime?.auth_controls,
+    serviceMeta?.runtime?.config_valid,
+    serviceMeta?.runtime?.mode,
+    viewMode,
+  ]);
 
   useEffect(() => {
     const handleKeyboardShortcuts = (event: KeyboardEvent) => {
@@ -811,17 +821,22 @@ const App: React.FC = () => {
       if (filesToAnalyze.length === 0) {
         console.log("📚 업로드된 파일이 없음 - AI Search 인덱스에서 문서 조회...");
         try {
+          type IndexedDocument = {
+            id: string;
+            file_name: string;
+            content?: string;
+          };
           const indexName = selectedRagIndex || "documents-index";
           const response = await fetchWithSession(
             `${API_ENDPOINTS.DOCUMENTS}?index_name=${encodeURIComponent(indexName)}`,
             {},
           );
           if (response.ok) {
-            const data = await response.json();
+            const data = (await response.json()) as { documents?: IndexedDocument[] };
             if (data.documents && data.documents.length > 0) {
               console.log(`✅ 인덱스에서 ${data.documents.length}개 문서 조회`);
               // 인덱스 문서들을 SourceFile 형식으로 변환
-              filesToAnalyze = data.documents.map((doc: any, _idx: number) => ({
+              filesToAnalyze = data.documents.map((doc) => ({
                 id: doc.id,
                 name: doc.file_name,
                 type: "text/plain",
@@ -922,6 +937,7 @@ const App: React.FC = () => {
               </div>
               {!handoverData && (
                 <button
+                  type="button"
                   onClick={handleGenerateHandover}
                   disabled={isProcessing}
                   className="bg-gray-900 text-white px-6 py-3 rounded-2xl text-xs font-black shadow-xl hover:bg-black hover:scale-105 disabled:opacity-50 transition-all active:scale-95 flex items-center gap-2 group"
@@ -977,24 +993,28 @@ const App: React.FC = () => {
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
+                    type="button"
                     onClick={handleCopyWorkspaceLink}
                     className="rounded-xl border border-gray-300 bg-gray-900 px-3 py-2 text-[11px] font-black text-white shadow-sm hover:bg-black"
                   >
                     현재 링크 복사
                   </button>
                   <button
+                    type="button"
                     onClick={handleCopyReviewerBundle}
                     className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-[11px] font-black text-gray-900 shadow-sm hover:bg-gray-50"
                   >
                     리뷰어 번들 복사
                   </button>
                   <button
+                    type="button"
                     onClick={handleCopyFocusedSession}
                     className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-[11px] font-black text-gray-900 shadow-sm hover:bg-gray-50"
                   >
                     세션 스냅샷 복사
                   </button>
                   <button
+                    type="button"
                     onClick={handleCopySecuritySnapshot}
                     className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-[11px] font-black text-gray-900 shadow-sm hover:bg-gray-50"
                   >
@@ -1022,7 +1042,7 @@ const App: React.FC = () => {
               </section>
               <section className="rounded-2xl border border-gray-300 bg-white/95 p-4 shadow-sm">
                 <p className="text-[10px] font-black tracking-[0.16em] text-gray-500 uppercase">Sponsored</p>
-                <p className="mt-1 text-[11px] text-gray-700 leading-relaxed">Google AdSense 광고 영역</p>
+                <p className="mt-1 text-[11px] text-gray-700 leading-relaxed">광고 슬롯 영역</p>
                 <div className="mt-2">
                   <AdSenseSlot />
                 </div>
@@ -1089,6 +1109,7 @@ const App: React.FC = () => {
       </aside>
 
       <button
+        type="button"
         onClick={() => setShowEngagementHub(true)}
         aria-label="Open community hub"
         className="fixed bottom-5 right-5 z-[65] rounded-2xl bg-gray-900 text-white px-4 py-2 text-[11px] font-black tracking-wide shadow-xl hover:bg-black hover:scale-105 active:scale-95 transition-all"

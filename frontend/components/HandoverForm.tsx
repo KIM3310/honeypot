@@ -15,7 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { HandoverData } from "../types.ts";
 
 interface Props {
@@ -23,11 +23,36 @@ interface Props {
   onUpdate: (data: HandoverData) => void;
 }
 
-const InputField = ({ label, value, onChange, multiline = false, placeholder = "" }: any) => {
-  const [localValue, setLocalValue] = useState(value || "");
+type InputFieldProps = {
+  label: string;
+  value?: string;
+  onChange: (value: string) => void;
+  multiline?: boolean;
+  placeholder?: string;
+};
+
+type SectionProps = {
+  title: string;
+  icon?: React.ReactNode;
+  color?: string;
+  children: React.ReactNode;
+  onAdd?: () => void;
+};
+
+type ListEditorProps<T> = {
+  items: T[];
+  onRemove: (index: number) => void;
+  renderItem: (item: T, index: number) => React.ReactNode;
+  getKey: (item: T, index: number) => string;
+  emptyText?: string;
+};
+
+const InputField = ({ label, value, onChange, multiline = false, placeholder = "" }: InputFieldProps) => {
+  const inputId = useId();
+  const [localValue, setLocalValue] = useState(value ?? "");
 
   useEffect(() => {
-    setLocalValue(value || "");
+    setLocalValue(value ?? "");
   }, [value]);
 
   const handleChange = (newValue: string) => {
@@ -42,9 +67,12 @@ const InputField = ({ label, value, onChange, multiline = false, placeholder = "
 
   return (
     <div className="mb-4 group">
-      <label className="block text-[9px] font-black text-yellow-600 uppercase mb-1.5 tracking-widest">{label}</label>
+      <label htmlFor={inputId} className="block text-[9px] font-black text-yellow-600 uppercase mb-1.5 tracking-widest">
+        {label}
+      </label>
       {multiline ? (
         <textarea
+          id={inputId}
           value={localValue}
           onChange={(e) => handleChange(e.target.value)}
           onBlur={handleBlur}
@@ -53,6 +81,7 @@ const InputField = ({ label, value, onChange, multiline = false, placeholder = "
         />
       ) : (
         <input
+          id={inputId}
           type="text"
           value={localValue}
           onChange={(e) => handleChange(e.target.value)}
@@ -65,7 +94,7 @@ const InputField = ({ label, value, onChange, multiline = false, placeholder = "
   );
 };
 
-const Section = ({ title, icon, color = "yellow", children, onAdd }: any) => {
+const Section = ({ title, icon, color = "yellow", children, onAdd }: SectionProps) => {
   const colors: Record<string, string> = {
     yellow: "bg-amber-50 border-amber-100 text-amber-800",
     orange: "bg-orange-50 border-orange-100 text-orange-800",
@@ -86,6 +115,7 @@ const Section = ({ title, icon, color = "yellow", children, onAdd }: any) => {
         </h3>
         {onAdd && (
           <button
+            type="button"
             onClick={onAdd}
             className="p-1.5 bg-white rounded-lg text-gray-400 hover:text-yellow-600 shadow-sm transition-all"
           >
@@ -98,17 +128,18 @@ const Section = ({ title, icon, color = "yellow", children, onAdd }: any) => {
   );
 };
 
-const ListEditor = ({ items, onUpdate, onRemove, renderItem, emptyText }: any) => {
+const ListEditor = <T,>({ items, onRemove, renderItem, getKey, emptyText }: ListEditorProps<T>) => {
   if (!items || items.length === 0) {
     return <p className="text-[10px] text-gray-400 italic text-center py-4">{emptyText || "항목이 없습니다."}</p>;
   }
 
   return (
     <div className="space-y-3">
-      {items.map((item: any, idx: number) => (
-        <div key={idx} className="relative group/row">
+      {items.map((item, idx) => (
+        <div key={getKey(item, idx)} className="relative group/row">
           {renderItem(item, idx)}
           <button
+            type="button"
             onClick={() => onRemove(idx)}
             className="absolute top-2 right-2 opacity-0 group-hover/row:opacity-100 p-1.5 text-red-200 hover:text-red-500 transition-all z-10"
           >
@@ -281,32 +312,34 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
     );
   }
 
-  const handleChange = (path: string, value: any) => {
-    const newData = JSON.parse(JSON.stringify(data));
+  const cloneData = () => JSON.parse(JSON.stringify(data)) as HandoverData;
+
+  const handleChange = (path: string, value: unknown) => {
+    const newData = cloneData();
     const keys = path.split(".");
-    let current: any = newData;
+    let current: unknown = newData;
     for (let i = 0; i < keys.length - 1; i++) {
-      current = current[keys[i]];
+      current = (current as Record<string, unknown>)[keys[i]];
     }
-    current[keys[keys.length - 1]] = value;
+    (current as Record<string, unknown>)[keys[keys.length - 1]] = value;
     onUpdate(newData);
   };
 
-  const addItem = (path: string, defaultItem: any) => {
-    const newData = JSON.parse(JSON.stringify(data));
+  const addItem = (path: string, defaultItem: unknown) => {
+    const newData = cloneData();
     const keys = path.split(".");
-    let current: any = newData;
-    for (const key of keys) current = current[key];
-    current.push(defaultItem);
+    let current: unknown = newData;
+    for (const key of keys) current = (current as Record<string, unknown>)[key];
+    (current as unknown[]).push(defaultItem);
     onUpdate(newData);
   };
 
   const removeItem = (path: string, index: number) => {
-    const newData = JSON.parse(JSON.stringify(data));
+    const newData = cloneData();
     const keys = path.split(".");
-    let current: any = newData;
-    for (const key of keys) current = current[key];
-    current.splice(index, 1);
+    let current: unknown = newData;
+    for (const key of keys) current = (current as Record<string, unknown>)[key];
+    (current as unknown[]).splice(index, 1);
     onUpdate(newData);
   };
 
@@ -324,9 +357,9 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
       alert(`리뷰 준비 전입니다. 보완 필요: ${completeness.missing.join(", ")}`);
       return;
     }
-    if ((window as any).electronAPI) {
+    if (window.electronAPI?.saveJson) {
       try {
-        const result = await (window as any).electronAPI.saveJson(
+        const result = await window.electronAPI.saveJson(
           data,
           `handover_${new Date().toISOString().split("T")[0]}.json`,
         );
@@ -356,11 +389,9 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
       alert(`리뷰 준비 전입니다. 보완 필요: ${completeness.missing.join(", ")}`);
       return;
     }
-    if ((window as any).electronAPI) {
+    if (window.electronAPI?.savePdf) {
       try {
-        const result = await (window as any).electronAPI.savePdf(
-          `handover_${new Date().toISOString().split("T")[0]}.pdf`,
-        );
+        const result = await window.electronAPI.savePdf(`handover_${new Date().toISOString().split("T")[0]}.pdf`);
         if (result.success) {
           alert(`저장되었습니다: ${result.filePath}`);
         }
@@ -396,12 +427,14 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
           </div>
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={handleCopyReviewerSnapshot}
               className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors"
             >
               <CheckSquare className="w-3.5 h-3.5" /> Reviewer snapshot
             </button>
             <button
+              type="button"
               onClick={handleExportJSON}
               disabled={!completeness.reviewReady}
               className="flex items-center gap-2 px-3 py-1.5 bg-yellow-50 text-yellow-600 rounded-lg text-xs font-bold hover:bg-yellow-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -409,6 +442,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
               <Save className="w-3.5 h-3.5" /> JSON 저장
             </button>
             <button
+              type="button"
               onClick={handleExportPDF}
               disabled={!completeness.reviewReady}
               className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500 text-white rounded-lg text-xs font-bold hover:bg-yellow-600 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
@@ -512,7 +546,8 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
       <div className="flex bg-yellow-50/50 border-b border-yellow-100 p-2 gap-1 overflow-x-auto no-scrollbar">
         {tabs.map((tab, idx) => (
           <button
-            key={idx}
+            key={tab.name}
+            type="button"
             onClick={() => setActiveTab(idx)}
             className={`flex items-center gap-2 px-4 py-2.5 text-[10px] font-black transition-all rounded-xl whitespace-nowrap ${
               activeTab === idx
@@ -534,34 +569,34 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                 <InputField
                   label="이름"
                   value={data.overview.transferor.name}
-                  onChange={(v: any) => handleChange("overview.transferor.name", v)}
+                  onChange={(value) => handleChange("overview.transferor.name", value)}
                 />
                 <InputField
                   label="직급/부서"
                   value={data.overview.transferor.position}
-                  onChange={(v: any) => handleChange("overview.transferor.position", v)}
+                  onChange={(value) => handleChange("overview.transferor.position", value)}
                 />
                 <InputField
                   label="연락처"
                   value={data.overview.transferor.contact}
-                  onChange={(v: any) => handleChange("overview.transferor.contact", v)}
+                  onChange={(value) => handleChange("overview.transferor.contact", value)}
                 />
               </Section>
               <Section title="인수자 정보" color="orange">
                 <InputField
                   label="이름"
                   value={data.overview.transferee.name}
-                  onChange={(v: any) => handleChange("overview.transferee.name", v)}
+                  onChange={(value) => handleChange("overview.transferee.name", value)}
                 />
                 <InputField
                   label="직급/부서"
                   value={data.overview.transferee.position}
-                  onChange={(v: any) => handleChange("overview.transferee.position", v)}
+                  onChange={(value) => handleChange("overview.transferee.position", value)}
                 />
                 <InputField
                   label="부임 예정일"
                   value={data.overview.transferee.startDate}
-                  onChange={(v: any) => handleChange("overview.transferee.startDate", v)}
+                  onChange={(value) => handleChange("overview.transferee.startDate", value)}
                 />
               </Section>
             </div>
@@ -571,18 +606,18 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                 label="인계 사유"
                 value={data.overview.reason}
                 multiline
-                onChange={(v: any) => handleChange("overview.reason", v)}
+                onChange={(value) => handleChange("overview.reason", value)}
               />
               <InputField
                 label="배경 및 배경 정보"
                 value={data.overview.background}
                 multiline
-                onChange={(v: any) => handleChange("overview.background", v)}
+                onChange={(value) => handleChange("overview.background", value)}
               />
               <InputField
                 label="인계 기간"
                 value={data.overview.period}
-                onChange={(v: any) => handleChange("overview.period", v)}
+                onChange={(value) => handleChange("overview.period", value)}
                 placeholder="YYYY.MM.DD ~ YYYY.MM.DD"
               />
             </div>
@@ -596,24 +631,24 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
               <InputField
                 label="공식 직무명"
                 value={data.jobStatus.title}
-                onChange={(v: any) => handleChange("jobStatus.title", v)}
+                onChange={(value) => handleChange("jobStatus.title", value)}
               />
               <InputField
                 label="핵심 책임 (엔터로 구분)"
                 value={data.jobStatus.responsibilities.join("\n")}
                 multiline
-                onChange={(v: any) => handleChange("jobStatus.responsibilities", v.split("\n"))}
+                onChange={(value) => handleChange("jobStatus.responsibilities", value.split("\n"))}
               />
               <div className="grid grid-cols-2 gap-6">
                 <InputField
                   label="의사결정 권한"
                   value={data.jobStatus.authority}
-                  onChange={(v: any) => handleChange("jobStatus.authority", v)}
+                  onChange={(value) => handleChange("jobStatus.authority", value)}
                 />
                 <InputField
                   label="보고 체계"
                   value={data.jobStatus.reportingLine}
-                  onChange={(v: any) => handleChange("jobStatus.reportingLine", v)}
+                  onChange={(value) => handleChange("jobStatus.reportingLine", value)}
                 />
               </div>
             </Section>
@@ -622,13 +657,13 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
               <InputField
                 label="팀 미션"
                 value={data.jobStatus.teamMission}
-                onChange={(v: any) => handleChange("jobStatus.teamMission", v)}
+                onChange={(value) => handleChange("jobStatus.teamMission", value)}
               />
               <InputField
                 label="현재 핵심 목표"
                 value={data.jobStatus.teamGoals?.join("\n") || ""}
                 multiline
-                onChange={(v: any) => handleChange("jobStatus.teamGoals", v.split("\n"))}
+                onChange={(value) => handleChange("jobStatus.teamGoals", value.split("\n"))}
               />
             </Section>
           </div>
@@ -641,19 +676,24 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
               <ListEditor
                 items={data.priorities}
                 onRemove={(idx: number) => removeItem("priorities", idx)}
-                renderItem={(p: any, i: number) => (
+                getKey={(priority, index) => `${priority.title}-${priority.deadline ?? "no-deadline"}-${index}`}
+                renderItem={(priority, i: number) => (
                   <div className="p-6 bg-white border border-red-50 rounded-3xl shadow-sm flex items-start gap-6">
                     <span className="w-8 h-8 bg-red-500 text-white rounded-xl flex items-center justify-center text-[10px] font-black shrink-0 shadow-lg">
                       {i + 1}
                     </span>
                     <div className="flex-1 grid grid-cols-12 gap-6">
                       <div className="col-span-6">
-                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest block mb-1">
+                        <label
+                          htmlFor={`priority-title-${i}`}
+                          className="text-[8px] font-black text-gray-400 uppercase tracking-widest block mb-1"
+                        >
                           과제명
                         </label>
                         <input
+                          id={`priority-title-${i}`}
                           className="w-full text-xs font-black text-gray-800 outline-none bg-transparent"
-                          value={p.title}
+                          value={priority.title}
                           onChange={(e) => {
                             const next = [...data.priorities];
                             next[i].title = e.target.value;
@@ -662,12 +702,16 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                         />
                       </div>
                       <div className="col-span-3">
-                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest block mb-1">
+                        <label
+                          htmlFor={`priority-status-${i}`}
+                          className="text-[8px] font-black text-gray-400 uppercase tracking-widest block mb-1"
+                        >
                           상태
                         </label>
                         <input
+                          id={`priority-status-${i}`}
                           className="w-full text-[10px] font-bold text-gray-500 outline-none bg-transparent"
-                          value={p.status}
+                          value={priority.status}
                           onChange={(e) => {
                             const next = [...data.priorities];
                             next[i].status = e.target.value;
@@ -676,12 +720,16 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                         />
                       </div>
                       <div className="col-span-3 text-right">
-                        <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest block mb-1">
+                        <label
+                          htmlFor={`priority-deadline-${i}`}
+                          className="text-[8px] font-black text-gray-400 uppercase tracking-widest block mb-1"
+                        >
                           기한
                         </label>
                         <input
+                          id={`priority-deadline-${i}`}
                           className="w-full text-[10px] font-black text-red-500 outline-none bg-transparent text-right"
-                          value={p.deadline}
+                          value={priority.deadline}
                           onChange={(e) => {
                             const next = [...data.priorities];
                             next[i].deadline = e.target.value;
@@ -704,12 +752,13 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                 <ListEditor
                   items={data.stakeholders.internal}
                   onRemove={(idx: number) => removeItem("stakeholders.internal", idx)}
-                  renderItem={(s: any, i: number) => (
+                  getKey={(stakeholder, index) => `${stakeholder.name}-${stakeholder.role}-${index}`}
+                  renderItem={(stakeholder, i: number) => (
                     <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border border-gray-100">
                       <div className="flex-1">
                         <input
                           className="w-full text-[11px] font-black text-gray-800 outline-none"
-                          value={s.name}
+                          value={stakeholder.name}
                           onChange={(e) => {
                             const next = [...data.stakeholders.internal];
                             next[i].name = e.target.value;
@@ -718,7 +767,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                         />
                         <input
                           className="w-full text-[9px] font-bold text-gray-400 outline-none"
-                          value={s.role}
+                          value={stakeholder.role}
                           onChange={(e) => {
                             const next = [...data.stakeholders.internal];
                             next[i].role = e.target.value;
@@ -739,11 +788,12 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                 <ListEditor
                   items={data.teamMembers}
                   onRemove={(idx: number) => removeItem("teamMembers", idx)}
-                  renderItem={(m: any, i: number) => (
+                  getKey={(member, index) => `${member.name}-${member.role}-${index}`}
+                  renderItem={(member, i: number) => (
                     <div className="p-3 bg-white rounded-xl shadow-sm border border-blue-100">
                       <input
                         className="w-full text-[11px] font-black text-gray-800 outline-none"
-                        value={`${m.name} (${m.position})`}
+                        value={`${member.name} (${member.position})`}
                         onChange={(e) => {
                           const next = [...data.teamMembers];
                           const [name, pos] = e.target.value.split(" (");
@@ -754,7 +804,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                       />
                       <input
                         className="w-full text-[9px] font-bold text-blue-500 outline-none"
-                        value={m.role}
+                        value={member.role}
                         onChange={(e) => {
                           const next = [...data.teamMembers];
                           next[i].role = e.target.value;
@@ -789,13 +839,14 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
               <ListEditor
                 items={data.ongoingProjects}
                 onRemove={(idx: number) => removeItem("ongoingProjects", idx)}
-                renderItem={(p: any, i: number) => (
+                getKey={(project, index) => `${project.name}-${project.owner}-${index}`}
+                renderItem={(project, i: number) => (
                   <div className="p-6 bg-white border border-indigo-50 rounded-[2rem] shadow-sm hover:shadow-md transition-all">
                     <div className="flex justify-between items-center mb-4">
                       <div className="flex items-center gap-3">
                         <input
                           className="text-sm font-black text-gray-800 outline-none bg-transparent"
-                          value={p.name}
+                          value={project.name}
                           onChange={(e) => {
                             const next = [...data.ongoingProjects];
                             next[i].name = e.target.value;
@@ -804,7 +855,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                         />
                         <input
                           className="text-[9px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full outline-none"
-                          value={p.owner}
+                          value={project.owner}
                           onChange={(e) => {
                             const next = [...data.ongoingProjects];
                             next[i].owner = e.target.value;
@@ -816,7 +867,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                         <input
                           type="number"
                           className="w-10 text-right text-xs font-black text-indigo-600 outline-none bg-transparent"
-                          value={p.progress}
+                          value={project.progress}
                           onChange={(e) => {
                             const next = [...data.ongoingProjects];
                             next[i].progress = Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0));
@@ -829,16 +880,16 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                     <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden mb-4 shadow-inner">
                       <div
                         className="bg-indigo-500 h-full transition-all duration-1000"
-                        style={{ width: `${p.progress}%` }}
+                        style={{ width: `${project.progress}%` }}
                       ></div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <InputField
                         label="진행 상황 / 기한"
-                        value={`${p.status} / ${p.deadline}`}
-                        onChange={(v: any) => {
+                        value={`${project.status} / ${project.deadline}`}
+                        onChange={(value) => {
                           const next = [...data.ongoingProjects];
-                          const [status, deadline] = v.split(" / ");
+                          const [status, deadline] = value.split(" / ");
                           next[i].status = status || "";
                           if (deadline) next[i].deadline = deadline;
                           handleChange("ongoingProjects", next);
@@ -846,10 +897,10 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                       />
                       <InputField
                         label="상세 내용"
-                        value={p.description}
-                        onChange={(v: any) => {
+                        value={project.description}
+                        onChange={(value) => {
                           const next = [...data.ongoingProjects];
-                          next[i].description = v;
+                          next[i].description = value;
                           handleChange("ongoingProjects", next);
                         }}
                       />
@@ -864,13 +915,13 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                 label="현재 이슈"
                 value={data.risks.issues}
                 multiline
-                onChange={(v: any) => handleChange("risks.issues", v)}
+                onChange={(value) => handleChange("risks.issues", value)}
               />
               <InputField
                 label="잠재적 리스크"
                 value={data.risks.risks}
                 multiline
-                onChange={(v: any) => handleChange("risks.risks", v)}
+                onChange={(value) => handleChange("risks.risks", value)}
               />
             </Section>
           </div>
@@ -887,11 +938,12 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
               <ListEditor
                 items={data.resources.docs}
                 onRemove={(idx: number) => removeItem("resources.docs", idx)}
-                renderItem={(d: any, i: number) => (
+                getKey={(doc, index) => `${doc.category}-${doc.name}-${index}`}
+                renderItem={(doc, i: number) => (
                   <div className="flex gap-4 p-3 bg-white rounded-xl shadow-sm border border-emerald-100">
                     <input
                       className="w-16 text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 rounded-lg outline-none"
-                      value={d.category}
+                      value={doc.category}
                       onChange={(e) => {
                         const next = [...data.resources.docs];
                         next[i].category = e.target.value;
@@ -901,7 +953,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                     <div className="flex-1">
                       <input
                         className="w-full text-[11px] font-black text-gray-800 outline-none"
-                        value={d.name}
+                        value={doc.name}
                         onChange={(e) => {
                           const next = [...data.resources.docs];
                           next[i].name = e.target.value;
@@ -910,7 +962,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                       />
                       <input
                         className="w-full text-[9px] font-bold text-gray-400 outline-none"
-                        value={d.location}
+                        value={doc.location}
                         onChange={(e) => {
                           const next = [...data.resources.docs];
                           next[i].location = e.target.value;
@@ -931,11 +983,12 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
               <ListEditor
                 items={data.resources.systems}
                 onRemove={(idx: number) => removeItem("resources.systems", idx)}
-                renderItem={(s: any, i: number) => (
+                getKey={(system, index) => `${system.name}-${system.contact}-${index}`}
+                renderItem={(system, i: number) => (
                   <div className="p-4 bg-white rounded-xl shadow-sm border border-teal-100">
                     <input
                       className="w-full text-xs font-black text-gray-800 outline-none mb-1"
-                      value={s.name}
+                      value={system.name}
                       onChange={(e) => {
                         const next = [...data.resources.systems];
                         next[i].name = e.target.value;
@@ -945,7 +998,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                     <div className="grid grid-cols-2 gap-4">
                       <input
                         className="w-full text-[10px] font-bold text-teal-600 outline-none"
-                        value={s.usage}
+                        value={system.usage}
                         onChange={(e) => {
                           const next = [...data.resources.systems];
                           next[i].usage = e.target.value;
@@ -954,7 +1007,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                       />
                       <input
                         className="w-full text-[10px] font-bold text-gray-400 outline-none text-right"
-                        value={s.contact}
+                        value={system.contact}
                         onChange={(e) => {
                           const next = [...data.resources.systems];
                           next[i].contact = e.target.value;
@@ -980,12 +1033,13 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
               <ListEditor
                 items={data.checklist}
                 onRemove={(idx: number) => removeItem("checklist", idx)}
-                renderItem={(c: any, i: number) => (
+                getKey={(item, index) => `${item.text}-${index}`}
+                renderItem={(item, i: number) => (
                   <label className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-yellow-50 shadow-sm cursor-pointer hover:bg-yellow-50/30 transition-all group/item">
                     <div className="relative flex items-center justify-center">
                       <input
                         type="checkbox"
-                        checked={c.completed}
+                        checked={item.completed}
                         onChange={(e) => {
                           const next = [...data.checklist];
                           next[i].completed = e.target.checked;
@@ -993,13 +1047,13 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                         }}
                         className="w-6 h-6 rounded-lg border-2 border-yellow-200 text-yellow-500 focus:ring-yellow-500 focus:ring-offset-0 transition-all cursor-pointer appearance-none checked:bg-yellow-500 checked:border-yellow-500"
                       />
-                      {c.completed && <CheckSquare className="w-4 h-4 text-white absolute pointer-events-none" />}
+                      {item.completed && <CheckSquare className="w-4 h-4 text-white absolute pointer-events-none" />}
                     </div>
                     <input
                       className={`flex-1 text-[11px] font-bold outline-none bg-transparent transition-all ${
-                        c.completed ? "text-gray-300 line-through" : "text-gray-700"
+                        item.completed ? "text-gray-300 line-through" : "text-gray-700"
                       }`}
-                      value={c.text}
+                      value={item.text}
                       onChange={(e) => {
                         const next = [...data.checklist];
                         next[i].text = e.target.value;
@@ -1077,6 +1131,7 @@ const HandoverForm: React.FC<Props> = ({ data, onUpdate }) => {
                 모든 내용이 정확한지 인계자/인수자와 함께 확인한 후 PDF로 저장해 주세요.
               </p>
               <button
+                type="button"
                 onClick={handleExportPDF}
                 className="w-full py-4 bg-yellow-400 text-gray-900 rounded-2xl text-sm font-black hover:bg-yellow-500 transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3"
               >

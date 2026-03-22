@@ -1,7 +1,16 @@
 // API 설정 파일
 // Electron 환경 감지
+declare global {
+  interface Window {
+    electronAPI?: {
+      saveJson?: (data: unknown, filename: string) => Promise<{ success: boolean; filePath?: string }>;
+      savePdf?: (filename: string) => Promise<{ success: boolean; filePath?: string }>;
+    };
+  }
+}
+
 const hasWindow = typeof window !== "undefined";
-const isElectron = hasWindow && !!(window as any).electronAPI;
+const isElectron = hasWindow && !!window.electronAPI;
 const MISCONFIGURED_API_BASE_URL = "https://backend-not-configured.invalid";
 
 // 개발/프로덕션 환경 감지

@@ -61,4 +61,4 @@ class MockIntersectionObserver {
 vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
 
 // Mock scrollTo
-Element.prototype.scrollTo = vi.fn() as any;
+Element.prototype.scrollTo = vi.fn() as unknown as typeof Element.prototype.scrollTo;

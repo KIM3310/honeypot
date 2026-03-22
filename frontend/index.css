@@ -1,7 +1,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&family=Inter:wght@400;500;600;700&display=swap");
 
+/* biome-ignore lint/suspicious/noUnknownAtRules: Tailwind CSS directives */
 @tailwind base;
+/* biome-ignore lint/suspicious/noUnknownAtRules: Tailwind CSS directives */
 @tailwind components;
+/* biome-ignore lint/suspicious/noUnknownAtRules: Tailwind CSS directives */
 @tailwind utilities;
 
 body {
@@ -142,7 +145,7 @@ input:valid:not(:placeholder-shown) {
   }
 
   /* 메인 UI 숨기기 */
-  .main-ui {
+  #app-container .main-ui {
     display: none;
   }
 

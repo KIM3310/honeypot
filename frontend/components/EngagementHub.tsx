@@ -14,6 +14,13 @@ const GISCUS_REPO_ID = String(import.meta.env.VITE_GISCUS_REPO_ID || "").trim();
 const GISCUS_CATEGORY = String(import.meta.env.VITE_GISCUS_CATEGORY || "").trim();
 const GISCUS_CATEGORY_ID = String(import.meta.env.VITE_GISCUS_CATEGORY_ID || "").trim();
 
+const handleOverlayKeyDown = (event: React.KeyboardEvent<HTMLDivElement>, onClose: () => void) => {
+  if (event.key === "Escape" || event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    onClose();
+  }
+};
+
 const EngagementHub: React.FC<Props> = ({ open, onClose }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -107,17 +114,25 @@ const EngagementHub: React.FC<Props> = ({ open, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div
-        className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden"
-        onClick={(event) => event.stopPropagation()}
-      >
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+      onKeyDown={(event) => handleOverlayKeyDown(event, onClose)}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
           <div>
             <h2 className="text-sm font-black tracking-wide text-gray-900">Community & Feedback Hub</h2>
             <p className="text-[11px] text-gray-500">Formspree + Disqus + Giscus(Open Source)</p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-black text-gray-700 hover:bg-gray-100"
           >
@@ -153,6 +168,7 @@ const EngagementHub: React.FC<Props> = ({ open, onClose }) => {
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs"
               />
               <button
+                type="submit"
                 disabled={status === "submitting"}
                 className="rounded-lg bg-gray-900 px-4 py-2 text-xs font-black text-white disabled:opacity-60"
               >

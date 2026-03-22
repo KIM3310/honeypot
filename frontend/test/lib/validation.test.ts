@@ -96,7 +96,7 @@ describe("Zod validation schemas", () => {
     it("should return raw data when invalid (graceful degradation)", () => {
       const data = { unexpected: true };
       const result = validateResponse(StatsResponseSchema, data, "test");
-      expect((result as any).unexpected).toBe(true);
+      expect((result as Record<string, unknown>).unexpected).toBe(true);
     });
   });
 });
